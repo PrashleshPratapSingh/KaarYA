@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  .border-brutal {
+    border: 4px solid #000000;
+  }
+  
+  .shadow-brutal {
+    box-shadow: 6px 6px 0px #000000;
+  }
+  
+  .text-brutal {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
