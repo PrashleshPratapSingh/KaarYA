@@ -5,11 +5,12 @@ import {
     TextInput,
     Pressable,
     ScrollView,
-    SafeAreaView,
-    StatusBar,
+    StyleSheet,
+    Dimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -18,6 +19,20 @@ import Animated, {
 } from "react-native-reanimated";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+// Colors - consistent with index.tsx and details.tsx
+const COLORS = {
+    primary: "#d4f906",
+    primaryDark: "#ccf005",
+    karyaBlack: "#171811",
+    karyaYellow: "#d4f906",
+    karyaGray: "#858c5f",
+    white: "#FFFFFF",
+    gray: "#666666",
+    lightGray: "#F5F5F5",
+    backgroundLight: "#f8f8f5",
+};
 
 type PaymentType = "fixed" | "hourly" | "milestone";
 
@@ -40,6 +55,7 @@ const generateDates = () => {
 
 export default function BudgetTimelineScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const params = useLocalSearchParams();
 
     const [paymentType, setPaymentType] = useState<PaymentType>("fixed");
@@ -49,20 +65,16 @@ export default function BudgetTimelineScreen() {
     const buttonScale = useSharedValue(1);
     const dates = useMemo(() => generateDates(), []);
 
-    const isFormValid = parseInt(amount) >= 100 && selectedDate;
-
     const handleNext = () => {
-        if (isFormValid) {
-            router.push({
-                pathname: "/post-gig/attachments",
-                params: {
-                    ...params,
-                    paymentType,
-                    amount,
-                    deadline: selectedDate,
-                },
-            });
-        }
+        router.push({
+            pathname: "/post-gig/attachments",
+            params: {
+                ...params,
+                paymentType,
+                amount,
+                deadline: selectedDate,
+            },
+        });
     };
 
     const buttonAnimatedStyle = useAnimatedStyle(() => ({
@@ -70,7 +82,7 @@ export default function BudgetTimelineScreen() {
     }));
 
     const handleButtonPressIn = () => {
-        buttonScale.value = withSpring(0.96, { damping: 15, stiffness: 400 });
+        buttonScale.value = withSpring(0.98, { damping: 15, stiffness: 400 });
     };
 
     const handleButtonPressOut = () => {
@@ -78,63 +90,96 @@ export default function BudgetTimelineScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
-            {/* Header */}
-            <View className="flex-row items-center justify-between px-5 py-4 bg-white border-b border-gray-100">
-                <Pressable
-                    onPress={() => router.back()}
-                    className="w-12 h-12 rounded-full border-2 border-black items-center justify-center"
-                >
-                    <Feather name="arrow-left" size={20} color="#000" />
-                </Pressable>
-                <Text className="text-lg font-black italic tracking-tight">STEP 4/5</Text>
-                <View className="w-12" />
+        <View style={styles.container}>
+            {/* Yellow Striped Background */}
+            <View style={styles.stripedBackground}>
+                {[...Array(60)].map((_, i) => (
+                    <View key={i} style={[styles.stripe, { top: i * 20 - 300 }]} />
+                ))}
             </View>
 
+            {/* Header - Consistent with index.tsx and details.tsx */}
+            <View
+                style={[
+                    styles.safeAreaTop,
+                    { height: insets.top > 0 ? insets.top : 0, backgroundColor: COLORS.white },
+                ]}
+            />
+            <View style={styles.header}>
+                {/* Back Button */}
+                <Pressable
+                    onPress={() => router.back()}
+                    style={({ pressed }) => [
+                        styles.backButton,
+                        pressed && styles.backButtonPressed,
+                    ]}
+                >
+                    <MaterialCommunityIcons
+                        name="arrow-left"
+                        size={20}
+                        color={COLORS.karyaBlack}
+                    />
+                </Pressable>
+
+                {/* Centered Title */}
+                <Text style={styles.headerTitle}>Set Budget</Text>
+
+                {/* Step Counter Capsule */}
+                <View style={styles.stepCapsule}>
+                    <Text style={styles.stepText}>3/5</Text>
+                </View>
+            </View>
+
+            {/* Scrollable Content */}
             <ScrollView
-                className="flex-1 bg-[#D4FF00]"
-                contentContainerStyle={{ paddingBottom: 120 }}
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
             >
-                {/* Rupee Icon */}
-                <Animated.View
-                    entering={FadeInDown.delay(100).springify()}
-                    className="items-center pt-8 pb-4"
-                >
-                    <View className="w-20 h-20 rounded-full border-3 border-black bg-white items-center justify-center">
-                        <Text className="text-3xl font-bold">₹</Text>
-                    </View>
-                </Animated.View>
+                {/* Hero Section - Title */}
+                <View style={styles.heroContainer}>
+                    {/* Title - Same style as "Pick Your Hustle" */}
+                    <Animated.View entering={FadeInDown.delay(100).springify()}>
+                        <Text style={styles.heroText}>Set</Text>
+                        <View style={styles.budgetWrapper}>
+                            {/* White offset shadow */}
+                            <View style={styles.budgetShadow} />
+                            {/* Main budget box */}
+                            <View style={styles.budgetBox}>
+                                <Text style={styles.budgetText}>Budget</Text>
+                            </View>
+                        </View>
+                    </Animated.View>
 
-                {/* Title */}
-                <Animated.View
-                    entering={FadeInDown.delay(150).springify()}
-                    className="items-center pb-6"
-                >
-                    <Text className="text-3xl font-black text-black">SET BUDGET</Text>
-                    <Text className="text-base text-gray-700 mt-2">
+                    <Animated.Text
+                        entering={FadeInDown.delay(150).springify()}
+                        style={styles.subtitle}
+                    >
                         How do you want to pay?
-                    </Text>
-                </Animated.View>
+                    </Animated.Text>
+                </View>
 
-                {/* Payment Type Selector */}
+                {/* Payment Type Selector - Segmented Toggle */}
                 <Animated.View
-                    entering={FadeInDown.delay(200).springify()}
-                    className="mx-6 mb-8"
+                    entering={FadeInDown.delay(250).springify()}
+                    style={styles.segmentedContainer}
                 >
-                    <View className="flex-row bg-white rounded-full p-1 border-2 border-black">
+                    <View style={styles.segmentedControl}>
                         {(["fixed", "hourly", "milestone"] as PaymentType[]).map((type) => (
                             <Pressable
                                 key={type}
                                 onPress={() => setPaymentType(type)}
-                                className={`flex-1 py-3 rounded-full items-center ${paymentType === type ? "bg-black" : "bg-transparent"
-                                    }`}
+                                style={[
+                                    styles.segmentItem,
+                                    paymentType === type && styles.segmentItemActive,
+                                ]}
                             >
                                 <Text
-                                    className={`font-bold uppercase text-sm ${paymentType === type ? "text-white" : "text-black"
-                                        }`}
+                                    style={[
+                                        styles.segmentText,
+                                        paymentType === type && styles.segmentTextActive,
+                                    ]}
                                 >
                                     {type}
                                 </Text>
@@ -145,26 +190,28 @@ export default function BudgetTimelineScreen() {
 
                 {/* Amount Input */}
                 <Animated.View
-                    entering={FadeInDown.delay(250).springify()}
-                    className="mx-6 mb-6"
+                    entering={FadeInDown.delay(300).springify()}
+                    style={styles.inputGroup}
                 >
-                    <Text className="text-sm font-bold text-black uppercase tracking-wider mb-3">
-                        TOTAL AMOUNT
-                    </Text>
-                    <View className="bg-white border-2 border-black rounded-2xl px-5 py-4 flex-row items-center">
-                        <Text className="text-3xl text-gray-400 mr-2">₹</Text>
+                    <Text style={styles.inputLabel}>Total Amount</Text>
+                    <View style={styles.amountInputContainer}>
+                        <Text style={styles.rupeeSymbol}>₹</Text>
                         <TextInput
                             value={amount}
                             onChangeText={setAmount}
                             keyboardType="numeric"
-                            className="text-3xl font-bold text-black flex-1"
-                            placeholder="0"
+                            style={styles.amountInput}
+                            placeholder="5000"
                             placeholderTextColor="#9CA3AF"
                         />
                     </View>
-                    <View className="flex-row items-center mt-3">
-                        <Feather name="shield" size={14} color="#666" />
-                        <Text className="text-xs text-gray-600 ml-2">
+                    <View style={styles.escrowNote}>
+                        <MaterialCommunityIcons
+                            name="shield-check"
+                            size={16}
+                            color={COLORS.karyaBlack}
+                        />
+                        <Text style={styles.escrowText}>
                             Money will be held in Escrow for safety until the gig is completed.
                         </Text>
                     </View>
@@ -172,95 +219,470 @@ export default function BudgetTimelineScreen() {
 
                 {/* Deadline Section */}
                 <Animated.View
-                    entering={FadeInDown.delay(300).springify()}
-                    className="mx-6"
+                    entering={FadeInDown.delay(350).springify()}
+                    style={styles.deadlineSection}
                 >
-                    <Text className="text-xl font-black text-black uppercase mb-4">
-                        DEADLINE
-                    </Text>
+                    <Text style={styles.deadlineTitle}>Deadline</Text>
 
-                    {/* Date Selector Card */}
-                    <View className="bg-white border-2 border-black rounded-3xl p-5">
-                        <View className="flex-row items-center justify-between mb-4">
-                            <Text className="text-sm font-bold text-gray-500 uppercase">
-                                SELECT DATE
-                            </Text>
-                            <Feather name="calendar" size={20} color="#000" />
+                    <View style={styles.calendarCard}>
+                        {/* Spiral Binding Effect */}
+                        <View style={styles.spiralBinding}>
+                            {[...Array(6)].map((_, i) => (
+                                <View key={i} style={styles.spiralDot} />
+                            ))}
                         </View>
 
-                        {/* Dotted Separator */}
-                        <View className="border-t border-dashed border-gray-300 mb-4" />
+                        <View style={styles.calendarContent}>
+                            <View style={styles.calendarHeader}>
+                                <Text style={styles.calendarLabel}>Select Date</Text>
+                                <MaterialCommunityIcons
+                                    name="calendar-edit"
+                                    size={22}
+                                    color={COLORS.karyaBlack}
+                                />
+                            </View>
 
-                        {/* Date Pills */}
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            className="-mx-1"
-                        >
-                            {dates.map((date, index) => (
-                                <Pressable
-                                    key={date.fullDate}
-                                    onPress={() => setSelectedDate(date.fullDate)}
-                                    className={`
-                    mx-1 px-4 py-3 rounded-2xl items-center min-w-[70px]
-                    ${selectedDate === date.fullDate
-                                            ? "bg-black"
-                                            : index === 0
-                                                ? "border-2 border-black bg-white"
-                                                : "bg-gray-100"
-                                        }
-                  `}
-                                >
-                                    <Text
-                                        className={`text-xs font-medium ${selectedDate === date.fullDate
-                                                ? "text-white"
-                                                : "text-gray-500"
-                                            }`}
-                                    >
-                                        {date.month}
-                                    </Text>
-                                    <Text
-                                        className={`text-2xl font-black ${selectedDate === date.fullDate
-                                                ? "text-white"
-                                                : "text-black"
-                                            }`}
-                                    >
-                                        {date.day}
-                                    </Text>
-                                    <Text
-                                        className={`text-xs font-medium ${selectedDate === date.fullDate
-                                                ? "text-[#D4FF00]"
-                                                : "text-gray-500"
-                                            }`}
-                                    >
-                                        {date.weekday}
-                                    </Text>
-                                </Pressable>
-                            ))}
-                        </ScrollView>
+                            {/* Dashed Separator */}
+                            <View style={styles.dashedSeparator} />
+
+                            {/* Date Selector */}
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.dateScrollContent}
+                            >
+                                {dates.map((date, index) => {
+                                    const isSelected = selectedDate === date.fullDate;
+                                    return (
+                                        <Pressable
+                                            key={date.fullDate}
+                                            onPress={() => setSelectedDate(date.fullDate)}
+                                            style={[
+                                                styles.dateItem,
+                                                isSelected && styles.dateItemActive,
+                                                index === 0 && !selectedDate && styles.dateItemFirst,
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.dateMonth,
+                                                    isSelected && styles.dateMonthActive,
+                                                ]}
+                                            >
+                                                {date.month}
+                                            </Text>
+                                            <Text
+                                                style={[
+                                                    styles.dateDay,
+                                                    isSelected && styles.dateDayActive,
+                                                ]}
+                                            >
+                                                {date.day}
+                                            </Text>
+                                            <Text
+                                                style={[
+                                                    styles.dateWeekday,
+                                                    isSelected && styles.dateWeekdayActive,
+                                                ]}
+                                            >
+                                                {date.weekday}
+                                            </Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </ScrollView>
+                        </View>
                     </View>
                 </Animated.View>
             </ScrollView>
 
-            {/* Bottom CTA */}
-            <View className="absolute bottom-0 left-0 right-0 bg-[#D4FF00] px-6 pb-8 pt-4">
+            {/* Fixed Bottom CTA - Same as index.tsx */}
+            <View style={styles.bottomContainer}>
                 <AnimatedPressable
                     onPress={handleNext}
                     onPressIn={handleButtonPressIn}
                     onPressOut={handleButtonPressOut}
-                    disabled={!isFormValid}
-                    style={[buttonAnimatedStyle]}
-                    className={`
-            py-5 rounded-full flex-row items-center justify-center
-            ${isFormValid ? "bg-black" : "bg-gray-400"}
-          `}
+                    style={[buttonAnimatedStyle, styles.continueButton]}
                 >
-                    <Text className="text-white text-lg font-bold tracking-wide mr-2">
-                        NEXT STEP
-                    </Text>
-                    <Feather name="arrow-right" size={20} color="#FFFFFF" />
+                    <Text style={styles.continueText}>Next Step</Text>
+                    <MaterialCommunityIcons
+                        name="arrow-right"
+                        size={24}
+                        color={COLORS.white}
+                    />
                 </AnimatedPressable>
             </View>
-        </SafeAreaView>
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.primary,
+    },
+    stripedBackground: {
+        ...StyleSheet.absoluteFillObject,
+        overflow: "hidden",
+        transform: [{ rotate: "45deg" }],
+    },
+    stripe: {
+        position: "absolute",
+        left: -200,
+        width: SCREEN_WIDTH * 3,
+        height: 10,
+        backgroundColor: COLORS.primaryDark,
+    },
+    safeAreaTop: {
+        width: "100%",
+    },
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: COLORS.white,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        borderBottomWidth: 4,
+        borderBottomColor: COLORS.karyaBlack,
+        zIndex: 50,
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: COLORS.white,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 2,
+    },
+    backButtonPressed: {
+        backgroundColor: COLORS.karyaYellow,
+        transform: [{ scale: 0.95 }],
+    },
+    headerTitle: {
+        flex: 1,
+        fontSize: 20,
+        fontWeight: "800",
+        textTransform: "uppercase",
+        letterSpacing: -0.5,
+        color: COLORS.karyaBlack,
+        textAlign: "center",
+    },
+    stepCapsule: {
+        backgroundColor: COLORS.karyaBlack,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    stepText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: COLORS.white,
+        letterSpacing: 0.5,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 120,
+    },
+    // Hero Section
+    heroContainer: {
+        alignItems: "center",
+        paddingTop: 32,
+        paddingBottom: 24,
+    },
+    heroText: {
+        fontSize: 44,
+        fontWeight: "900",
+        lineHeight: 40,
+        letterSpacing: -2,
+        textTransform: "uppercase",
+        color: COLORS.karyaBlack,
+        textAlign: "center",
+    },
+    budgetWrapper: {
+        marginTop: 4,
+        position: "relative",
+    },
+    budgetShadow: {
+        position: "absolute",
+        top: 4,
+        left: 4,
+        right: -4,
+        bottom: -4,
+        backgroundColor: COLORS.white,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+    },
+    budgetBox: {
+        backgroundColor: COLORS.karyaBlack,
+        paddingHorizontal: 16,
+        paddingVertical: 4,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        transform: [{ rotate: "-1deg" }],
+        zIndex: 1,
+    },
+    budgetText: {
+        fontSize: 44,
+        fontWeight: "900",
+        letterSpacing: -2,
+        textTransform: "uppercase",
+        color: COLORS.karyaYellow,
+        lineHeight: 48,
+    },
+    subtitle: {
+        fontSize: 16,
+        fontWeight: "500",
+        color: COLORS.karyaBlack,
+        marginTop: 16,
+        opacity: 0.8,
+    },
+    // Segmented Control
+    segmentedContainer: {
+        marginBottom: 24,
+    },
+    segmentedControl: {
+        flexDirection: "row",
+        backgroundColor: COLORS.white,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        padding: 4,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+    },
+    segmentItem: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    segmentItemActive: {
+        backgroundColor: COLORS.karyaBlack,
+        shadowColor: COLORS.karyaGray,
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 2,
+    },
+    segmentText: {
+        fontSize: 14,
+        fontWeight: "700",
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+        color: COLORS.karyaBlack,
+    },
+    segmentTextActive: {
+        color: COLORS.primary,
+    },
+    // Amount Input
+    inputGroup: {
+        marginBottom: 24,
+    },
+    inputLabel: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: COLORS.karyaBlack,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+        marginBottom: 8,
+    },
+    amountInputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: COLORS.white,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        borderRadius: 12,
+        height: 80,
+        paddingHorizontal: 20,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+    },
+    rupeeSymbol: {
+        fontSize: 36,
+        fontWeight: "900",
+        color: COLORS.karyaBlack,
+        opacity: 0.4,
+        marginRight: 8,
+    },
+    amountInput: {
+        flex: 1,
+        fontSize: 40,
+        fontWeight: "900",
+        color: COLORS.karyaBlack,
+        padding: 0,
+    },
+    escrowNote: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        marginTop: 12,
+        gap: 8,
+    },
+    escrowText: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: COLORS.karyaBlack,
+        flex: 1,
+        lineHeight: 18,
+    },
+    // Deadline Section
+    deadlineSection: {
+        marginBottom: 24,
+    },
+    deadlineTitle: {
+        fontSize: 24,
+        fontWeight: "800",
+        color: COLORS.karyaBlack,
+        textTransform: "uppercase",
+        marginBottom: 12,
+    },
+    calendarCard: {
+        backgroundColor: COLORS.white,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        borderRadius: 16,
+        overflow: "hidden",
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+    },
+    spiralBinding: {
+        flexDirection: "row",
+        justifyContent: "space-evenly",
+        paddingVertical: 4,
+        backgroundColor: COLORS.white,
+        borderTopLeftRadius: 14,
+        borderTopRightRadius: 14,
+    },
+    spiralDot: {
+        width: 8,
+        height: 20,
+        backgroundColor: COLORS.karyaBlack,
+        borderRadius: 4,
+        marginTop: -8,
+    },
+    calendarContent: {
+        padding: 16,
+    },
+    calendarHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 12,
+    },
+    calendarLabel: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: "#888",
+        textTransform: "uppercase",
+    },
+    dashedSeparator: {
+        borderTopWidth: 2,
+        borderStyle: "dashed",
+        borderColor: "#E5E5E5",
+        marginBottom: 16,
+    },
+    dateScrollContent: {
+        paddingRight: 8,
+        gap: 8,
+    },
+    dateItem: {
+        width: 56,
+        height: 80,
+        backgroundColor: COLORS.white,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    dateItemActive: {
+        backgroundColor: COLORS.karyaBlack,
+    },
+    dateItemFirst: {
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+    },
+    dateMonth: {
+        fontSize: 10,
+        fontWeight: "500",
+        color: "#888",
+        textTransform: "uppercase",
+        marginTop: 4,
+    },
+    dateMonthActive: {
+        color: COLORS.white,
+    },
+    dateDay: {
+        fontSize: 24,
+        fontWeight: "900",
+        color: COLORS.karyaBlack,
+    },
+    dateDayActive: {
+        color: COLORS.white,
+    },
+    dateWeekday: {
+        fontSize: 10,
+        fontWeight: "700",
+        color: "#888",
+        textTransform: "uppercase",
+        marginBottom: 4,
+    },
+    dateWeekdayActive: {
+        color: COLORS.primary,
+    },
+    // Bottom Container - Same as index.tsx
+    bottomContainer: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 24,
+        paddingBottom: 24,
+        paddingTop: 48,
+        zIndex: 40,
+    },
+    continueButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: COLORS.karyaBlack,
+        paddingVertical: 16,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        gap: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    continueText: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: COLORS.white,
+        textTransform: "uppercase",
+        letterSpacing: 2,
+    },
+});
