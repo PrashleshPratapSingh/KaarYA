@@ -39,6 +39,15 @@ export default function ProfileScreen() {
     const [showChallenge, setShowChallenge] = useState(false);
     const [processingAI, setProcessingAI] = useState(false);
 
+    // Settings sub-screens
+    const [showBank, setShowBank] = useState(false);
+    const [showVerified, setShowVerified] = useState(false);
+    const [showSafety, setShowSafety] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [showPrivacy, setShowPrivacy] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+
     return (
         <View className="flex-1 bg-[#0D0D0D]">
             <ScrollView
@@ -52,9 +61,7 @@ export default function ProfileScreen() {
                     className="pt-12 pb-8 px-5"
                 >
                     <View className="flex-row items-center justify-between">
-                        <TouchableOpacity className="w-11 h-11 rounded-full bg-black/20 items-center justify-center">
-                            <Ionicons name="arrow-back" size={22} color="black" />
-                        </TouchableOpacity>
+                        <View className="w-11" />
 
                         <Text className="text-black font-black text-lg tracking-wider">IDENTITY</Text>
 
@@ -365,7 +372,13 @@ export default function ProfileScreen() {
                         <ScrollView showsVerticalScrollIndicator={false}>
                             {/* Quick Actions */}
                             <View className="flex-row gap-3 mb-6">
-                                <TouchableOpacity className="flex-1 bg-[#FFD700] rounded-2xl p-4 items-center">
+                                <TouchableOpacity
+                                    className="flex-1 bg-[#FFD700] rounded-2xl p-4 items-center"
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                        setShowBank(true);
+                                    }}
+                                >
                                     <View className="w-12 h-12 rounded-2xl bg-black/20 items-center justify-center mb-2">
                                         <MaterialCommunityIcons name="bank" size={24} color="black" />
                                     </View>
@@ -373,7 +386,13 @@ export default function ProfileScreen() {
                                     <Text className="text-black/60 text-[10px]">₹85K Balance</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className="flex-1 bg-[#4ECDC4] rounded-2xl p-4 items-center">
+                                <TouchableOpacity
+                                    className="flex-1 bg-[#4ECDC4] rounded-2xl p-4 items-center"
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                        setShowVerified(true);
+                                    }}
+                                >
                                     <View className="w-12 h-12 rounded-2xl bg-black/20 items-center justify-center mb-2">
                                         <MaterialIcons name="verified-user" size={24} color="black" />
                                     </View>
@@ -381,7 +400,13 @@ export default function ProfileScreen() {
                                     <Text className="text-black/60 text-[10px]">Student ID</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className="flex-1 bg-[#A78BFA] rounded-2xl p-4 items-center">
+                                <TouchableOpacity
+                                    className="flex-1 bg-[#A78BFA] rounded-2xl p-4 items-center"
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                        setShowSafety(true);
+                                    }}
+                                >
                                     <View className="w-12 h-12 rounded-2xl bg-black/20 items-center justify-center mb-2">
                                         <MaterialIcons name="security" size={24} color="black" />
                                     </View>
@@ -416,7 +441,13 @@ export default function ProfileScreen() {
 
                             {/* Menu Items */}
                             <View className="bg-[#0D0D0D] rounded-2xl overflow-hidden mb-6">
-                                <TouchableOpacity className="flex-row items-center p-4 border-b border-[#1A1A1A]">
+                                <TouchableOpacity
+                                    className="flex-row items-center p-4 border-b border-[#1A1A1A]"
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setShowNotifications(true);
+                                    }}
+                                >
                                     <View className="w-10 h-10 rounded-xl bg-[#FF6B6B]/20 items-center justify-center">
                                         <Ionicons name="notifications" size={20} color="#FF6B6B" />
                                     </View>
@@ -427,7 +458,13 @@ export default function ProfileScreen() {
                                     <Ionicons name="chevron-forward" size={18} color="#666" />
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className="flex-row items-center p-4 border-b border-[#1A1A1A]">
+                                <TouchableOpacity
+                                    className="flex-row items-center p-4 border-b border-[#1A1A1A]"
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setShowPrivacy(true);
+                                    }}
+                                >
                                     <View className="w-10 h-10 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
                                         <Ionicons name="shield-checkmark" size={20} color="#4ECDC4" />
                                     </View>
@@ -435,7 +472,13 @@ export default function ProfileScreen() {
                                     <Ionicons name="chevron-forward" size={18} color="#666" />
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className="flex-row items-center p-4 border-b border-[#1A1A1A]">
+                                <TouchableOpacity
+                                    className="flex-row items-center p-4 border-b border-[#1A1A1A]"
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setShowHelp(true);
+                                    }}
+                                >
                                     <View className="w-10 h-10 rounded-xl bg-[#FFD700]/20 items-center justify-center">
                                         <Ionicons name="help-buoy" size={20} color="#FFD700" />
                                     </View>
@@ -443,7 +486,13 @@ export default function ProfileScreen() {
                                     <Ionicons name="chevron-forward" size={18} color="#666" />
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className="flex-row items-center p-4">
+                                <TouchableOpacity
+                                    className="flex-row items-center p-4"
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setShowTerms(true);
+                                    }}
+                                >
                                     <View className="w-10 h-10 rounded-xl bg-[#A78BFA]/20 items-center justify-center">
                                         <Ionicons name="document-text" size={20} color="#A78BFA" />
                                     </View>
@@ -459,6 +508,793 @@ export default function ProfileScreen() {
                             </TouchableOpacity>
                         </ScrollView>
                     </View>
+                </View>
+            </Modal>
+
+            {/* Bank Modal */}
+            <Modal
+                visible={showBank}
+                animationType="slide"
+                onRequestClose={() => setShowBank(false)}
+            >
+                <View className="flex-1 bg-[#0D0D0D]">
+                    {/* Header */}
+                    <View className="flex-row items-center justify-between px-5 pt-12 pb-4 bg-[#1A1A1A]">
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setShowBank(false);
+                            }}
+                            className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
+                        >
+                            <Ionicons name="arrow-back" size={22} color="white" />
+                        </TouchableOpacity>
+                        <Text className="text-white font-black text-lg">Kaarya Bank</Text>
+                        <View className="w-10" />
+                    </View>
+
+                    <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false}>
+                        {/* Balance Card */}
+                        <LinearGradient
+                            colors={['#FFD700', '#FFC000']}
+                            className="rounded-3xl p-6 mb-6"
+                        >
+                            <Text className="text-black/60 text-sm mb-1">Available Balance</Text>
+                            <Text className="text-black font-black text-4xl mb-4">₹85,420</Text>
+                            <View className="flex-row gap-3">
+                                <TouchableOpacity className="flex-1 bg-black rounded-2xl py-3 items-center">
+                                    <Text className="text-white font-bold">Withdraw</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity className="flex-1 bg-black/20 rounded-2xl py-3 items-center">
+                                    <Text className="text-black font-bold">History</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </LinearGradient>
+
+                        {/* Connected Banks */}
+                        <Text className="text-white font-bold text-lg mb-4">Connected Banks</Text>
+
+                        <View className="bg-[#1A1A1A] rounded-2xl p-4 mb-4">
+                            <View className="flex-row items-center">
+                                <View className="w-14 h-14 rounded-2xl bg-[#0033A0] items-center justify-center">
+                                    <Text className="text-white font-black text-lg">HDFC</Text>
+                                </View>
+                                <View className="flex-1 ml-4">
+                                    <Text className="text-white font-bold">HDFC Bank</Text>
+                                    <Text className="text-white/40 text-sm">•••• 4521</Text>
+                                </View>
+                                <View className="bg-[#4ECDC4]/20 px-3 py-1 rounded-full">
+                                    <Text className="text-[#4ECDC4] text-xs font-bold">Primary</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <TouchableOpacity className="bg-[#1A1A1A] rounded-2xl p-4 mb-6 flex-row items-center justify-center border border-dashed border-[#333]">
+                            <Ionicons name="add" size={24} color="#666" />
+                            <Text className="text-white/40 font-medium ml-2">Add Bank Account</Text>
+                        </TouchableOpacity>
+
+                        {/* Recent Transactions */}
+                        <Text className="text-white font-bold text-lg mb-4">Recent Transactions</Text>
+
+                        <View className="bg-[#1A1A1A] rounded-2xl overflow-hidden mb-6">
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#BFFF00]/20 items-center justify-center">
+                                    <Ionicons name="arrow-down" size={22} color="#BFFF00" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Poster Design Gig</Text>
+                                    <Text className="text-white/40 text-xs">Today, 2:30 PM</Text>
+                                </View>
+                                <Text className="text-[#BFFF00] font-bold">+₹1,500</Text>
+                            </View>
+
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#FF6B6B]/20 items-center justify-center">
+                                    <Ionicons name="arrow-up" size={22} color="#FF6B6B" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Withdrawal to HDFC</Text>
+                                    <Text className="text-white/40 text-xs">Yesterday, 5:00 PM</Text>
+                                </View>
+                                <Text className="text-[#FF6B6B] font-bold">-₹5,000</Text>
+                            </View>
+
+                            <View className="flex-row items-center p-4">
+                                <View className="w-12 h-12 rounded-xl bg-[#BFFF00]/20 items-center justify-center">
+                                    <Ionicons name="arrow-down" size={22} color="#BFFF00" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Video Editing Project</Text>
+                                    <Text className="text-white/40 text-xs">Jan 30, 11:20 AM</Text>
+                                </View>
+                                <Text className="text-[#BFFF00] font-bold">+₹3,200</Text>
+                            </View>
+                        </View>
+                    </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Verified Modal */}
+            <Modal
+                visible={showVerified}
+                animationType="slide"
+                onRequestClose={() => setShowVerified(false)}
+            >
+                <View className="flex-1 bg-[#0D0D0D]">
+                    {/* Header */}
+                    <View className="flex-row items-center justify-between px-5 pt-12 pb-4 bg-[#1A1A1A]">
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setShowVerified(false);
+                            }}
+                            className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
+                        >
+                            <Ionicons name="arrow-back" size={22} color="white" />
+                        </TouchableOpacity>
+                        <Text className="text-white font-black text-lg">Verification</Text>
+                        <View className="w-10" />
+                    </View>
+
+                    <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false}>
+                        {/* Verification Status */}
+                        <View className="bg-[#4ECDC4]/10 border border-[#4ECDC4]/30 rounded-3xl p-6 mb-6 items-center">
+                            <View className="w-20 h-20 rounded-full bg-[#4ECDC4]/20 items-center justify-center mb-4">
+                                <MaterialIcons name="verified-user" size={40} color="#4ECDC4" />
+                            </View>
+                            <Text className="text-[#4ECDC4] font-black text-xl mb-1">Fully Verified</Text>
+                            <Text className="text-white/40 text-sm text-center">Your identity has been verified</Text>
+                        </View>
+
+                        {/* Verification Items */}
+                        <Text className="text-white font-bold text-lg mb-4">Verification Status</Text>
+
+                        <View className="bg-[#1A1A1A] rounded-2xl overflow-hidden mb-6">
+                            {/* Student ID */}
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
+                                    <Ionicons name="school" size={22} color="#4ECDC4" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Student ID</Text>
+                                    <Text className="text-white/40 text-xs">Delhi University • 2023</Text>
+                                </View>
+                                <View className="bg-[#4ECDC4] w-6 h-6 rounded-full items-center justify-center">
+                                    <Ionicons name="checkmark" size={16} color="black" />
+                                </View>
+                            </View>
+
+                            {/* Aadhaar */}
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
+                                    <Ionicons name="id-card" size={22} color="#4ECDC4" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Aadhaar KYC</Text>
+                                    <Text className="text-white/40 text-xs">•••• •••• 5678</Text>
+                                </View>
+                                <View className="bg-[#4ECDC4] w-6 h-6 rounded-full items-center justify-center">
+                                    <Ionicons name="checkmark" size={16} color="black" />
+                                </View>
+                            </View>
+
+                            {/* PAN */}
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
+                                    <Ionicons name="document" size={22} color="#4ECDC4" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">PAN Card</Text>
+                                    <Text className="text-white/40 text-xs">ABCDE1234F</Text>
+                                </View>
+                                <View className="bg-[#4ECDC4] w-6 h-6 rounded-full items-center justify-center">
+                                    <Ionicons name="checkmark" size={16} color="black" />
+                                </View>
+                            </View>
+
+                            {/* Phone */}
+                            <View className="flex-row items-center p-4">
+                                <View className="w-12 h-12 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
+                                    <Ionicons name="call" size={22} color="#4ECDC4" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Phone Number</Text>
+                                    <Text className="text-white/40 text-xs">+91 98765 •••••</Text>
+                                </View>
+                                <View className="bg-[#4ECDC4] w-6 h-6 rounded-full items-center justify-center">
+                                    <Ionicons name="checkmark" size={16} color="black" />
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Verification Timeline */}
+                        <Text className="text-white font-bold text-lg mb-4">Verification Timeline</Text>
+                        <View className="bg-[#1A1A1A] rounded-2xl p-4 mb-6">
+                            <View className="flex-row items-start mb-4">
+                                <View className="w-3 h-3 rounded-full bg-[#4ECDC4] mt-1.5" />
+                                <View className="flex-1 ml-4">
+                                    <Text className="text-white font-medium">Fully Verified</Text>
+                                    <Text className="text-white/40 text-xs">Jan 15, 2024</Text>
+                                </View>
+                            </View>
+                            <View className="flex-row items-start mb-4">
+                                <View className="w-3 h-3 rounded-full bg-[#FFD700] mt-1.5" />
+                                <View className="flex-1 ml-4">
+                                    <Text className="text-white font-medium">Documents Submitted</Text>
+                                    <Text className="text-white/40 text-xs">Jan 14, 2024</Text>
+                                </View>
+                            </View>
+                            <View className="flex-row items-start">
+                                <View className="w-3 h-3 rounded-full bg-[#A78BFA] mt-1.5" />
+                                <View className="flex-1 ml-4">
+                                    <Text className="text-white font-medium">Account Created</Text>
+                                    <Text className="text-white/40 text-xs">Jan 10, 2024</Text>
+                                </View>
+                            </View>
+                        </View>
+                    </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Safety Modal */}
+            <Modal
+                visible={showSafety}
+                animationType="slide"
+                onRequestClose={() => setShowSafety(false)}
+            >
+                <View className="flex-1 bg-[#0D0D0D]">
+                    {/* Header */}
+                    <View className="flex-row items-center justify-between px-5 pt-12 pb-4 bg-[#1A1A1A]">
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setShowSafety(false);
+                            }}
+                            className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
+                        >
+                            <Ionicons name="arrow-back" size={22} color="white" />
+                        </TouchableOpacity>
+                        <Text className="text-white font-black text-lg">Security Hub</Text>
+                        <View className="w-10" />
+                    </View>
+
+                    <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false}>
+                        {/* Security Score */}
+                        <View className="bg-[#A78BFA]/10 border border-[#A78BFA]/30 rounded-3xl p-6 mb-6 items-center">
+                            <View className="w-20 h-20 rounded-full bg-[#A78BFA]/20 items-center justify-center mb-4">
+                                <Text className="text-[#A78BFA] font-black text-3xl">95</Text>
+                            </View>
+                            <Text className="text-[#A78BFA] font-black text-xl mb-1">Security Score</Text>
+                            <Text className="text-white/40 text-sm text-center">Your account is well protected</Text>
+                        </View>
+
+                        {/* Security Options */}
+                        <Text className="text-white font-bold text-lg mb-4">Security Settings</Text>
+
+                        <View className="bg-[#1A1A1A] rounded-2xl overflow-hidden mb-6">
+                            {/* PIN */}
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#A78BFA]/20 items-center justify-center">
+                                    <MaterialCommunityIcons name="lock-outline" size={24} color="#A78BFA" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Transaction PIN</Text>
+                                    <Text className="text-white/40 text-xs">4-digit PIN enabled</Text>
+                                </View>
+                                <TouchableOpacity className="bg-[#A78BFA]/20 px-4 py-2 rounded-full">
+                                    <Text className="text-[#A78BFA] text-xs font-bold">Change</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Biometrics */}
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
+                                    <MaterialCommunityIcons name="fingerprint" size={24} color="#4ECDC4" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Biometric Login</Text>
+                                    <Text className="text-white/40 text-xs">Face ID / Fingerprint</Text>
+                                </View>
+                                <Switch
+                                    value={true}
+                                    trackColor={{ false: '#333', true: '#4ECDC4' }}
+                                    thumbColor={'black'}
+                                />
+                            </View>
+
+                            {/* 2FA */}
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#FFD700]/20 items-center justify-center">
+                                    <MaterialIcons name="security" size={24} color="#FFD700" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Two-Factor Auth</Text>
+                                    <Text className="text-white/40 text-xs">SMS verification enabled</Text>
+                                </View>
+                                <Switch
+                                    value={true}
+                                    trackColor={{ false: '#333', true: '#FFD700' }}
+                                    thumbColor={'black'}
+                                />
+                            </View>
+
+                            {/* Session Timeout */}
+                            <View className="flex-row items-center p-4">
+                                <View className="w-12 h-12 rounded-xl bg-[#FF6B6B]/20 items-center justify-center">
+                                    <Ionicons name="time" size={24} color="#FF6B6B" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Session Timeout</Text>
+                                    <Text className="text-white/40 text-xs">Auto-logout after 30 mins</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </View>
+                        </View>
+
+                        {/* Trusted Devices */}
+                        <Text className="text-white font-bold text-lg mb-4">Trusted Devices</Text>
+                        <View className="bg-[#1A1A1A] rounded-2xl p-4 mb-6">
+                            <View className="flex-row items-center mb-4">
+                                <View className="w-10 h-10 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
+                                    <Ionicons name="phone-portrait" size={20} color="#4ECDC4" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">iPhone 14 Pro</Text>
+                                    <Text className="text-[#4ECDC4] text-xs">Current Device</Text>
+                                </View>
+                            </View>
+                            <View className="flex-row items-center">
+                                <View className="w-10 h-10 rounded-xl bg-white/10 items-center justify-center">
+                                    <Ionicons name="laptop" size={20} color="#666" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">MacBook Air</Text>
+                                    <Text className="text-white/40 text-xs">Last active: 2 days ago</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Emergency */}
+                        <TouchableOpacity className="bg-[#FF4444]/10 rounded-2xl py-4 flex-row items-center justify-center gap-2 mb-6">
+                            <Ionicons name="warning" size={20} color="#FF4444" />
+                            <Text className="text-[#FF4444] font-bold">Emergency Account Lock</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Notifications Modal */}
+            <Modal
+                visible={showNotifications}
+                animationType="slide"
+                onRequestClose={() => setShowNotifications(false)}
+            >
+                <View className="flex-1 bg-[#0D0D0D]">
+                    {/* Header */}
+                    <View className="flex-row items-center justify-between px-5 pt-12 pb-4 bg-[#1A1A1A]">
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setShowNotifications(false);
+                            }}
+                            className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
+                        >
+                            <Ionicons name="arrow-back" size={22} color="white" />
+                        </TouchableOpacity>
+                        <Text className="text-white font-black text-lg">Notifications</Text>
+                        <View className="w-10" />
+                    </View>
+
+                    <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false}>
+                        {/* Push Notifications */}
+                        <Text className="text-white font-bold text-lg mb-4">Push Notifications</Text>
+
+                        <View className="bg-[#1A1A1A] rounded-2xl overflow-hidden mb-6">
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#FF6B6B]/20 items-center justify-center">
+                                    <Ionicons name="notifications" size={22} color="#FF6B6B" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">All Notifications</Text>
+                                    <Text className="text-white/40 text-xs">Master toggle for all alerts</Text>
+                                </View>
+                                <Switch
+                                    value={true}
+                                    trackColor={{ false: '#333', true: '#FF6B6B' }}
+                                    thumbColor={'black'}
+                                />
+                            </View>
+
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#BFFF00]/20 items-center justify-center">
+                                    <Ionicons name="briefcase" size={22} color="#BFFF00" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">New Gig Alerts</Text>
+                                    <Text className="text-white/40 text-xs">When new gigs match your skills</Text>
+                                </View>
+                                <Switch
+                                    value={true}
+                                    trackColor={{ false: '#333', true: '#BFFF00' }}
+                                    thumbColor={'black'}
+                                />
+                            </View>
+
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#FFD700]/20 items-center justify-center">
+                                    <Ionicons name="cash" size={22} color="#FFD700" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Payment Alerts</Text>
+                                    <Text className="text-white/40 text-xs">When you receive payments</Text>
+                                </View>
+                                <Switch
+                                    value={true}
+                                    trackColor={{ false: '#333', true: '#FFD700' }}
+                                    thumbColor={'black'}
+                                />
+                            </View>
+
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
+                                    <Ionicons name="chatbubbles" size={22} color="#4ECDC4" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Messages</Text>
+                                    <Text className="text-white/40 text-xs">Direct messages and inquiries</Text>
+                                </View>
+                                <Switch
+                                    value={true}
+                                    trackColor={{ false: '#333', true: '#4ECDC4' }}
+                                    thumbColor={'black'}
+                                />
+                            </View>
+
+                            <View className="flex-row items-center p-4">
+                                <View className="w-12 h-12 rounded-xl bg-[#A78BFA]/20 items-center justify-center">
+                                    <Ionicons name="star" size={22} color="#A78BFA" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Reviews & Vouches</Text>
+                                    <Text className="text-white/40 text-xs">When someone vouches for you</Text>
+                                </View>
+                                <Switch
+                                    value={true}
+                                    trackColor={{ false: '#333', true: '#A78BFA' }}
+                                    thumbColor={'black'}
+                                />
+                            </View>
+                        </View>
+
+                        {/* Email Preferences */}
+                        <Text className="text-white font-bold text-lg mb-4">Email Preferences</Text>
+
+                        <View className="bg-[#1A1A1A] rounded-2xl overflow-hidden mb-6">
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="flex-1">
+                                    <Text className="text-white font-medium">Weekly Summary</Text>
+                                    <Text className="text-white/40 text-xs">Your gig stats and earnings</Text>
+                                </View>
+                                <Switch
+                                    value={true}
+                                    trackColor={{ false: '#333', true: '#FFD700' }}
+                                    thumbColor={'black'}
+                                />
+                            </View>
+
+                            <View className="flex-row items-center p-4">
+                                <View className="flex-1">
+                                    <Text className="text-white font-medium">Marketing</Text>
+                                    <Text className="text-white/40 text-xs">Tips, offers, and updates</Text>
+                                </View>
+                                <Switch
+                                    value={false}
+                                    trackColor={{ false: '#333', true: '#FFD700' }}
+                                    thumbColor={'#666'}
+                                />
+                            </View>
+                        </View>
+                    </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Privacy Modal */}
+            <Modal
+                visible={showPrivacy}
+                animationType="slide"
+                onRequestClose={() => setShowPrivacy(false)}
+            >
+                <View className="flex-1 bg-[#0D0D0D]">
+                    {/* Header */}
+                    <View className="flex-row items-center justify-between px-5 pt-12 pb-4 bg-[#1A1A1A]">
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setShowPrivacy(false);
+                            }}
+                            className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
+                        >
+                            <Ionicons name="arrow-back" size={22} color="white" />
+                        </TouchableOpacity>
+                        <Text className="text-white font-black text-lg">Privacy & Data</Text>
+                        <View className="w-10" />
+                    </View>
+
+                    <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false}>
+                        {/* Profile Visibility */}
+                        <Text className="text-white font-bold text-lg mb-4">Profile Visibility</Text>
+
+                        <View className="bg-[#1A1A1A] rounded-2xl overflow-hidden mb-6">
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
+                                    <Ionicons name="globe" size={22} color="#4ECDC4" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Public Profile</Text>
+                                    <Text className="text-white/40 text-xs">Anyone can view your profile</Text>
+                                </View>
+                                <Switch
+                                    value={true}
+                                    trackColor={{ false: '#333', true: '#4ECDC4' }}
+                                    thumbColor={'black'}
+                                />
+                            </View>
+
+                            <View className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#FFD700]/20 items-center justify-center">
+                                    <Ionicons name="cash" size={22} color="#FFD700" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Show Earnings</Text>
+                                    <Text className="text-white/40 text-xs">Display your total earnings</Text>
+                                </View>
+                                <Switch
+                                    value={false}
+                                    trackColor={{ false: '#333', true: '#FFD700' }}
+                                    thumbColor={'#666'}
+                                />
+                            </View>
+
+                            <View className="flex-row items-center p-4">
+                                <View className="w-12 h-12 rounded-xl bg-[#A78BFA]/20 items-center justify-center">
+                                    <Ionicons name="location" size={22} color="#A78BFA" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Location Sharing</Text>
+                                    <Text className="text-white/40 text-xs">College location on map</Text>
+                                </View>
+                                <Switch
+                                    value={true}
+                                    trackColor={{ false: '#333', true: '#A78BFA' }}
+                                    thumbColor={'black'}
+                                />
+                            </View>
+                        </View>
+
+                        {/* Data Management */}
+                        <Text className="text-white font-bold text-lg mb-4">Data Management</Text>
+
+                        <View className="bg-[#1A1A1A] rounded-2xl overflow-hidden mb-6">
+                            <TouchableOpacity className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
+                                    <Ionicons name="download" size={22} color="#4ECDC4" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Download My Data</Text>
+                                    <Text className="text-white/40 text-xs">Get a copy of your data</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity className="flex-row items-center p-4">
+                                <View className="w-12 h-12 rounded-xl bg-[#FF6B6B]/20 items-center justify-center">
+                                    <Ionicons name="trash" size={22} color="#FF6B6B" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Delete Account</Text>
+                                    <Text className="text-white/40 text-xs">Permanently remove your data</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Blocked Users */}
+                        <Text className="text-white font-bold text-lg mb-4">Blocked Users</Text>
+                        <View className="bg-[#1A1A1A] rounded-2xl p-4 mb-6 items-center">
+                            <Text className="text-white/40 text-sm">No blocked users</Text>
+                        </View>
+                    </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Help Modal */}
+            <Modal
+                visible={showHelp}
+                animationType="slide"
+                onRequestClose={() => setShowHelp(false)}
+            >
+                <View className="flex-1 bg-[#0D0D0D]">
+                    {/* Header */}
+                    <View className="flex-row items-center justify-between px-5 pt-12 pb-4 bg-[#1A1A1A]">
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setShowHelp(false);
+                            }}
+                            className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
+                        >
+                            <Ionicons name="arrow-back" size={22} color="white" />
+                        </TouchableOpacity>
+                        <Text className="text-white font-black text-lg">Help & Support</Text>
+                        <View className="w-10" />
+                    </View>
+
+                    <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false}>
+                        {/* Quick Help */}
+                        <View className="bg-[#FFD700]/10 border border-[#FFD700]/30 rounded-2xl p-5 mb-6">
+                            <View className="flex-row items-center mb-3">
+                                <View className="w-12 h-12 rounded-xl bg-[#FFD700]/20 items-center justify-center">
+                                    <Ionicons name="chatbubbles" size={24} color="#FFD700" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-[#FFD700] font-bold">Chat with Support</Text>
+                                    <Text className="text-white/40 text-xs">Usually responds in 5 mins</Text>
+                                </View>
+                            </View>
+                            <TouchableOpacity className="bg-[#FFD700] rounded-xl py-3 items-center">
+                                <Text className="text-black font-bold">Start Chat</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* FAQ Section */}
+                        <Text className="text-white font-bold text-lg mb-4">Frequently Asked</Text>
+
+                        <View className="bg-[#1A1A1A] rounded-2xl overflow-hidden mb-6">
+                            <TouchableOpacity className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="flex-1">
+                                    <Text className="text-white font-medium">How do I get paid?</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="flex-1">
+                                    <Text className="text-white font-medium">How do vouches work?</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="flex-1">
+                                    <Text className="text-white font-medium">How to increase my rating?</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity className="flex-row items-center p-4">
+                                <View className="flex-1">
+                                    <Text className="text-white font-medium">How to verify my skills?</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Contact Options */}
+                        <Text className="text-white font-bold text-lg mb-4">Contact Us</Text>
+
+                        <View className="flex-row gap-3 mb-6">
+                            <TouchableOpacity className="flex-1 bg-[#1A1A1A] rounded-2xl p-4 items-center">
+                                <View className="w-12 h-12 rounded-xl bg-[#25D366]/20 items-center justify-center mb-2">
+                                    <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
+                                </View>
+                                <Text className="text-white font-medium text-sm">WhatsApp</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity className="flex-1 bg-[#1A1A1A] rounded-2xl p-4 items-center">
+                                <View className="w-12 h-12 rounded-xl bg-[#FF6B6B]/20 items-center justify-center mb-2">
+                                    <Ionicons name="mail" size={24} color="#FF6B6B" />
+                                </View>
+                                <Text className="text-white font-medium text-sm">Email</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity className="flex-1 bg-[#1A1A1A] rounded-2xl p-4 items-center">
+                                <View className="w-12 h-12 rounded-xl bg-[#1DA1F2]/20 items-center justify-center mb-2">
+                                    <Ionicons name="logo-twitter" size={24} color="#1DA1F2" />
+                                </View>
+                                <Text className="text-white font-medium text-sm">Twitter</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Report Issue */}
+                        <TouchableOpacity className="bg-[#FF6B6B]/10 rounded-2xl py-4 flex-row items-center justify-center gap-2 mb-6">
+                            <Ionicons name="bug" size={20} color="#FF6B6B" />
+                            <Text className="text-[#FF6B6B] font-bold">Report a Bug</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Terms Modal */}
+            <Modal
+                visible={showTerms}
+                animationType="slide"
+                onRequestClose={() => setShowTerms(false)}
+            >
+                <View className="flex-1 bg-[#0D0D0D]">
+                    {/* Header */}
+                    <View className="flex-row items-center justify-between px-5 pt-12 pb-4 bg-[#1A1A1A]">
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setShowTerms(false);
+                            }}
+                            className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
+                        >
+                            <Ionicons name="arrow-back" size={22} color="white" />
+                        </TouchableOpacity>
+                        <Text className="text-white font-black text-lg">Legal</Text>
+                        <View className="w-10" />
+                    </View>
+
+                    <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false}>
+                        {/* Legal Documents */}
+                        <View className="bg-[#1A1A1A] rounded-2xl overflow-hidden mb-6">
+                            <TouchableOpacity className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#A78BFA]/20 items-center justify-center">
+                                    <Ionicons name="document-text" size={22} color="#A78BFA" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Terms of Service</Text>
+                                    <Text className="text-white/40 text-xs">Last updated: Jan 2024</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#4ECDC4]/20 items-center justify-center">
+                                    <Ionicons name="shield" size={22} color="#4ECDC4" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Privacy Policy</Text>
+                                    <Text className="text-white/40 text-xs">How we handle your data</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity className="flex-row items-center p-4 border-b border-[#0D0D0D]">
+                                <View className="w-12 h-12 rounded-xl bg-[#FFD700]/20 items-center justify-center">
+                                    <Ionicons name="people" size={22} color="#FFD700" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Community Guidelines</Text>
+                                    <Text className="text-white/40 text-xs">Rules for the community</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity className="flex-row items-center p-4">
+                                <View className="w-12 h-12 rounded-xl bg-[#FF6B6B]/20 items-center justify-center">
+                                    <Ionicons name="warning" size={22} color="#FF6B6B" />
+                                </View>
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-white font-medium">Safety Guidelines</Text>
+                                    <Text className="text-white/40 text-xs">Stay safe while hustling</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="#666" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* App Info */}
+                        <View className="bg-[#1A1A1A] rounded-2xl p-5 mb-6 items-center">
+                            <Text className="text-[#FFD700] font-black text-2xl mb-1">KAARYA</Text>
+                            <Text className="text-white/40 text-sm mb-3">Version 1.0.0</Text>
+                            <Text className="text-white/30 text-xs text-center">
+                                © 2024 Kaarya Technologies Pvt. Ltd.{'\n'}
+                                All rights reserved.
+                            </Text>
+                        </View>
+                    </ScrollView>
                 </View>
             </Modal>
 
