@@ -11,9 +11,33 @@ export {
   ErrorBoundary,
 } from "expo-router";
 
+import {
+  ArchivoBlack_400Regular,
+} from '@expo-google-fonts/archivo-black';
+import {
+  Inter_400Regular,
+  Inter_600SemiBold,
+  Inter_800ExtraBold,
+} from '@expo-google-fonts/inter';
+import {
+  Merriweather_400Regular,
+  Merriweather_700Bold,
+  Merriweather_400Regular_Italic,
+  Merriweather_700Bold_Italic,
+} from '@expo-google-fonts/merriweather';
+import {
+  SpaceGrotesk_400Regular,
+  SpaceGrotesk_700Bold,
+} from '@expo-google-fonts/space-grotesk';
+import {
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_700Bold,
+} from '@expo-google-fonts/dm-sans';
+
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: "(tabs)",
+  initialRouteName: "onboarding",
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -23,6 +47,19 @@ export default memo(function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     ...FontAwesome.font,
+    ArchivoBlack_400Regular,
+    Inter_400Regular,
+    Inter_600SemiBold,
+    Inter_800ExtraBold,
+    Merriweather_400Regular,
+    Merriweather_700Bold,
+    Merriweather_400Regular_Italic,
+    Merriweather_700Bold_Italic,
+    SpaceGrotesk_400Regular,
+    SpaceGrotesk_700Bold,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_700Bold,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
@@ -53,6 +90,7 @@ function RootLayoutNav() {
     <View style={[theme, StyleSheet.absoluteFill]}>
       <StatusBar hidden={true} />
       <Stack>
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
         <Stack.Screen
