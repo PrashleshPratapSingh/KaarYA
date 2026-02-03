@@ -81,63 +81,69 @@ export default function MessagesListScreen() {
         });
     };
 
-    const renderItem = ({ item }: { item: ChatPreview }) => (
-        <TouchableOpacity
-            style={styles.chatItem}
-            onPress={() => handleChatPress(item.id, item.name)}
-            activeOpacity={0.7}
-        >
-            {/* Avatar */}
-            <View style={[styles.avatar, { backgroundColor: item.avatarColor }]}>
-                {item.type === 'photo' ? (
-                    <Ionicons name="people" size={24} color="#FFF" />
-                ) : (
-                    <Text style={styles.avatarText}>{item.name.substring(0, 1)}</Text>
-                )}
-            </View>
-
-            {/* Content */}
-            <View style={styles.contentContainer}>
-                <View style={styles.headerRow}>
-                    <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-                    <Text style={[
-                        styles.time,
-                        item.unreadCount > 0 && { color: BrandColors.green, fontWeight: '700' }
-                    ]}>
-                        {item.time}
-                    </Text>
+    const renderItem = ({ item, index }: { item: ChatPreview; index: number }) => (
+        <>
+            <TouchableOpacity
+                style={styles.chatItem}
+                onPress={() => handleChatPress(item.id, item.name)}
+                activeOpacity={0.6}
+            >
+                {/* Avatar */}
+                <View style={[styles.avatar, { backgroundColor: item.avatarColor }]}>
+                    {item.type === 'photo' ? (
+                        <Ionicons name="people" size={24} color="#FFF" />
+                    ) : (
+                        <Text style={styles.avatarText}>{item.name.substring(0, 1)}</Text>
+                    )}
                 </View>
 
-                <View style={styles.messageRow}>
-                    <View style={styles.messagePreview}>
-                        {item.type === 'photo' && (
-                            <Ionicons name="image" size={14} color={BrandColors.mediumGray} style={{ marginRight: 4 }} />
-                        )}
-                        {item.type === 'audio' && (
-                            <Ionicons name="mic" size={14} color={BrandColors.mediumGray} style={{ marginRight: 4 }} />
-                        )}
-                        <Text style={styles.lastMessage} numberOfLines={1}>
-                            {item.lastMessage}
+                {/* Content */}
+                <View style={styles.contentContainer}>
+                    <View style={styles.headerRow}>
+                        <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+                        <Text style={[
+                            styles.time,
+                            item.unreadCount > 0 && { color: '#25D366', fontWeight: '700' }
+                        ]}>
+                            {item.time}
                         </Text>
                     </View>
 
-                    {item.unreadCount > 0 && (
-                        <View style={styles.unreadBadge}>
-                            <Text style={styles.unreadText}>{item.unreadCount}</Text>
+                    <View style={styles.messageRow}>
+                        <View style={styles.messagePreview}>
+                            {item.type === 'photo' && (
+                                <Ionicons name="image" size={14} color="#8696A0" style={{ marginRight: 4 }} />
+                            )}
+                            {item.type === 'audio' && (
+                                <Ionicons name="mic" size={14} color="#8696A0" style={{ marginRight: 4 }} />
+                            )}
+                            <Text style={styles.lastMessage} numberOfLines={1}>
+                                {item.lastMessage}
+                            </Text>
                         </View>
-                    )}
+
+                        {item.unreadCount > 0 && (
+                            <View style={styles.unreadBadge}>
+                                <Text style={styles.unreadText}>{item.unreadCount}</Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
-            </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
+            {/* Separator line */}
+            {index < MOCK_CHATS.length - 1 && (
+                <View style={styles.separator} />
+            )}
+        </>
     );
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor={BrandColors.cream} />
+            <StatusBar barStyle="dark-content" backgroundColor="#FFF9E6" />
             <View style={styles.headerContainer}>
                 <Text style={styles.headerTitle}>Messages</Text>
                 <View style={styles.searchBar}>
-                    <Ionicons name="search" size={20} color="rgba(0,0,0,0.4)" />
+                    <Ionicons name="search" size={20} color="rgba(0,0,0,0.5)" />
                     <TextInput
                         placeholder="Search..."
                         style={styles.searchInput}
@@ -160,49 +166,47 @@ export default function MessagesListScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: BrandColors.cream,
+        backgroundColor: '#FFF9E6',
     },
     headerContainer: {
         paddingHorizontal: 20,
-        paddingTop: 20, // Added top padding
-        paddingBottom: 10,
+        paddingTop: 20,
+        paddingBottom: 16,
     },
     headerTitle: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: '800',
-        color: BrandColors.black,
-        marginBottom: 16, // Space between title and search
+        color: '#000',
+        marginBottom: 16,
     },
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 12,
     },
     searchInput: {
         flex: 1,
         marginLeft: 10,
         fontSize: 16,
-        color: BrandColors.black,
+        color: '#000',
     },
     listContent: {
-        paddingTop: 10,
-        paddingBottom: 20,
+        paddingBottom: 100,
     },
     chatItem: {
         flexDirection: 'row',
-        paddingVertical: 12, // Increased padding for items
+        paddingVertical: 12,
         paddingHorizontal: 20,
         alignItems: 'center',
+    },
+    separator: {
+        height: 1,
+        backgroundColor: 'rgba(0,0,0,0.08)',
+        marginLeft: 86,
+        marginRight: 20,
     },
     // ... keep existing avatar styles ...
     avatar: {

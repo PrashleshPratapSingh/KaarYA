@@ -209,10 +209,14 @@ export default function ChatRoomScreen() {
             <StatusBar
                 barStyle="dark-content"
                 backgroundColor={BrandColors.cream}
-                translucent={true}
+                translucent={false}
             />
             <SafeAreaView style={styles.safeArea}>
-                <View style={styles.container}>
+                <KeyboardAvoidingView
+                    style={styles.container}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                >
                     <ChatHeader
                         user={otherUser}
                         onBack={handleBack}
@@ -222,53 +226,49 @@ export default function ChatRoomScreen() {
 
                     {renderStatusIndicator()}
 
-                    <KeyboardAvoidingView
-                        style={styles.chatContainer}
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-                    >
-                        <FlatList
-                            ref={flatListRef}
-                            data={messages}
-                            renderItem={renderMessage}
-                            keyExtractor={(item) => item.id}
-                            contentContainerStyle={styles.messageList}
-                            ListHeaderComponent={renderDateSeparator}
-                            showsVerticalScrollIndicator={false}
-                            onContentSizeChange={() =>
-                                flatListRef.current?.scrollToEnd({ animated: true })
-                            }
-                        />
-
-                        <MessageInput
-                            onSendMessage={handleSendMessage}
-                            onSendAudio={handleSendAudio}
-                            onAttachFile={handleAttachFile}
-                        />
-                    </KeyboardAvoidingView>
-
-                    <GigDetailsModal
-                        visible={gigModalVisible}
-                        onClose={() => setGigModalVisible(false)}
+                    <FlatList
+                        ref={flatListRef}
+                        data={messages}
+                        renderItem={renderMessage}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={styles.messageList}
+                        ListHeaderComponent={renderDateSeparator}
+                        showsVerticalScrollIndicator={false}
+                        onContentSizeChange={() =>
+                            flatListRef.current?.scrollToEnd({ animated: true })
+                        }
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="interactive"
                     />
 
-                    <ProfileDetailsModal
-                        visible={profileModalVisible}
-                        onClose={() => setProfileModalVisible(false)}
-                        user={otherUser}
+                    <MessageInput
+                        onSendMessage={handleSendMessage}
+                        onSendAudio={handleSendAudio}
+                        onAttachFile={handleAttachFile}
                     />
+                </KeyboardAvoidingView>
 
-                    <MessageOptionsModal
-                        visible={optionsVisible}
-                        onClose={() => setOptionsVisible(false)}
-                        message={selectedMessage}
-                        isOwnMessage={selectedMessage?.senderId === currentUser.id}
-                        onReply={handleReply}
-                        onCopy={handleCopy}
-                        onDelete={handleDelete}
-                        onReact={handleReact}
-                    />
-                </View>
+                <GigDetailsModal
+                    visible={gigModalVisible}
+                    onClose={() => setGigModalVisible(false)}
+                />
+
+                <ProfileDetailsModal
+                    visible={profileModalVisible}
+                    onClose={() => setProfileModalVisible(false)}
+                    user={otherUser}
+                />
+
+                <MessageOptionsModal
+                    visible={optionsVisible}
+                    onClose={() => setOptionsVisible(false)}
+                    message={selectedMessage}
+                    isOwnMessage={selectedMessage?.senderId === currentUser.id}
+                    onReply={handleReply}
+                    onCopy={handleCopy}
+                    onDelete={handleDelete}
+                    onReact={handleReact}
+                />
             </SafeAreaView>
         </View>
     );

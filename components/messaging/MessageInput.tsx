@@ -5,15 +5,15 @@ import {
     StyleSheet,
     TouchableOpacity,
     Platform,
-    KeyboardAvoidingView,
-    Alert,
+    Text,
+    Modal,
+    Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { BrandColors, UIColors } from '../../constants/Colors';
 import { AudioRecorder } from './AudioRecorder';
-import { AttachmentModal } from './AttachmentModal';
 
 interface MessageInputProps {
     onSendMessage: (text: string) => void;
@@ -50,9 +50,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         setIsRecording(false);
     };
 
-    const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
-
     const pickImage = async () => {
+        setShowAttachMenu(false);
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -69,6 +68,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     };
 
     const pickDocument = async () => {
+        setShowAttachMenu(false);
         try {
             const result = await DocumentPicker.getDocumentAsync({
                 type: '*/*',
@@ -84,10 +84,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     };
 
     const pickCamera = async () => {
+        setShowAttachMenu(false);
         try {
             const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
             if (permissionResult.granted === false) {
-                Alert.alert("Permission to access camera is required!");
                 return;
             }
 
@@ -105,10 +105,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         }
     };
 
-    const handleAttachMenu = () => {
-        setAttachmentModalVisible(true);
-    };
-
     if (isRecording) {
         return (
             <AudioRecorder
@@ -119,152 +115,212 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     }
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        >
-            <View style={styles.container}>
-                {/* Action Buttons Row */}
-                <View style={styles.actionRow}>
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={handleAttachMenu}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="attach" size={18} color={BrandColors.black} />
-                    </TouchableOpacity>
+        <View style={styles.container}>
+            {/* Plus Button on Left */}
+            <TouchableOpacity
+                style={styles.plusButton}
+                onPress={() => setShowAttachMenu(true)}
+                activeOpacity={0.7}
+            >
+                <Ionicons name="add" size={26} color="#fff" />
+            </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={pickDocument}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="document-text" size={18} color={BrandColors.black} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={pickImage}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="images" size={18} color={BrandColors.black} />
-                    </TouchableOpacity>
-                </View>
-
-                <AttachmentModal
-                    visible={attachmentModalVisible}
-                    onClose={() => setAttachmentModalVisible(false)}
-                    onPickImage={pickImage}
-                    onPickDocument={pickDocument}
-                    onPickCamera={pickCamera}
+            {/* Input Field */}
+            <View style={styles.inputWrapper}>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Message..."
+                    placeholderTextColor="#999"
+                    value={message}
+                    onChangeText={setMessage}
+                    multiline
+                    maxLength={1000}
                 />
-
-                {/* Input Row */}
-                <View style={styles.inputRow}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Type something..."
-                        placeholderTextColor={BrandColors.mediumGray}
-                        value={message}
-                        onChangeText={setMessage}
-                        multiline
-                        maxLength={1000}
-                    />
-
-                    {message.trim() ? (
-                        <TouchableOpacity
-                            style={styles.sendButton}
-                            onPress={handleSend}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons name="send" size={20} color={BrandColors.white} />
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.micButton}
-                            onPress={handleStartRecording}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons name="mic" size={24} color={BrandColors.white} />
-                        </TouchableOpacity>
-                    )}
-                </View>
+                <TouchableOpacity style={styles.emojiButton} activeOpacity={0.7}>
+                    <Ionicons name="happy-outline" size={24} color="#888" />
+                </TouchableOpacity>
             </View>
-        </KeyboardAvoidingView>
+
+            {/* Send or Mic Button */}
+            {message.trim() ? (
+                <TouchableOpacity
+                    style={styles.sendButton}
+                    onPress={handleSend}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="send" size={20} color="#fff" />
+                </TouchableOpacity>
+            ) : (
+                <TouchableOpacity
+                    style={styles.micButton}
+                    onPress={handleStartRecording}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="mic" size={22} color="#fff" />
+                </TouchableOpacity>
+            )}
+
+            {/* Attachment Menu Modal */}
+            <Modal
+                visible={showAttachMenu}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowAttachMenu(false)}
+            >
+                <Pressable
+                    style={styles.modalOverlay}
+                    onPress={() => setShowAttachMenu(false)}
+                >
+                    <View style={styles.attachMenuContainer}>
+                        <View style={styles.attachMenu}>
+                            {/* Document */}
+                            <TouchableOpacity
+                                style={styles.attachOption}
+                                onPress={pickDocument}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.attachIcon, { backgroundColor: '#5B5FFF' }]}>
+                                    <Ionicons name="document-text" size={24} color="#fff" />
+                                </View>
+                                <Text style={styles.attachLabel}>Document</Text>
+                            </TouchableOpacity>
+
+                            {/* Camera */}
+                            <TouchableOpacity
+                                style={styles.attachOption}
+                                onPress={pickCamera}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.attachIcon, { backgroundColor: '#FF6B6B' }]}>
+                                    <Ionicons name="camera" size={24} color="#fff" />
+                                </View>
+                                <Text style={styles.attachLabel}>Camera</Text>
+                            </TouchableOpacity>
+
+                            {/* Gallery */}
+                            <TouchableOpacity
+                                style={styles.attachOption}
+                                onPress={pickImage}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.attachIcon, { backgroundColor: '#4ECDC4' }]}>
+                                    <Ionicons name="images" size={24} color="#fff" />
+                                </View>
+                                <Text style={styles.attachLabel}>Gallery</Text>
+                            </TouchableOpacity>
+
+                            {/* Link */}
+                            <TouchableOpacity
+                                style={styles.attachOption}
+                                onPress={() => setShowAttachMenu(false)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.attachIcon, { backgroundColor: '#FFD700' }]}>
+                                    <Ionicons name="link" size={24} color="#000" />
+                                </View>
+                                <Text style={styles.attachLabel}>Link</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Pressable>
+            </Modal>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: BrandColors.white,
-        paddingBottom: Platform.OS === 'ios' ? 24 : 16,
-        paddingTop: 16,
-        paddingHorizontal: 16,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(0, 0, 0, 0.08)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 8,
-    },
-    actionRow: {
-        flexDirection: 'row',
-        marginBottom: 12,
-        gap: 10,
-    },
-    actionButton: {
-        paddingHorizontal: 16,
-        paddingVertical: 9,
-        backgroundColor: 'rgba(91, 95, 255, 0.08)',
-        borderWidth: 1,
-        borderColor: 'rgba(91, 95, 255, 0.2)',
-        borderRadius: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    inputRow: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        gap: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        paddingBottom: Platform.OS === 'ios' ? 28 : 14,
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0,0,0,0.06)',
+        gap: 8,
+    },
+    plusButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#25D366',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    inputWrapper: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        backgroundColor: '#F5F5F5',
+        borderRadius: 24,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        minHeight: 44,
+        maxHeight: 120,
     },
     input: {
         flex: 1,
-        backgroundColor: BrandColors.cream,
-        borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
-        borderRadius: 24,
-        paddingHorizontal: 18,
-        paddingVertical: 12,
-        fontSize: 15,
-        color: BrandColors.black,
+        fontSize: 16,
+        color: '#000',
+        paddingVertical: 4,
         maxHeight: 100,
     },
+    emojiButton: {
+        padding: 4,
+        marginLeft: 4,
+    },
     sendButton: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: UIColors.primary,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#25D366',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: UIColors.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
     },
     micButton: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: UIColors.primary,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#25D366',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: UIColors.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'flex-end',
+    },
+    attachMenuContainer: {
+        paddingHorizontal: 16,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    },
+    attachMenu: {
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 10,
+    },
+    attachOption: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    attachIcon: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    attachLabel: {
+        fontSize: 12,
+        color: '#333',
+        fontWeight: '500',
     },
 });
