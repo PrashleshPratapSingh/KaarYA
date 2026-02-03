@@ -10,12 +10,23 @@ interface Props {
     onNotificationPress?: () => void;
 }
 
+const ACCENT_YELLOW = '#FACC15';
+
 export function HomeHeader({ onNotificationPress }: Props) {
     return (
         <View style={styles.header}>
-            <View>
+            <View style={styles.titleContainer}>
                 <Text style={styles.greeting}>WHAT'S</Text>
-                <Text style={styles.brandTitle}>HUSTLING?</Text>
+                {/* Creative white rectangle badge for HUSTLING */}
+                <View style={styles.hustlingBadge}>
+                    <View style={styles.hustlingShadow} />
+                    <View style={styles.hustlingBox}>
+                        <Text style={styles.brandTitle}>HUSTLING</Text>
+                        <View style={styles.questionMark}>
+                            <Text style={styles.questionText}>?</Text>
+                        </View>
+                    </View>
+                </View>
             </View>
             <Pressable style={styles.notificationBtn} onPress={onNotificationPress}>
                 <Feather name="bell" size={22} color={KARYA_BLACK} />
@@ -32,21 +43,64 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         paddingHorizontal: 20,
         paddingTop: 56,
-        paddingBottom: 16,
+        paddingBottom: 20,
+    },
+    titleContainer: {
+        flexDirection: 'column',
     },
     greeting: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '700',
         color: KARYA_BLACK,
-        letterSpacing: 2,
-        opacity: 0.7,
+        letterSpacing: 3,
+        opacity: 0.6,
+        marginBottom: 4,
+    },
+    hustlingBadge: {
+        position: 'relative',
+        marginTop: 2,
+    },
+    hustlingShadow: {
+        position: 'absolute',
+        top: 4,
+        left: 4,
+        right: -4,
+        bottom: -4,
+        backgroundColor: KARYA_BLACK,
+        borderRadius: 8,
+    },
+    hustlingBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: KARYA_WHITE,
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 8,
+        borderWidth: 3,
+        borderColor: KARYA_BLACK,
     },
     brandTitle: {
-        fontSize: 36,
+        fontSize: 32,
         fontWeight: '900',
         color: KARYA_BLACK,
-        letterSpacing: -1,
-        marginTop: -4,
+        letterSpacing: -0.5,
+    },
+    questionMark: {
+        marginLeft: 6,
+        backgroundColor: ACCENT_YELLOW,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2.5,
+        borderColor: KARYA_BLACK,
+        transform: [{ rotate: '12deg' }],
+    },
+    questionText: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: KARYA_BLACK,
     },
     notificationBtn: {
         width: 48,
@@ -57,6 +111,7 @@ const styles = StyleSheet.create({
         borderColor: KARYA_BLACK,
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 20,
     },
     notificationDot: {
         position: 'absolute',
