@@ -57,70 +57,61 @@ export default function ProfileScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 120 }}
             >
-                {/* Header - Curved Background Style */}
-                {/* Header - Curved Layout (Maria Style) */}
-                <View className="relative mb-8">
+                {/* Header - Polaroid / Scrapbook Style */}
+                <View className="relative mb-8 bg-black pt-16 pb-12 px-5 rounded-b-[40px] shadow-2xl z-0">
 
-                    {/* 1. Curved Background Header */}
-                    <View className="w-full bg-black pt-14 pb-20 rounded-b-[90px] px-6 flex-row justify-between items-start shadow-xl z-0">
-                        {/* Left: Back Button */}
-                        <TouchableOpacity
-                            onPress={() => Haptics.selectionAsync()}
-                            className="w-10 h-10 items-center justify-center rounded-full bg-white/10"
-                        >
-                            <Ionicons name="chevron-back" size={24} color="white" />
-                        </TouchableOpacity>
+                    {/* Settings Button: Top Right */}
+                    <TouchableOpacity
+                        className="absolute top-14 right-5 z-50 w-12 h-12 rounded-full bg-white/10 border border-white/10 items-center justify-center"
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            setShowSettings(true);
+                        }}
+                    >
+                        <Ionicons name="settings-sharp" size={22} color="white" />
+                    </TouchableOpacity>
 
-                        {/* Right: Actions (Share & Settings) */}
-                        <View className="flex-row gap-4">
-                            <TouchableOpacity
-                                onPress={() => setShowShareCard(true)}
-                                className="w-10 h-10 items-center justify-center rounded-full bg-white/10"
-                            >
-                                <Ionicons name="share-social-outline" size={22} color="white" />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => setShowSettings(true)}
-                                className="w-10 h-10 items-center justify-center rounded-full bg-white/10"
-                            >
-                                <Ionicons name="settings-outline" size={22} color="white" />
-                            </TouchableOpacity>
+
+
+                    {/* Main Content: Polaroid Stack */}
+                    <View className="items-center mt-6">
+
+                        {/* The Polaroid Frame */}
+                        <View className="bg-white p-3 pb-8 rotate-[-3deg] shadow-lg relative" style={{ elevation: 10 }}>
+
+
+                            {/* Image */}
+                            <Image
+                                source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600' }}
+                                className="w-52 h-64 bg-gray-200"
+                                resizeMode="cover"
+                            />
+
+
+                            {/* Signature / Handwritten Note on Polaroid Bottom */}
+                            <Text className="font-bold text-black/40 text-xs text-center mt-4 font-handwriting" style={{ fontFamily: 'serif' }}>@ariadesigns</Text>
                         </View>
-                    </View>
 
-                    {/* 2. Profile Picture (Overlapping) */}
-                    <View className="items-center -mt-16 relative z-10">
-                        <View className="relative">
-                            {/* Avatar */}
-                            <View className="w-32 h-32 rounded-full border-[6px] border-[#FFE600] bg-black p-0.5 shadow-2xl overflow-hidden">
-                                <Image
-                                    source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' }}
-                                    className="w-full h-full rounded-full"
-                                    resizeMode="cover"
-                                />
+                        {/* Name - Below Photo (Exhibition Style) */}
+                        <View className="items-center mt-8 space-y-1">
+                            <Text className="text-white font-black text-5xl tracking-tighter shadow-black shadow-lg" style={{ textShadowRadius: 10 }}>
+                                ARIA <Text className="text-[#FFE600]">SINGH</Text>
+                            </Text>
+
+                            {/* Tags / Badges */}
+                            <View className="flex-row gap-3 mt-2">
+                                <View className="bg-white transform -rotate-2 px-3 py-1 shadow-sm border-2 border-transparent">
+                                    <Text className="text-black font-black text-xs tracking-wide">UI/UX KILLER</Text>
+                                </View>
+                                <View className="bg-black border border-white transform rotate-2 px-3 py-1 shadow-sm">
+                                    <Text className="text-white font-bold text-xs tracking-wide">CODE NINJA</Text>
+                                </View>
                             </View>
 
-                            {/* Crown Icon (Floating Top Center-Left) */}
-                            <View className="absolute -top-4 -left-2 transform -rotate-12 bg-[#FFE600] p-2 rounded-full border-4 border-black shadow-sm z-20">
-                                <FontAwesome5 name="crown" size={14} color="black" />
-                            </View>
 
-                            {/* Online Dot (Bottom Right) */}
-                            <View className="absolute bottom-2 right-2 bg-[#00FF00] w-6 h-6 rounded-full border-4 border-[#FFE600] z-20 shadow-sm" />
                         </View>
-                    </View>
 
-                    {/* 3. Name & Identity (Below Curve) */}
-                    <View className="items-center mt-3 space-y-1">
-                        <View className="flex-row items-center gap-2">
-                            <Text className="text-black font-black text-3xl tracking-tight">ARIA SINGH</Text>
-                            <View className="bg-black px-2 py-0.5 rounded border border-[#FFE600]">
-                                <Text className="text-[#FFE600] text-[10px] font-black tracking-widest">PRO</Text>
-                            </View>
-                        </View>
-                        <Text className="text-black/50 font-bold text-sm tracking-widest uppercase">UX/UI DESIGNER</Text>
                     </View>
-
                 </View>
 
                 {/* Hustle Rows (Stats List) */}
