@@ -1,8 +1,15 @@
 /**
- * GigCard - Gig listing with entrance animation
+ * GigCard - Duolingo-style bouncy featured card
+ * Simple, playful interactions
  */
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, Easing } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withSequence,
+} from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { KARYA_BLACK, KARYA_WHITE, KARYA_YELLOW, BADGE_COLORS, Gig } from './types';
 
@@ -13,51 +20,63 @@ interface Props {
     onApply?: () => void;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export function GigCard({ gig, index, onPress, onApply }: Props) {
-    const slideAnim = useRef(new Animated.Value(50)).current;
-    const opacityAnim = useRef(new Animated.Value(0)).current;
-    const scaleAnim = useRef(new Animated.Value(1)).current;
+    // Card press animation
+    const cardScale = useSharedValue(1);
+    const cardTranslateY = useSharedValue(0);
 
-    useEffect(() => {
-        Animated.parallel([
-            Animated.timing(slideAnim, {
-                toValue: 0,
-                duration: 400,
-                delay: index * 100,
-                easing: Easing.out(Easing.back(1.5)),
-                useNativeDriver: true,
-            }),
-            Animated.timing(opacityAnim, {
-                toValue: 1,
-                duration: 300,
-                delay: index * 100,
-                useNativeDriver: true,
-            }),
-        ]).start();
-    }, []);
+    // Button press animation
+    const buttonScale = useSharedValue(1);
 
-    const handlePressIn = () => {
-        Animated.timing(scaleAnim, { toValue: 0.98, duration: 100, useNativeDriver: true }).start();
+    const cardAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: cardScale.value },
+            { translateY: cardTranslateY.value },
+        ],
+    }));
+
+    const buttonAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: buttonScale.value }],
+    }));
+
+    const handleCardPressIn = () => {
+        cardScale.value = withSpring(0.97, { damping: 20, stiffness: 400 });
+        cardTranslateY.value = withSpring(2, { damping: 20, stiffness: 400 });
     };
 
-    const handlePressOut = () => {
-        Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }).start();
+    const handleCardPressOut = () => {
+        cardScale.value = withSequence(
+            withSpring(1.02, { damping: 12, stiffness: 500 }),
+            withSpring(1, { damping: 15, stiffness: 300 })
+        );
+        cardTranslateY.value = withSequence(
+            withSpring(-1, { damping: 12, stiffness: 500 }),
+            withSpring(0, { damping: 15, stiffness: 300 })
+        );
+    };
+
+    const handleButtonPressIn = () => {
+        buttonScale.value = withSpring(0.9, { damping: 20, stiffness: 500 });
+    };
+
+    const handleButtonPressOut = () => {
+        buttonScale.value = withSequence(
+            withSpring(1.08, { damping: 8, stiffness: 400 }),
+            withSpring(1, { damping: 12, stiffness: 300 })
+        );
     };
 
     const badgeColor = BADGE_COLORS[gig.collegeCode] || BADGE_COLORS.du;
 
     return (
-        <Animated.View
-            style={{
-                transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-                opacity: opacityAnim,
-            }}
-        >
-            <Pressable
+        <Animated.View style={[styles.cardContainer, cardAnimatedStyle]}>
+            <AnimatedPressable
                 style={styles.card}
                 onPress={onPress}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
+                onPressIn={handleCardPressIn}
+                onPressOut={handleCardPressOut}
             >
                 {/* Header */}
                 <View style={styles.header}>
@@ -88,24 +107,31 @@ export function GigCard({ gig, index, onPress, onApply }: Props) {
                     </View>
                 </View>
 
-                {/* Apply Button */}
-                <Pressable style={styles.applyButton} onPress={onApply}>
+                {/* Apply Button - Duolingo bouncy */}
+                <AnimatedPressable
+                    style={[styles.applyButton, buttonAnimatedStyle]}
+                    onPress={onApply}
+                    onPressIn={handleButtonPressIn}
+                    onPressOut={handleButtonPressOut}
+                >
                     <Text style={styles.applyButtonText}>APPLY NOW</Text>
                     <Feather name="arrow-right" size={18} color={KARYA_YELLOW} />
-                </Pressable>
-            </Pressable>
+                </AnimatedPressable>
+            </AnimatedPressable>
         </Animated.View>
     );
 }
 
 const styles = StyleSheet.create({
+    cardContainer: {
+        marginBottom: 16,
+    },
     card: {
         backgroundColor: KARYA_WHITE,
         borderRadius: 20,
         borderWidth: 3,
         borderColor: KARYA_BLACK,
         padding: 18,
-        marginBottom: 16,
     },
     header: {
         flexDirection: 'row',

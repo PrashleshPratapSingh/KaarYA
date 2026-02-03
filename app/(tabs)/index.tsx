@@ -1,29 +1,35 @@
 /**
  * KaarYa Home Screen
- * Clean main screen that imports modular components
+ * Clean main screen with functional Apply and Notification
  */
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Text, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { StatusBar } from 'react-native';
+import { useRouter } from 'expo-router';
 
 // Import components from home folder
 import {
   HomeHeader,
   CategoryChip,
-  GigCard,
-  EmptyState,
+  GigGrid,
+  GigDetailModal,
   KARYA_YELLOW,
-  KARYA_BLACK,
   CATEGORIES,
   CategoryType,
+  Gig,
 } from '../../components/home';
 
 // Import sample data
 import { SAMPLE_GIGS } from '../../components/home/data';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [refreshing, setRefreshing] = useState(false);
+
+  // Modal state
+  const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   // Filter gigs by category
   const filteredGigs = SAMPLE_GIGS.filter(
@@ -43,12 +49,39 @@ export default function HomeScreen() {
     setActiveCategory(category);
   };
 
+  // Open gig detail modal
+  const handleGigPress = (gig: Gig) => {
+    setSelectedGig(gig);
+    setModalVisible(true);
+  };
+
+  // Apply to gig
+  const handleApply = (gig: Gig) => {
+    setSelectedGig(gig);
+    setModalVisible(true);
+  };
+
+  // Send application
+  const handleSendApplication = () => {
+    setModalVisible(false);
+    Alert.alert(
+      '🎉 Application Sent!',
+      `Your application for "${selectedGig?.title}" has been sent to ${selectedGig?.postedBy}. They'll get back to you soon!`,
+      [{ text: 'Awesome!', style: 'default' }]
+    );
+  };
+
+  // Notification press
+  const handleNotificationPress = () => {
+    router.push('/messages');
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={KARYA_YELLOW} />
 
       {/* Header */}
-      <HomeHeader />
+      <HomeHeader onNotificationPress={handleNotificationPress} />
 
       {/* Category Filters */}
       <ScrollView
@@ -57,55 +90,34 @@ export default function HomeScreen() {
         style={styles.categoriesWrapper}
         contentContainerStyle={styles.categoriesContainer}
       >
-        {CATEGORIES.map((cat) => (
+        {CATEGORIES.map((cat, index) => (
           <CategoryChip
             key={cat.key}
             label={cat.label}
             icon={cat.icon}
             isActive={activeCategory === cat.key}
             onPress={() => handleCategoryChange(cat.key)}
+            index={index}
           />
         ))}
       </ScrollView>
 
       {/* Gig Feed */}
-      <ScrollView
-        style={styles.feed}
-        contentContainerStyle={styles.feedContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={KARYA_BLACK}
-            colors={[KARYA_BLACK]}
-          />
-        }
-      >
-        {/* Section Title */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>FRESH GIGS</Text>
-          <Text style={styles.gigCount}>{filteredGigs.length} available</Text>
-        </View>
+      <GigGrid
+        gigs={filteredGigs}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        onGigPress={handleGigPress}
+        onApply={handleApply}
+      />
 
-        {/* Gig Cards or Empty State */}
-        {filteredGigs.length > 0 ? (
-          filteredGigs.map((gig, index) => (
-            <GigCard
-              key={gig.id}
-              gig={gig}
-              index={index}
-              onPress={() => console.log(`View gig: ${gig.id}`)}
-              onApply={() => console.log(`Apply to: ${gig.id}`)}
-            />
-          ))
-        ) : (
-          <EmptyState />
-        )}
-
-        {/* Bottom spacer for tab bar */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      {/* Gig Detail Modal */}
+      <GigDetailModal
+        visible={modalVisible}
+        gig={selectedGig}
+        onClose={() => setModalVisible(false)}
+        onApply={handleSendApplication}
+      />
     </View>
   );
 }
@@ -122,29 +134,5 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     paddingHorizontal: 20,
     gap: 10,
-  },
-  feed: {
-    flex: 1,
-  },
-  feedContent: {
-    paddingHorizontal: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: KARYA_BLACK,
-    letterSpacing: 1,
-  },
-  gigCount: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: KARYA_BLACK,
-    opacity: 0.6,
   },
 });

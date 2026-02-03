@@ -32,8 +32,10 @@ export interface Gig {
     applicants: number;
 }
 
+import { Feather } from '@expo/vector-icons';
+
 // Categories Config
-export const CATEGORIES: { key: CategoryType; label: string; icon: string }[] = [
+export const CATEGORIES: { key: CategoryType; label: string; icon: keyof typeof Feather.glyphMap }[] = [
     { key: 'all', label: 'ALL', icon: 'grid' },
     { key: 'design', label: 'DESIGN', icon: 'pen-tool' },
     { key: 'writing', label: 'WRITING', icon: 'edit-3' },

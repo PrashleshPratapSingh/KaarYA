@@ -1,39 +1,65 @@
 /**
- * CategoryChip - Filter button with bounce animation
+ * CategoryChip - Simple bouncy filter chip
  */
-import React, { useRef } from 'react';
-import { Pressable, Text, StyleSheet, Animated } from 'react-native';
+import React from 'react';
+import { Text, StyleSheet, Pressable } from 'react-native';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withSequence,
+} from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { KARYA_BLACK, KARYA_WHITE, KARYA_YELLOW } from './types';
 
 interface Props {
     label: string;
-    icon: string;
-    isActive: boolean;
-    onPress: () => void;
+    icon: keyof typeof Feather.glyphMap;
+    isActive?: boolean;
+    onPress?: () => void;
+    index?: number;
 }
 
-export function CategoryChip({ label, icon, isActive, onPress }: Props) {
-    const scaleAnim = useRef(new Animated.Value(1)).current;
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-    const handlePress = () => {
-        Animated.sequence([
-            Animated.timing(scaleAnim, { toValue: 0.9, duration: 100, useNativeDriver: true }),
-            Animated.spring(scaleAnim, { toValue: 1, friction: 3, tension: 100, useNativeDriver: true }),
-        ]).start();
-        onPress();
+export function CategoryChip({ label, icon, isActive = false, onPress }: Props) {
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const handlePressIn = () => {
+        scale.value = withSpring(0.9, { damping: 20, stiffness: 400 });
+    };
+
+    const handlePressOut = () => {
+        scale.value = withSequence(
+            withSpring(1.05, { damping: 10, stiffness: 500 }),
+            withSpring(1, { damping: 15, stiffness: 300 })
+        );
     };
 
     return (
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-            <Pressable
-                style={[styles.chip, isActive && styles.chipActive]}
-                onPress={handlePress}
-            >
-                <Feather name={icon as any} size={16} color={isActive ? KARYA_YELLOW : KARYA_BLACK} />
-                <Text style={[styles.label, isActive && styles.labelActive]}>{label}</Text>
-            </Pressable>
-        </Animated.View>
+        <AnimatedPressable
+            style={[
+                styles.chip,
+                isActive && styles.chipActive,
+                animatedStyle,
+            ]}
+            onPress={onPress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+        >
+            <Feather
+                name={icon}
+                size={14}
+                color={isActive ? KARYA_YELLOW : KARYA_BLACK}
+            />
+            <Text style={[styles.label, isActive && styles.labelActive]}>
+                {label}
+            </Text>
+        </AnimatedPressable>
     );
 }
 
@@ -41,13 +67,13 @@ const styles = StyleSheet.create({
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
+        gap: 6,
+        backgroundColor: KARYA_WHITE,
+        paddingHorizontal: 14,
         paddingVertical: 10,
         borderRadius: 20,
-        backgroundColor: KARYA_WHITE,
-        borderWidth: 2,
+        borderWidth: 2.5,
         borderColor: KARYA_BLACK,
-        gap: 6,
     },
     chipActive: {
         backgroundColor: KARYA_BLACK,
