@@ -18,6 +18,7 @@ import { ProfileModal } from '@/components/my-work/ProfileModal';
 // Updated components
 import { OngoingGigCard } from '@/components/my-work/pipeline/OngoingGigCard';
 import { UpcomingGigCard } from '@/components/my-work/pipeline/UpcomingGigCard';
+import { HustleGoalCard } from '@/components/my-work/stash/HustleGoalCard';
 
 // Data
 import {
@@ -46,6 +47,14 @@ export default function MyWorkScreen() {
     const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
     const [detailModalVisible, setDetailModalVisible] = useState(false);
     const [profileModalVisible, setProfileModalVisible] = useState(false);
+
+    // Earnings Data state
+    const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
+    const monthlyEarnings = [
+        { month: 'JANUARY', amount: '18,750' },
+        { month: 'DECEMBER', amount: '22,400' },
+        { month: 'NOVEMBER', amount: '15,200' },
+    ];
 
     // State for gigs
     const [ongoingGigs, setOngoingGigs] = useState(mockOngoingGigs);
@@ -93,8 +102,64 @@ export default function MyWorkScreen() {
         setDetailModalVisible(true);
     };
 
-    const handleSendMessage = (message: string) => {
-        console.log('Sending message:', message);
+    const handleSendMessage = (text: string) => {
+        if (!selectedGig) return;
+
+        const newMessage: ChatMessage = {
+            id: Math.random().toString(),
+            gigId: selectedGig.id,
+            senderId: 'executor1',
+            senderName: 'You',
+            senderRole: 'executor',
+            message: text,
+            timestamp: new Date().toISOString(),
+            isRead: true,
+        };
+
+        // Update current selected gig for modal
+        const updatedGig = {
+            ...selectedGig,
+            chatMessages: [...(selectedGig.chatMessages || []), newMessage]
+        };
+        setSelectedGig(updatedGig);
+
+        // Update in lists
+        if (viewMode === 'executor') {
+            setOngoingGigs(prev => prev.map(g => g.id === selectedGig.id ? updatedGig : g));
+        }
+
+        // AI Response Logic
+        setTimeout(() => {
+            const responses = [
+                "That sounds like a solid plan! Let's push for EOD.",
+                "Can you make the yellow a bit more vibrant? #FFE500 style.",
+                "The progress looks great. Keep crushing it!",
+                "Love the hustle! I'll release the next phase funds once this is uploaded.",
+                "Quick check: did you see the brand guidelines I sent?"
+            ];
+            const aiText = responses[Math.floor(Math.random() * responses.length)];
+
+            const aiMessage: ChatMessage = {
+                id: Math.random().toString(),
+                gigId: selectedGig.id,
+                senderId: 'ai',
+                senderName: selectedGig.clientName,
+                senderRole: 'client',
+                message: aiText,
+                timestamp: new Date().toISOString(),
+                isRead: false,
+            };
+
+            const finalGig = {
+                ...updatedGig,
+                chatMessages: [...(updatedGig.chatMessages || []), aiMessage]
+            };
+
+            setSelectedGig(finalGig);
+            if (viewMode === 'executor') {
+                setOngoingGigs(prev => prev.map(g => g.id === selectedGig.id ? finalGig : g));
+            }
+        }, 1500);
     };
 
     const handleUploadFiles = async (files: Partial<FileAttachment>[]) => {
@@ -139,11 +204,6 @@ export default function MyWorkScreen() {
                         <Feather name="arrow-left" size={20} color="black" />
                     </Pressable>
 
-                    {viewMode === 'client' && (
-                        <View className="bg-blue-500 px-3 py-1 rounded-full">
-                            <Text className="text-[10px] font-bold text-white uppercase">CLIENT MODE</Text>
-                        </View>
-                    )}
                 </View>
 
                 {/* Title */}
@@ -154,7 +214,7 @@ export default function MyWorkScreen() {
 
             {/* Content for CLIENT Dashboard */}
             {viewMode === 'client' && (
-                <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
+                <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 140 }}>
                     {/* Summary Card */}
                     <View className="bg-karya-black rounded-[32px] p-6 mb-6">
                         <Text className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">
@@ -231,47 +291,39 @@ export default function MyWorkScreen() {
                     <View className="flex-1 bg-karya-yellow">
                         {/* STASH TAB */}
                         {activeTab === 'stash' && (
-                            <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
+                            <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 140 }}>
                                 <StashCard
                                     balance={14500}
+                                    pendingPayment={8420}
                                     onWithdraw={() => setWithdrawModalVisible(true)}
                                 />
 
-                                {/* The Stash - Escrow Section */}
-                                <View className="bg-white rounded-3xl p-5 mb-5 shadow-sm">
-                                    <View className="flex-row items-center justify-between mb-4">
-                                        <View className="flex-row items-center gap-2">
-                                            <View className="bg-karya-black px-2.5 py-1 rounded-full">
-                                                <Feather name="lock" size={10} color="#FFE500" />
-                                            </View>
-                                            <Text className="text-base font-extrabold text-karya-black">THE VAULT</Text>
-                                            <View className="bg-gray-100 px-2 py-0.5 rounded-md">
-                                                <Text className="text-[10px] font-bold text-gray-400 uppercase">ESCROW</Text>
-                                            </View>
-                                        </View>
-                                    </View>
+                                <HustleGoalCard />
 
-                                    <View className="mb-4">
-                                        <View className="flex-row justify-between mb-2">
-                                            <Text className="text-[10px] font-bold text-gray-400 uppercase">GOAL PROGRESS</Text>
-                                            <Text className="text-[10px] font-bold text-gray-400">
-                                                <Text className="text-karya-black text-sm">₹6,500</Text> / 10k
-                                            </Text>
+                                {/* EARNINGS HISTORY */}
+                                <View className="bg-karya-black rounded-[32px] p-6 mb-6 flex-row items-center justify-between shadow-lg">
+                                    <View className="flex-1">
+                                        <View className="flex-row items-center gap-2 mb-1">
+                                            <Text className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{monthlyEarnings[selectedMonthIndex].month} EARNINGS</Text>
+                                            <View className="bg-karya-yellow/20 px-2 py-0.5 rounded-full">
+                                                <Text className="text-[8px] font-bold text-karya-yellow">PROCESSED</Text>
+                                            </View>
                                         </View>
-                                        <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                            <View className="h-full bg-karya-yellow w-[65%]" />
-                                        </View>
+                                        <Text className="text-3xl font-extrabold text-white">₹{monthlyEarnings[selectedMonthIndex].amount}</Text>
                                     </View>
-
-                                    <View className="flex-row gap-3">
-                                        <View className="flex-1 bg-gray-50 rounded-2xl p-3">
-                                            <Text className="text-[10px] text-gray-400 font-bold uppercase mb-1">PENDING</Text>
-                                            <Text className="text-lg font-extrabold text-karya-black">₹8,000</Text>
-                                        </View>
-                                        <View className="flex-1 bg-gray-50 rounded-2xl p-3">
-                                            <Text className="text-[10px] text-gray-400 font-bold uppercase mb-1">LOCKED</Text>
-                                            <Text className="text-lg font-extrabold text-karya-black">₹2,400</Text>
-                                        </View>
+                                    <View className="flex-row items-center gap-2">
+                                        <Pressable
+                                            onPress={() => setSelectedMonthIndex((prev) => (prev + 1) % monthlyEarnings.length)}
+                                            className="w-10 h-10 bg-white/10 rounded-xl items-center justify-center active:bg-white/20"
+                                        >
+                                            <Feather name="chevron-left" size={18} color="white" />
+                                        </Pressable>
+                                        <Pressable
+                                            onPress={() => setSelectedMonthIndex((prev) => (prev - 1 + monthlyEarnings.length) % monthlyEarnings.length)}
+                                            className="w-10 h-10 bg-white/10 rounded-xl items-center justify-center active:bg-white/20"
+                                        >
+                                            <Feather name="chevron-right" size={18} color="white" />
+                                        </Pressable>
                                     </View>
                                 </View>
 
@@ -287,7 +339,7 @@ export default function MyWorkScreen() {
 
                         {/* PIPELINE TAB */}
                         {activeTab === 'pipeline' && (
-                            <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 16, paddingHorizontal: 20, paddingBottom: 100 }}>
+                            <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 140 }}>
                                 {/* Ongoing Gigs Section - LIMIT TO 1 */}
                                 {ongoingGigs.length > 0 && (
                                     <View className="mb-6">
@@ -328,12 +380,14 @@ export default function MyWorkScreen() {
 
                         {/* PORTFOLIO TAB */}
                         {activeTab === 'portfolio' && (
-                            <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
+                            <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 140 }}>
                                 <View className="mb-4 px-1">
                                     <Text className="text-sm font-bold text-karya-black/60 uppercase tracking-wide">YOUR HUSTLE HISTORY</Text>
                                 </View>
-                                <PortfolioGrid completedGigs={mockCompletedGigs} />
-                                <ShareButton />
+                                <PortfolioGrid
+                                    completedGigs={mockCompletedGigs}
+                                    onGigPress={(gig) => handleOpenProfile(gig.clientId)}
+                                />
                             </ScrollView>
                         )}
                     </View>

@@ -27,10 +27,10 @@ export function ProfileModal({ visible, onClose, profile }: ProfileModalProps) {
                     {/* Rank Badge */}
                     <View
                         className="absolute -top-4 px-6 py-2 rounded-full shadow-lg"
-                        style={{ backgroundColor: getRankColor(profile.rank) }}
+                        style={{ backgroundColor: profile.gigsGiven ? '#FFE500' : getRankColor(profile.rank) }}
                     >
                         <Text className="text-sm font-extrabold text-karya-black uppercase tracking-widest">
-                            {profile.rank}
+                            {profile.gigsGiven ? 'CLIENT' : profile.rank}
                         </Text>
                     </View>
 
@@ -59,7 +59,9 @@ export function ProfileModal({ visible, onClose, profile }: ProfileModalProps) {
                         </View>
                         <Text className="text-gray-300">•</Text>
                         <Text className="text-sm font-bold text-gray-500 uppercase tracking-tight">
-                            {profile.completedGigs} Gigs Completed
+                            {profile.gigsGiven !== undefined && profile.gigsGiven > 0
+                                ? `${profile.gigsGiven} Gigs Given`
+                                : `${profile.completedGigs} Gigs Completed`}
                         </Text>
                     </View>
 

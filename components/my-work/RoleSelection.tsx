@@ -63,9 +63,6 @@ export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
                 <Text className="text-[10px] font-bold text-karya-black/40 uppercase mb-6 tracking-widest">
                     PREMIUM MICRO-GIG ECOSYSTEM
                 </Text>
-                <Pressable className="bg-white px-8 py-4 rounded-full shadow-sm">
-                    <Text className="text-xs font-extrabold text-karya-black uppercase tracking-wide">BACK TO HOME</Text>
-                </Pressable>
             </View>
         </SafeAreaView>
     );
