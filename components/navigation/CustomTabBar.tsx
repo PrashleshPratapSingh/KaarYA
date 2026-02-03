@@ -1,10 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const { width } = Dimensions.get('window');
 
 const COLORS = {
     black: '#000000',
@@ -13,12 +11,65 @@ const COLORS = {
     yellow: '#FACC15',
 };
 
+// Responsive sizing based on screen width
+const getResponsiveSizes = (width: number) => {
+    // For tablets and larger devices
+    if (width >= 768) {
+        return {
+            pillWidth: Math.min(width * 0.7, 600), // Max width 600 for tablets
+            pillHeight: 72,
+            iconSize: 24,
+            labelSize: 11,
+            centerButtonOuter: 65,
+            centerButtonInner: 55,
+            centerButtonOffset: -48,
+            plusIconSize: 28,
+            paddingHorizontal: 16,
+        };
+    }
+    // For medium phones (375-768)
+    if (width >= 375) {
+        return {
+            pillWidth: width * 0.92,
+            pillHeight: 68,
+            iconSize: 22,
+            labelSize: 10,
+            centerButtonOuter: 60,
+            centerButtonInner: 50,
+            centerButtonOffset: -45,
+            plusIconSize: 26,
+            paddingHorizontal: 10,
+        };
+    }
+    // For smaller phones (<375)
+    return {
+        pillWidth: width * 0.95,
+        pillHeight: 60,
+        iconSize: 20,
+        labelSize: 9,
+        centerButtonOuter: 52,
+        centerButtonInner: 44,
+        centerButtonOffset: -38,
+        plusIconSize: 22,
+        paddingHorizontal: 8,
+    };
+};
+
 export default function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const insets = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
+    const sizes = getResponsiveSizes(width);
 
     return (
         <View style={[styles.container, { bottom: insets.bottom + 10 }]}>
-            <View style={styles.pill}>
+            <View style={[
+                styles.pill,
+                {
+                    width: sizes.pillWidth,
+                    height: sizes.pillHeight,
+                    paddingHorizontal: sizes.paddingHorizontal,
+                }
+            ]}>
                 {state.routes.map((route, index) => {
                     const { options } = descriptors[route.key];
                     const isFocused = state.index === index;
@@ -43,10 +94,25 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
                                 key={route.key}
                                 onPress={onPress}
                                 activeOpacity={0.8}
-                                style={styles.centerButtonOuter}
+                                style={[
+                                    styles.centerButtonOuter,
+                                    {
+                                        width: sizes.centerButtonOuter,
+                                        height: sizes.centerButtonOuter,
+                                        borderRadius: sizes.centerButtonOuter / 2,
+                                        marginTop: sizes.centerButtonOffset,
+                                    }
+                                ]}
                             >
-                                <View style={styles.centerButtonInner}>
-                                    <Feather name="plus" size={26} color={COLORS.yellow} />
+                                <View style={[
+                                    styles.centerButtonInner,
+                                    {
+                                        width: sizes.centerButtonInner,
+                                        height: sizes.centerButtonInner,
+                                        borderRadius: sizes.centerButtonInner / 2,
+                                    }
+                                ]}>
+                                    <Feather name="plus" size={sizes.plusIconSize} color={COLORS.yellow} />
                                 </View>
                             </TouchableOpacity>
                         );
@@ -72,12 +138,15 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
                         >
                             <Feather
                                 name={getIconName()}
-                                size={22}
+                                size={sizes.iconSize}
                                 color={isFocused ? COLORS.black : COLORS.grey}
                             />
                             <Text style={[
                                 styles.tabLabel,
-                                { color: isFocused ? COLORS.black : COLORS.grey }
+                                {
+                                    color: isFocused ? COLORS.black : COLORS.grey,
+                                    fontSize: sizes.labelSize,
+                                }
                             ]}>
                                 {label}
                             </Text>
@@ -101,15 +170,12 @@ const styles = StyleSheet.create({
     },
     pill: {
         flexDirection: 'row',
-        width: width * 0.92,
-        height: 68,
         backgroundColor: '#FFF',
         borderRadius: 100,
         borderWidth: 2.5,
         borderColor: '#000',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 10,
         // Neo-brutalism shadow
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -124,20 +190,15 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     tabLabel: {
-        fontSize: 10,
         fontWeight: '600',
         marginTop: 2,
     },
     centerButtonOuter: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
         backgroundColor: '#FFF',
         borderWidth: 2.5,
         borderColor: '#000',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: -45, // Floating effect
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
@@ -145,9 +206,6 @@ const styles = StyleSheet.create({
         elevation: 10,
     },
     centerButtonInner: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
         backgroundColor: '#000',
         borderWidth: 2,
         borderColor: COLORS.yellow,
