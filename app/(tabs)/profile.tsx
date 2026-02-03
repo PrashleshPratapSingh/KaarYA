@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, Switch, Pressable, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5, Feather, MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from "react-native-reanimated";
 
 export default function ProfileScreen() {
     const [showSettings, setShowSettings] = useState(false);
@@ -11,6 +12,7 @@ export default function ProfileScreen() {
     const [showShareCard, setShowShareCard] = useState(false);
     const [showLevelUp, setShowLevelUp] = useState(false);
     const [showStats, setShowStats] = useState(false);
+    const [showRating, setShowRating] = useState(false);
     const [showEditStash, setShowEditStash] = useState(false);
     const [showSkills, setShowSkills] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState<'neon' | 'brutalist' | 'minimal'>('brutalist');
@@ -51,8 +53,29 @@ export default function ProfileScreen() {
 
     // Scroll animation
     const scrollY = useRef(new Animated.Value(0)).current;
+
+    // Screen entry animation
+    const entryOpacity = useSharedValue(0);
+    const entryScale = useSharedValue(0.96);
+    const entryTranslateY = useSharedValue(20);
+
+    useEffect(() => {
+        // Trigger entry animation on mount
+        entryOpacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
+        entryScale.value = withSpring(1, { damping: 20, stiffness: 300 });
+        entryTranslateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+    }, []);
+
+    const screenAnimatedStyle = useAnimatedStyle(() => ({
+        opacity: entryOpacity.value,
+        transform: [
+            { scale: entryScale.value },
+            { translateY: entryTranslateY.value },
+        ],
+    }));
+
     return (
-        <View className="flex-1 bg-[#FFE600]">
+        <ReAnimated.View style={[{ flex: 1, backgroundColor: '#FFE600' }, screenAnimatedStyle]}>
             <Animated.ScrollView
                 className="flex-1"
                 showsVerticalScrollIndicator={false}
@@ -157,7 +180,7 @@ export default function ProfileScreen() {
                         {/* Rating Star */}
                         <TouchableOpacity
                             className="flex-1 bg-black rounded-2xl p-4 items-center justify-center"
-                            onPress={() => setShowStats(true)}
+                            onPress={() => setShowRating(true)}
                             style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 }}
                         >
                             <View className="w-14 h-14 rounded-full border-[3px] border-white/30 items-center justify-center mb-2">
@@ -1892,6 +1915,206 @@ export default function ProfileScreen() {
                 </View>
             </Modal>
 
+            {/* Rating & Reviews Modal */}
+            <Modal
+                visible={showRating}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowRating(false)}
+            >
+                <View className="flex-1 bg-black/90 justify-end">
+                    <Pressable
+                        className="absolute inset-0"
+                        onPress={() => setShowRating(false)}
+                    />
+
+                    <View className="bg-white rounded-t-[32px] px-5 pt-4 pb-10 max-h-[90%] border-t-2 border-black">
+                        {/* Handle */}
+                        <View className="w-12 h-1.5 bg-black/20 rounded-full self-center mb-6" />
+
+                        {/* Header */}
+                        <View className="flex-row justify-between items-start mb-6">
+                            <View>
+                                <Text className="text-black font-black text-2xl">Reviews & Rating</Text>
+                                <Text className="text-black/50 text-sm">What clients say about you</Text>
+                            </View>
+                            <TouchableOpacity
+                                className="w-10 h-10 rounded-full bg-black items-center justify-center"
+                                onPress={() => setShowRating(false)}
+                            >
+                                <Ionicons name="close" size={22} color="white" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            {/* Overall Rating Card */}
+                            <View className="bg-[#FFE600] border-2 border-black rounded-2xl p-5 mb-6 items-center">
+                                <View className="flex-row items-center gap-2 mb-2">
+                                    <Text className="text-black font-black text-5xl">4.9</Text>
+                                    <Ionicons name="star" size={36} color="black" />
+                                </View>
+                                <Text className="text-black/70 text-sm mb-2">Based on 47 reviews</Text>
+                                <View className="flex-row items-center gap-1">
+                                    <View className="bg-black px-2 py-1 rounded-md">
+                                        <Text className="text-white font-bold text-xs">TOP RATED</Text>
+                                    </View>
+                                    <Text className="text-black/50 text-xs">Top 5% in Design</Text>
+                                </View>
+                            </View>
+
+                            {/* Rating Breakdown */}
+                            <Text className="text-black font-bold text-base mb-4">⭐ Rating Breakdown</Text>
+                            <View className="bg-white border-2 border-black rounded-2xl p-4 mb-6">
+                                {[
+                                    { stars: 5, count: 38, percentage: 81 },
+                                    { stars: 4, count: 7, percentage: 15 },
+                                    { stars: 3, count: 2, percentage: 4 },
+                                    { stars: 2, count: 0, percentage: 0 },
+                                    { stars: 1, count: 0, percentage: 0 },
+                                ].map((item) => (
+                                    <View key={item.stars} className="flex-row items-center mb-2">
+                                        <Text className="text-black font-medium text-sm w-8">{item.stars}★</Text>
+                                        <View className="flex-1 h-3 bg-black/10 rounded-full overflow-hidden mx-3">
+                                            <View
+                                                className="h-full bg-[#FFD700] rounded-full"
+                                                style={{ width: `${item.percentage}%` }}
+                                            />
+                                        </View>
+                                        <Text className="text-black/50 text-xs w-8">{item.count}</Text>
+                                    </View>
+                                ))}
+                            </View>
+
+                            {/* Performance Badges */}
+                            <Text className="text-black font-bold text-base mb-4">🏆 Performance Badges</Text>
+                            <View className="flex-row gap-3 mb-6">
+                                <View className="flex-1 bg-[#4ECDC4]/20 border border-[#4ECDC4] rounded-2xl p-4 items-center">
+                                    <View className="w-12 h-12 rounded-full bg-[#4ECDC4] items-center justify-center mb-2">
+                                        <Ionicons name="flash" size={24} color="white" />
+                                    </View>
+                                    <Text className="text-black font-semibold text-xs text-center">Quick Deliverer</Text>
+                                    <Text className="text-black/40 text-[10px]">98% on-time</Text>
+                                </View>
+                                <View className="flex-1 bg-[#A78BFA]/20 border border-[#A78BFA] rounded-2xl p-4 items-center">
+                                    <View className="w-12 h-12 rounded-full bg-[#A78BFA] items-center justify-center mb-2">
+                                        <Ionicons name="chatbubbles" size={24} color="white" />
+                                    </View>
+                                    <Text className="text-black font-semibold text-xs text-center">Great Communicator</Text>
+                                    <Text className="text-black/40 text-[10px]">4.9 avg</Text>
+                                </View>
+                                <View className="flex-1 bg-[#FF6B6B]/20 border border-[#FF6B6B] rounded-2xl p-4 items-center">
+                                    <View className="w-12 h-12 rounded-full bg-[#FF6B6B] items-center justify-center mb-2">
+                                        <Ionicons name="heart" size={24} color="white" />
+                                    </View>
+                                    <Text className="text-black font-semibold text-xs text-center">Client Favorite</Text>
+                                    <Text className="text-black/40 text-[10px]">96% repeat</Text>
+                                </View>
+                            </View>
+
+                            {/* Recent Reviews */}
+                            <Text className="text-black font-bold text-base mb-4">💬 Recent Reviews</Text>
+                            <View className="gap-4 mb-4">
+                                {/* Review 1 */}
+                                <View className="bg-white border-2 border-black rounded-2xl p-4">
+                                    <View className="flex-row items-center justify-between mb-3">
+                                        <View className="flex-row items-center gap-3">
+                                            <View className="w-10 h-10 rounded-full bg-[#FF6B6B] items-center justify-center">
+                                                <Text className="text-white font-bold">RK</Text>
+                                            </View>
+                                            <View>
+                                                <Text className="text-black font-bold text-sm">Rahul K.</Text>
+                                                <Text className="text-black/40 text-xs">2 days ago</Text>
+                                            </View>
+                                        </View>
+                                        <View className="flex-row items-center gap-1">
+                                            <Text className="text-black font-bold">5</Text>
+                                            <Ionicons name="star" size={14} color="#FFD700" />
+                                        </View>
+                                    </View>
+                                    <Text className="text-black/70 text-sm leading-5">
+                                        "Absolutely incredible work! Aria understood exactly what I wanted and delivered beyond expectations. Will definitely hire again!"
+                                    </Text>
+                                    <View className="flex-row items-center gap-2 mt-3">
+                                        <View className="bg-[#BFFF00]/30 px-2 py-1 rounded-md">
+                                            <Text className="text-black text-xs">Logo Design</Text>
+                                        </View>
+                                        <View className="bg-black/5 px-2 py-1 rounded-md">
+                                            <Text className="text-black/60 text-xs">₹2,500</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                {/* Review 2 */}
+                                <View className="bg-white border-2 border-black rounded-2xl p-4">
+                                    <View className="flex-row items-center justify-between mb-3">
+                                        <View className="flex-row items-center gap-3">
+                                            <View className="w-10 h-10 rounded-full bg-[#4ECDC4] items-center justify-center">
+                                                <Text className="text-white font-bold">PS</Text>
+                                            </View>
+                                            <View>
+                                                <Text className="text-black font-bold text-sm">Priya S.</Text>
+                                                <Text className="text-black/40 text-xs">1 week ago</Text>
+                                            </View>
+                                        </View>
+                                        <View className="flex-row items-center gap-1">
+                                            <Text className="text-black font-bold">5</Text>
+                                            <Ionicons name="star" size={14} color="#FFD700" />
+                                        </View>
+                                    </View>
+                                    <Text className="text-black/70 text-sm leading-5">
+                                        "Super fast delivery and great communication throughout the project. The poster design was exactly what we needed for our event."
+                                    </Text>
+                                    <View className="flex-row items-center gap-2 mt-3">
+                                        <View className="bg-[#A78BFA]/30 px-2 py-1 rounded-md">
+                                            <Text className="text-black text-xs">Event Poster</Text>
+                                        </View>
+                                        <View className="bg-black/5 px-2 py-1 rounded-md">
+                                            <Text className="text-black/60 text-xs">₹1,800</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                {/* Review 3 */}
+                                <View className="bg-white border-2 border-black rounded-2xl p-4">
+                                    <View className="flex-row items-center justify-between mb-3">
+                                        <View className="flex-row items-center gap-3">
+                                            <View className="w-10 h-10 rounded-full bg-[#FFD700] items-center justify-center">
+                                                <Text className="text-black font-bold">AM</Text>
+                                            </View>
+                                            <View>
+                                                <Text className="text-black font-bold text-sm">Amit M.</Text>
+                                                <Text className="text-black/40 text-xs">2 weeks ago</Text>
+                                            </View>
+                                        </View>
+                                        <View className="flex-row items-center gap-1">
+                                            <Text className="text-black font-bold">4</Text>
+                                            <Ionicons name="star" size={14} color="#FFD700" />
+                                        </View>
+                                    </View>
+                                    <Text className="text-black/70 text-sm leading-5">
+                                        "Good work overall. Took a couple of revisions but the final result was great. Professional and patient."
+                                    </Text>
+                                    <View className="flex-row items-center gap-2 mt-3">
+                                        <View className="bg-[#FF6B6B]/30 px-2 py-1 rounded-md">
+                                            <Text className="text-black text-xs">Social Media</Text>
+                                        </View>
+                                        <View className="bg-black/5 px-2 py-1 rounded-md">
+                                            <Text className="text-black/60 text-xs">₹3,200</Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* View All Reviews Button */}
+                            <TouchableOpacity className="bg-black rounded-2xl py-4 flex-row items-center justify-center gap-2 mb-4">
+                                <Text className="text-white font-bold text-sm">View All 47 Reviews</Text>
+                                <Ionicons name="arrow-forward" size={18} color="white" />
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+
             {/* Edit Stash Modal */}
             <Modal
                 visible={showEditStash}
@@ -2266,6 +2489,6 @@ export default function ProfileScreen() {
                     </View>
                 </Modal>
             </Modal>
-        </View>
+        </ReAnimated.View>
     );
 }
