@@ -54,6 +54,13 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        <Stack.Screen
+          name="post-gig"
+          options={{
+            presentation: "fullScreenModal",
+            headerShown: false,
+          }}
+        />
       </Stack>
     </View>
   );
