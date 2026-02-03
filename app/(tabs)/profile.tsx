@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, Switch, Pressable, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -49,147 +49,148 @@ export default function ProfileScreen() {
     const [showHelp, setShowHelp] = useState(false);
     const [showTerms, setShowTerms] = useState(false);
 
-
+    // Scroll animation
+    const scrollY = useRef(new Animated.Value(0)).current;
     return (
         <View className="flex-1 bg-[#FFE600]">
-            <ScrollView
+            <Animated.ScrollView
                 className="flex-1"
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 120 }}
+                contentContainerStyle={{ paddingBottom: 20 }}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: true }
+                )}
+                scrollEventThrottle={16}
             >
-                {/* Header - Polaroid / Scrapbook Style */}
-                <View className="relative mb-8 bg-black pt-16 pb-12 px-5 rounded-b-[40px] shadow-2xl z-0">
+                {/* Header - Black Top, Yellow Curve Bottom */}
+                <View className="relative mb-4">
 
-                    {/* Settings Button: Top Right */}
-                    <TouchableOpacity
-                        className="absolute top-14 right-5 z-50 w-12 h-12 rounded-full bg-white/10 border border-white/10 items-center justify-center"
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            setShowSettings(true);
-                        }}
-                    >
-                        <Ionicons name="settings-sharp" size={22} color="white" />
-                    </TouchableOpacity>
+                    {/* Black Top Section */}
+                    <View className="w-full bg-black pt-14 pb-32 relative">
 
+                        {/* Settings Button */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                setShowSettings(true);
+                            }}
+                            className="absolute top-14 right-5 z-50 w-9 h-9 items-center justify-center"
+                        >
+                            <Ionicons name="ellipsis-horizontal" size={22} color="white" />
+                        </TouchableOpacity>
 
-
-                    {/* Main Content: Polaroid Stack */}
-                    <View className="items-center mt-6">
-
-                        {/* The Polaroid Frame */}
-                        <View className="bg-white p-3 pb-8 rotate-[-3deg] shadow-lg relative" style={{ elevation: 10 }}>
-
-
-                            {/* Image */}
-                            <Image
-                                source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600' }}
-                                className="w-52 h-64 bg-gray-200"
-                                resizeMode="cover"
-                            />
-
-
-                            {/* Signature / Handwritten Note on Polaroid Bottom */}
-                            <Text className="font-bold text-black/40 text-xs text-center mt-4 font-handwriting" style={{ fontFamily: 'serif' }}>@ariadesigns</Text>
-                        </View>
-
-                        {/* Name - Below Photo (Exhibition Style) */}
-                        <View className="items-center mt-8 space-y-1">
-                            <Text className="text-white font-black text-5xl tracking-tighter shadow-black shadow-lg" style={{ textShadowRadius: 10 }}>
-                                ARIA <Text className="text-[#FFE600]">SINGH</Text>
-                            </Text>
-
-                            {/* Tags / Badges */}
-                            <View className="flex-row gap-3 mt-2">
-                                <View className="bg-white transform -rotate-2 px-3 py-1 shadow-sm border-2 border-transparent">
-                                    <Text className="text-black font-black text-xs tracking-wide">UI/UX KILLER</Text>
-                                </View>
-                                <View className="bg-black border border-white transform rotate-2 px-3 py-1 shadow-sm">
-                                    <Text className="text-white font-bold text-xs tracking-wide">CODE NINJA</Text>
-                                </View>
-                            </View>
-
-
-                        </View>
+                        {/* Yellow Curve Coming Up from Bottom */}
+                        <Animated.View
+                            className="absolute bottom-0 left-0 right-0 h-28 bg-[#FFE600] rounded-t-[100px]"
+                            style={{
+                                transform: [
+                                    {
+                                        translateY: scrollY.interpolate({
+                                            inputRange: [-150, -50, 0, 50],
+                                            outputRange: [-60, -20, 0, 30],
+                                            extrapolate: 'clamp',
+                                        }),
+                                    },
+                                    {
+                                        scaleX: scrollY.interpolate({
+                                            inputRange: [-100, 0],
+                                            outputRange: [1.3, 1],
+                                            extrapolate: 'clamp',
+                                        }),
+                                    },
+                                ],
+                            }}
+                        />
 
                     </View>
+
+                    {/* Profile Picture */}
+                    <View className="items-center -mt-20 relative z-20">
+                        <View className="w-32 h-32 rounded-full border-[5px] border-white bg-white shadow-2xl overflow-hidden">
+                            <Image
+                                source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' }}
+                                className="w-full h-full rounded-full"
+                                resizeMode="cover"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Name & Title - On Yellow Background */}
+                    <View className="items-center mt-4 px-5 pb-6 bg-[#FFE600]">
+                        <Text className="text-black font-bold text-2xl">Aria Singh</Text>
+                        <Text className="text-black/60 text-sm mt-1">UX/UI designer, Web-designer</Text>
+                    </View>
+
                 </View>
 
-                {/* Hustle Rows (Stats List) */}
-                <View className="px-5 mt-8">
+                {/* Quick Stats - Minimal Icon-Based Design */}
+                <View className="px-5 mt-10">
 
-                    {/* Row 1: Level & XP */}
-                    <TouchableOpacity
-                        className="bg-white rounded-3xl p-5 border-2 border-black flex-row items-center justify-between mb-6"
-                        style={{ shadowColor: "#000", shadowOffset: { width: 4, height: 4 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4 }}
-                        onPress={() => setShowLevelUp(true)}
-                    >
-                        <View className="flex-row items-center gap-4">
-                            <View className="w-12 h-12 rounded-2xl bg-black items-center justify-center">
-                                <FontAwesome5 name="crown" size={20} color="#FFD700" />
-                            </View>
-                            <View>
-                                <Text className="text-black font-bold text-lg">Level 42</Text>
-                                <Text className="text-black/50 text-xs font-bold tracking-wide">MASTER HUSTLER</Text>
-                            </View>
-                        </View>
-                        <View className="items-end">
-                            <Text className="text-black font-black text-2xl">850 XP</Text>
-                            <View className="w-20 h-2 bg-black/10 rounded-full mt-2 overflow-hidden">
-                                <View className="w-[85%] h-full bg-black rounded-full" />
-                            </View>
-                        </View>
-                    </TouchableOpacity>
+                    {/* Primary Stats Row - Clean Horizontal Layout */}
+                    <View className="flex-row gap-3 mb-4">
 
-                    {/* Row 2: Earnings */}
-                    <TouchableOpacity
-                        className="bg-white rounded-3xl p-5 border-2 border-black flex-row items-center justify-between mb-6"
-                        style={{ shadowColor: "#000", shadowOffset: { width: 4, height: 4 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4 }}
-                        onPress={() => setShowStats(true)}
-                    >
-                        <View className="flex-row items-center gap-4">
-                            <View className="w-12 h-12 rounded-2xl bg-black items-center justify-center">
-                                <MaterialCommunityIcons name="wallet" size={22} color="white" />
+                        {/* XP Progress Circle */}
+                        <TouchableOpacity
+                            className="flex-1 bg-black rounded-2xl p-4 items-center justify-center"
+                            onPress={() => setShowLevelUp(true)}
+                            style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 }}
+                        >
+                            <View className="w-14 h-14 rounded-full border-[3px] border-[#FFE600] items-center justify-center mb-2">
+                                <Text className="text-[#FFE600] font-black text-lg">42</Text>
                             </View>
-                            <View>
-                                <Text className="text-black font-bold text-lg">Total Earnings</Text>
-                                <Text className="text-[#00C853] text-xs font-bold">▲ 27% this month</Text>
-                            </View>
-                        </View>
-                        <Text className="text-black font-black text-2xl">₹85,420</Text>
-                    </TouchableOpacity>
+                            <Text className="text-white/60 text-[10px] font-bold tracking-widest">LEVEL</Text>
+                        </TouchableOpacity>
 
-                    {/* Row 3: Metrics Grid (Gigs, Rating, Repeat) */}
-                    <View className="flex-row gap-4">
-                        <View className="flex-1 bg-white rounded-3xl p-4 border-2 border-black items-center justify-center py-5" style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 }}>
-                            <Text className="text-black/40 text-[10px] font-bold mb-1 tracking-widest">GIGS</Text>
-                            <Text className="text-black font-black text-2xl">47</Text>
+                        {/* Wallet / Earnings */}
+                        <TouchableOpacity
+                            className="flex-1 bg-black rounded-2xl p-4 items-center justify-center"
+                            onPress={() => setShowStats(true)}
+                            style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 }}
+                        >
+                            <View className="w-14 h-14 rounded-full bg-[#FFE600] items-center justify-center mb-2">
+                                <MaterialCommunityIcons name="wallet" size={24} color="black" />
+                            </View>
+                            <Text className="text-white/60 text-[10px] font-bold tracking-widest">WALLET</Text>
+                        </TouchableOpacity>
+
+                        {/* Rating Star */}
+                        <TouchableOpacity
+                            className="flex-1 bg-black rounded-2xl p-4 items-center justify-center"
+                            onPress={() => setShowStats(true)}
+                            style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 }}
+                        >
+                            <View className="w-14 h-14 rounded-full border-[3px] border-white/30 items-center justify-center mb-2">
+                                <Text className="text-white font-black text-lg">4.9</Text>
+                            </View>
+                            <Text className="text-white/60 text-[10px] font-bold tracking-widest">RATING</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Secondary Stats - Compact Pill Style */}
+                    <View className="flex-row gap-2">
+                        <View className="flex-1 bg-white/90 rounded-xl py-3 px-4 flex-row items-center justify-center gap-2 border border-black/10">
+                            <Ionicons name="briefcase" size={16} color="black" />
+                            <Text className="text-black font-bold text-sm">47 Gigs</Text>
                         </View>
-                        <View className="flex-1 bg-white rounded-3xl p-4 border-2 border-black items-center justify-center py-5" style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 }}>
-                            <Text className="text-black/40 text-[10px] font-bold mb-1 tracking-widest">RATING</Text>
-                            <Text className="text-black font-black text-2xl">4.9</Text>
-                        </View>
-                        <View className="flex-1 bg-white rounded-3xl p-4 border-2 border-black items-center justify-center py-5" style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 }}>
-                            <Text className="text-black/40 text-[10px] font-bold mb-1 tracking-widest">REPEAT</Text>
-                            <Text className="text-black font-black text-2xl">96%</Text>
+                        <View className="flex-1 bg-white/90 rounded-xl py-3 px-4 flex-row items-center justify-center gap-2 border border-black/10">
+                            <Ionicons name="repeat" size={16} color="black" />
+                            <Text className="text-black font-bold text-sm">96% Repeat</Text>
                         </View>
                     </View>
 
                 </View>
 
                 {/* Collapsible Skill Arsenal */}
-                <View className="mt-8 px-5">
+                <View className="mt-10 px-5">
                     <TouchableOpacity
-                        className="bg-black rounded-2xl p-5 flex-row items-center justify-between"
+                        className="bg-black rounded-2xl p-5 items-center justify-center"
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             setShowSkills(!showSkills);
                         }}
                     >
-                        <View className="flex-row items-center gap-3">
-                            <Ionicons name="flash" size={20} color="#DAA520" />
-                            <Text className="text-white font-black text-lg">SKILL ARSENAL</Text>
-                        </View>
-                        <Ionicons name={showSkills ? "chevron-up" : "chevron-down"} size={24} color="white" />
+                        <Text className="text-white font-black text-lg tracking-wider">SKILL ARSENAL</Text>
                     </TouchableOpacity>
 
                     {/* Expanded Skills */}
@@ -220,92 +221,68 @@ export default function ProfileScreen() {
                     )}
                 </View>
 
-                {/* Player Card - 'Hustler Pass' Design */}
-                <View className="mt-8 px-5 pb-8">
-                    <View className="flex-row items-center gap-2 mb-4">
-                        <MaterialCommunityIcons name="card-account-details-outline" size={20} color="black" />
-                        <Text className="text-black font-bold text-base">HUSTLER PASS</Text>
-                    </View>
-
+                {/* Identity Pass - Premium Ticket Style */}
+                <View className="mt-10 px-5">
                     <TouchableOpacity
                         onPress={() => {
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             setShowPlayerCard(true);
                         }}
-                        activeOpacity={0.9}
+                        activeOpacity={0.95}
                     >
-                        {/* Vertical Identity Card container */}
-                        <View className="w-full aspect-[3/4] bg-[#111] rounded-[32px] overflow-hidden border-2 border-[#FFE600] relative">
-
-                            {/* Top Section: Header */}
-                            <View className="bg-[#FFE600] px-5 py-3 flex-row justify-between items-center">
-                                <Text className="text-black font-black text-xs tracking-widest">IDENTITY PASS</Text>
-                                <Ionicons name="infinite" size={18} color="black" />
-                            </View>
+                        {/* Ticket Container */}
+                        <View className="w-full bg-[#0A0A0A] rounded-2xl overflow-hidden relative">
 
                             {/* Main Content */}
-                            <View className="flex-1 p-6 justify-between">
+                            <View className="flex-row">
 
-                                {/* Identity & Tags */}
-                                <View>
-                                    <View className="flex-row gap-2 mb-4">
-                                        <View className="bg-white/10 px-3 py-1 rounded-full border border-white/20">
-                                            <Text className="text-white text-[10px] font-bold">GEN-Z</Text>
-                                        </View>
-                                        <View className="bg-[#FFE600] px-3 py-1 rounded-full">
-                                            <Text className="text-black text-[10px] font-black">VERIFIED</Text>
-                                        </View>
+                                {/* Left Section - Identity */}
+                                <View className="flex-1 p-4 border-r border-dashed border-white/10">
+                                    <View className="bg-[#FFE600] self-start px-3 py-1 rounded-lg mb-2">
+                                        <Text className="text-black font-black text-xs tracking-widest">IDENTITY PASS</Text>
                                     </View>
-                                    <Text className="text-white font-black text-4xl tracking-tight leading-none mb-1">ARIA</Text>
-                                    <Text className="text-white/40 font-bold text-xl tracking-widest uppercase">SINGH</Text>
-                                </View>
+                                    <Text className="text-white font-black text-2xl tracking-tight">ARIA SINGH</Text>
+                                    <Text className="text-[#FFE600] text-xs font-bold mt-0.5">@ariadesigns</Text>
 
-                                {/* Center Visual / Stats */}
-                                <View className="flex-row items-end gap-2">
-                                    <Text className="text-[#FFE600] font-black text-[80px] leading-[80px] -ml-1">94</Text>
-                                    <View className="mb-3">
-                                        <Text className="text-white font-bold text-xl">OVR</Text>
-                                        <Text className="text-white/30 text-[10px] font-bold">WIZARD SCORE</Text>
+                                    <View className="flex-row gap-2 mt-3">
+                                        <View className="bg-white/10 px-2 py-0.5 rounded">
+                                            <Text className="text-white text-[8px] font-bold">VERIFIED</Text>
+                                        </View>
                                     </View>
                                 </View>
 
-                                {/* Footer: Barcode & ID */}
-                                <View>
-                                    {/* Simulated Barcode */}
-                                    <View className="h-12 flex-row items-end gap-[3px] opacity-80 mb-2">
-                                        {[...Array(20)].map((_, i) => (
-                                            <View
-                                                key={i}
-                                                className={`bg-white rounded-full w-[3px]`}
-                                                style={{ height: Math.random() * 100 + '%' }}
-                                            />
-                                        ))}
+                                {/* Right Section - Score */}
+                                <View className="w-24 items-center justify-center py-4">
+                                    <View className="w-16 h-16 rounded-full border-[3px] border-[#FFE600] items-center justify-center">
+                                        <Text className="text-[#FFE600] font-black text-2xl">94</Text>
                                     </View>
-                                    <View className="flex-row justify-between items-center">
-                                        <Text className="text-white/30 text-[10px] tracking-[4px]">ID: 8842-9421</Text>
-                                        <Text className="text-[#FFE600] text-[10px] font-bold">SCAN ME</Text>
-                                    </View>
+                                    <Text className="text-white/30 text-[8px] font-bold mt-2 tracking-widest">SCORE</Text>
                                 </View>
 
                             </View>
 
-                            {/* Decorative holographic overlay hint */}
-                            <LinearGradient
-                                colors={['transparent', 'rgba(255,255,255,0.05)', 'transparent']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                className="absolute inset-0 pointer-events-none"
-                            />
+                            {/* Bottom Strip */}
+                            <View className="bg-[#FFE600] mx-4 mb-3 rounded-lg px-3 py-2 flex-row justify-between items-center">
+                                <View className="flex-row items-center gap-2">
+                                    <View className="w-5 h-5 rounded bg-black items-center justify-center">
+                                        <Ionicons name="finger-print" size={12} color="#FFE600" />
+                                    </View>
+                                    <Text className="text-black text-[10px] font-bold">KY-2024-8842</Text>
+                                </View>
+                                <View className="flex-row items-center gap-1">
+                                    <Text className="text-black/60 text-[10px] font-bold">TAP TO VIEW</Text>
+                                    <Ionicons name="chevron-forward" size={12} color="black" />
+                                </View>
+                            </View>
+
                         </View>
                     </TouchableOpacity>
-
-                    <Text className="text-center text-black/40 text-xs mt-4">Tap to flip & view stats</Text>
                 </View>
 
-                {/* Action Buttons */}
-                <View className="px-5 mt-6 gap-3">
+                {/* Share Card - Creative Design */}
+                <View className="px-5 mt-10 mb-6">
                     <TouchableOpacity
-                        className="bg-black rounded-2xl py-4 flex-row items-center justify-center gap-2"
+                        className="bg-black rounded-2xl p-4 flex-row items-center justify-between overflow-hidden relative"
                         onPress={() => {
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             setShowShareCard(true);
@@ -313,11 +290,32 @@ export default function ProfileScreen() {
                             setTimeout(() => setIsGenerating(false), 500);
                         }}
                     >
-                        <Feather name="share-2" size={20} color="white" />
-                        <Text className="text-white font-black text-base">SHARE MY CARD</Text>
+                        {/* Decorative circles */}
+                        <View className="absolute -right-6 -top-6 w-24 h-24 rounded-full border-2 border-white/5" />
+                        <View className="absolute -right-3 -bottom-8 w-20 h-20 rounded-full border-2 border-[#FFE600]/20" />
+
+                        {/* Content */}
+                        <View className="flex-row items-center gap-3">
+                            <View className="w-10 h-10 rounded-xl bg-[#FFE600] items-center justify-center">
+                                <Feather name="share-2" size={18} color="black" />
+                            </View>
+                            <View>
+                                <Text className="text-white font-bold text-sm">Share Profile</Text>
+                                <Text className="text-white/40 text-[10px]">Let others discover you</Text>
+                            </View>
+                        </View>
+
+                        <View className="flex-row items-center gap-2">
+                            <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+                                <Ionicons name="qr-code" size={16} color="white" />
+                            </View>
+                            <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+                                <Ionicons name="link" size={16} color="white" />
+                            </View>
+                        </View>
                     </TouchableOpacity>
                 </View>
-            </ScrollView>
+            </Animated.ScrollView>
 
             {/* Settings Modal */}
             <Modal
