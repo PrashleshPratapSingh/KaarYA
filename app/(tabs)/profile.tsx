@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { View, Text, TouchableOpacity, Image, Modal, Switch, Pressable, ScrollView } from "react-native";
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, interpolate, Extrapolate } from "react-native-reanimated";
 import { useTabBarContext } from '../../app/context/TabBarContext';
@@ -7,10 +7,39 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5, Feather, MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-// Removed unused ReAnimated import since we are using 'Animated' from 'react-native-reanimated' above
-// import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from "react-native-reanimated";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Storage key for onboarding data
+const STORAGE_KEY = '@kaarya_onboarding_data';
+
+// User data interface
+interface UserData {
+    name: string;
+    email: string;
+    phone: string;
+    university: string;
+    gradYear: string;
+    bio: string;
+    image: string | null;
+    skills: string[];
+    isVerified: boolean;
+}
 
 export default function ProfileScreen() {
+    // User data from onboarding
+    const [userData, setUserData] = useState<UserData>({
+        name: '',
+        email: '',
+        phone: '',
+        university: '',
+        gradYear: '',
+        bio: '',
+        image: null,
+        skills: [],
+        isVerified: false,
+    });
+    const [isLoading, setIsLoading] = useState(true);
+
     const [showSettings, setShowSettings] = useState(false);
     const [showPlayerCard, setShowPlayerCard] = useState(false);
     const [showShareCard, setShowShareCard] = useState(false);
@@ -24,13 +53,8 @@ export default function ProfileScreen() {
     const [isSyncing, setIsSyncing] = useState(false);
     const [ghostMode, setGhostMode] = useState(false);
 
-    // Skill management state
-    const [activeSkills, setActiveSkills] = useState([
-        { id: '1', name: 'Poster Design', color: '#FF69B4', vouches: 12, verified: true, highDemand: true },
-        { id: '2', name: 'Typography', color: '#BFFF00', vouches: 8, verified: true, highDemand: false },
-        { id: '3', name: 'Figma', color: '#87CEEB', vouches: 0, verified: true, highDemand: true },
-        { id: '4', name: 'Motion', color: '#FFFFFF', vouches: 5, verified: true, highDemand: false },
-    ]);
+    // Skill management state - will be populated from user data
+    const [activeSkills, setActiveSkills] = useState<Array<{ id: string; name: string; color: string; vouches: number; verified: boolean; highDemand: boolean }>>([]);
     const [inactiveSkills, setInactiveSkills] = useState([
         { id: '5', name: 'Video Editing', color: '#DDA0DD', vouches: 0, verified: false, highDemand: true },
         { id: '6', name: 'Photography', color: '#FFB6C1', vouches: 0, verified: false, highDemand: false },
@@ -54,6 +78,49 @@ export default function ProfileScreen() {
     const [showPrivacy, setShowPrivacy] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [showTerms, setShowTerms] = useState(false);
+
+    // Load user data from AsyncStorage
+    useEffect(() => {
+        const loadUserData = async () => {
+            try {
+                const savedData = await AsyncStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    setUserData({
+                        name: data.name || '',
+                        email: data.email || '',
+                        phone: data.phone || '',
+                        university: data.university || '',
+                        gradYear: data.gradYear || '',
+                        bio: data.bio || '',
+                        image: data.image || null,
+                        skills: data.skills || [],
+                        isVerified: data.isVerified || false,
+                    });
+
+                    // Convert skills to activeSkills format with random colors
+                    const colors = ['#FF69B4', '#BFFF00', '#87CEEB', '#FFD700', '#FF6B6B', '#4ECDC4', '#9B59B6'];
+                    if (data.skills && data.skills.length > 0) {
+                        const formattedSkills = data.skills.map((skill: string, index: number) => ({
+                            id: String(index + 1),
+                            name: skill,
+                            color: colors[index % colors.length],
+                            vouches: Math.floor(Math.random() * 15),
+                            verified: true,
+                            highDemand: index < 2,
+                        }));
+                        setActiveSkills(formattedSkills);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load user data:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadUserData();
+    }, []);
 
     // Scroll animation
     const { scrollY } = useTabBarContext();
@@ -131,25 +198,49 @@ export default function ProfileScreen() {
 
                     {/* Profile Picture */}
                     <View className="items-center -mt-20 relative z-20">
-                        <View className="w-32 h-32 rounded-full border-[5px] border-white bg-white shadow-2xl overflow-hidden">
-                            <Image
-                                source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' }}
-                                className="w-full h-full rounded-full"
-                                resizeMode="cover"
-                            />
+                        <View className="w-32 h-32 rounded-full border-[5px] border-white bg-white shadow-2xl overflow-hidden relative">
+                            {userData.image ? (
+                                <Image
+                                    source={{ uri: userData.image }}
+                                    className="w-full h-full rounded-full"
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <View className="w-full h-full rounded-full bg-black items-center justify-center">
+                                    <Text className="text-white font-black text-4xl">
+                                        {userData.name ? userData.name.charAt(0).toUpperCase() : '?'}
+                                    </Text>
+                                </View>
+                            )}
                         </View>
+                        {userData.isVerified && (
+                            <View
+                                className="absolute w-8 h-8 rounded-full bg-[#FFE600] items-center justify-center border-2 border-white"
+                                style={{ bottom: 4, right: '50%', marginRight: -52 }}
+                            >
+                                <MaterialIcons name="verified" size={18} color="black" />
+                            </View>
+                        )}
                     </View>
 
                     {/* Name & Title - On Yellow Background */}
-                    <View className="items-center mt-4 px-5 pb-6 bg-[#FFE600]">
-                        <Text className="text-black font-bold text-2xl">Aria Singh</Text>
-                        <Text className="text-black/60 text-sm mt-1">UX/UI designer, Web-designer</Text>
+                    <View className="items-center mt-2 px-5 bg-[#FFE600]">
+                        <Text className="text-black font-bold text-2xl">
+                            {userData.name || 'Your Name'}
+                        </Text>
+                        <Text className="text-black/60 text-sm mt-1">
+                            {userData.university ? `${userData.university} • Class of ${userData.gradYear}` : 'Complete your profile'}
+                        </Text>
+                        {userData.bio ? (
+                            <Text className="text-black/70 text-sm mt-3 text-center px-4">
+                                {userData.bio}
+                            </Text>
+                        ) : null}
                     </View>
 
                 </View>
-
                 {/* Quick Stats - Minimal Icon-Based Design */}
-                <View className="px-5 mt-10">
+                <View className="px-5 mt-2">
 
                     {/* Primary Stats Row - Clean Horizontal Layout */}
                     <View className="flex-row gap-3 mb-4">
@@ -203,6 +294,66 @@ export default function ProfileScreen() {
                         </View>
                     </View>
 
+                </View>
+
+                {/* Contact & Details Section */}
+                <View className="px-5 mt-6">
+                    <Text className="text-black font-bold text-lg mb-3">Contact & Details</Text>
+                    <View className="bg-black rounded-2xl overflow-hidden">
+                        {/* Email */}
+                        <View className="flex-row items-center p-4 border-b border-white/10">
+                            <View className="w-10 h-10 rounded-xl bg-[#FFE600] items-center justify-center">
+                                <Ionicons name="mail" size={18} color="black" />
+                            </View>
+                            <View className="flex-1 ml-3">
+                                <Text className="text-white/50 text-xs">Email</Text>
+                                <Text className="text-white font-medium">{userData.email || 'Not provided'}</Text>
+                            </View>
+                        </View>
+
+                        {/* Phone */}
+                        <View className="flex-row items-center p-4 border-b border-white/10">
+                            <View className="w-10 h-10 rounded-xl bg-[#FFE600] items-center justify-center">
+                                <Ionicons name="call" size={18} color="black" />
+                            </View>
+                            <View className="flex-1 ml-3">
+                                <Text className="text-white/50 text-xs">Phone</Text>
+                                <Text className="text-white font-medium">{userData.phone || 'Not provided'}</Text>
+                            </View>
+                            {userData.isVerified && (
+                                <View className="bg-[#FFE600] px-2 py-1 rounded-full">
+                                    <Text className="text-black text-[10px] font-bold">VERIFIED</Text>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* University */}
+                        <View className="flex-row items-center p-4 border-b border-white/10">
+                            <View className="w-10 h-10 rounded-xl bg-[#FFE600] items-center justify-center">
+                                <Ionicons name="school" size={18} color="black" />
+                            </View>
+                            <View className="flex-1 ml-3">
+                                <Text className="text-white/50 text-xs">University</Text>
+                                <Text className="text-white font-medium">{userData.university || 'Not provided'}</Text>
+                            </View>
+                            {userData.gradYear && (
+                                <View className="bg-white px-2 py-1 rounded-full">
+                                    <Text className="text-black text-[10px] font-bold">{userData.gradYear}</Text>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Member Since */}
+                        <View className="flex-row items-center p-4">
+                            <View className="w-10 h-10 rounded-xl bg-[#FFE600] items-center justify-center">
+                                <Ionicons name="calendar" size={18} color="black" />
+                            </View>
+                            <View className="flex-1 ml-3">
+                                <Text className="text-white/50 text-xs">Member Since</Text>
+                                <Text className="text-white font-medium">February 2026</Text>
+                            </View>
+                        </View>
+                    </View>
                 </View>
 
                 {/* Collapsible Skill Arsenal */}
@@ -265,13 +416,24 @@ export default function ProfileScreen() {
                                     <View className="bg-[#FFE600] self-start px-3 py-1 rounded-lg mb-2">
                                         <Text className="text-black font-black text-xs tracking-widest">IDENTITY PASS</Text>
                                     </View>
-                                    <Text className="text-white font-black text-2xl tracking-tight">ARIA SINGH</Text>
-                                    <Text className="text-[#FFE600] text-xs font-bold mt-0.5">@ariadesigns</Text>
+                                    <Text className="text-white font-black text-2xl tracking-tight">
+                                        {userData.name ? userData.name.toUpperCase() : 'YOUR NAME'}
+                                    </Text>
+                                    <Text className="text-[#FFE600] text-xs font-bold mt-0.5">
+                                        {userData.email || '@yourhandle'}
+                                    </Text>
 
                                     <View className="flex-row gap-2 mt-3">
-                                        <View className="bg-white/10 px-2 py-0.5 rounded">
-                                            <Text className="text-white text-[8px] font-bold">VERIFIED</Text>
-                                        </View>
+                                        {userData.isVerified && (
+                                            <View className="bg-white/10 px-2 py-0.5 rounded">
+                                                <Text className="text-white text-[8px] font-bold">VERIFIED</Text>
+                                            </View>
+                                        )}
+                                        {userData.university && (
+                                            <View className="bg-white/10 px-2 py-0.5 rounded">
+                                                <Text className="text-white text-[8px] font-bold">{userData.university.toUpperCase()}</Text>
+                                            </View>
+                                        )}
                                     </View>
                                 </View>
 
@@ -1320,7 +1482,7 @@ export default function ProfileScreen() {
                             <View className="flex-row justify-between items-start">
                                 <View>
                                     <Text className="text-black font-black text-2xl tracking-wider">KAARYA</Text>
-                                    <Text className="text-black/50 text-sm mt-1">ARIA SINGH</Text>
+                                    <Text className="text-black/50 text-sm mt-1">{userData.name ? userData.name.toUpperCase() : 'YOUR NAME'}</Text>
                                 </View>
                                 <TouchableOpacity
                                     onPress={() => setShowPlayerCard(false)}
@@ -1337,6 +1499,35 @@ export default function ProfileScreen() {
                                 <View className="items-end">
                                     <Text className="text-black font-black text-5xl">94</Text>
                                     <Text className="text-black/50 text-xs">WIZARD SCORE</Text>
+                                </View>
+                            </View>
+
+                            {/* User Details */}
+                            <View className="mt-4 pt-4 border-t border-black/10">
+                                <View className="flex-row flex-wrap gap-2">
+                                    {userData.email && (
+                                        <View className="bg-black/5 rounded-lg px-3 py-1.5 flex-row items-center gap-1.5">
+                                            <Ionicons name="mail" size={12} color="black" />
+                                            <Text className="text-black text-xs font-medium">{userData.email}</Text>
+                                        </View>
+                                    )}
+                                    {userData.university && (
+                                        <View className="bg-black/5 rounded-lg px-3 py-1.5 flex-row items-center gap-1.5">
+                                            <Ionicons name="school" size={12} color="black" />
+                                            <Text className="text-black text-xs font-medium">{userData.university}</Text>
+                                        </View>
+                                    )}
+                                    {userData.gradYear && (
+                                        <View className="bg-[#FFE600] rounded-lg px-3 py-1.5">
+                                            <Text className="text-black text-xs font-bold">Class of {userData.gradYear}</Text>
+                                        </View>
+                                    )}
+                                    {userData.isVerified && (
+                                        <View className="bg-black rounded-lg px-3 py-1.5 flex-row items-center gap-1.5">
+                                            <MaterialIcons name="verified" size={12} color="#FFE600" />
+                                            <Text className="text-white text-xs font-bold">VERIFIED</Text>
+                                        </View>
+                                    )}
                                 </View>
                             </View>
                         </View>
