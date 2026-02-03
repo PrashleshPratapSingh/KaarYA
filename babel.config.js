@@ -14,6 +14,15 @@ module.exports = (api) => {
 			// Required for expo-router
 			"@babel/plugin-transform-export-namespace-from",
 			"react-native-reanimated/plugin",
+			[
+				"module-resolver",
+				{
+					root: ["./"],
+					alias: {
+						"@": "./",
+					},
+				},
+			],
 		],
 	};
 };
