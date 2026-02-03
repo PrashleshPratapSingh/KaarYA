@@ -10,6 +10,9 @@ export { GigGrid } from './GigGrid';
 export { GigDetailModal } from './GigDetailModal';
 export { EmptyState } from './EmptyState';
 export { HomeHeader } from './HomeHeader';
+export { FreshGigsCarousel } from './FreshGigsCarousel';
+export { BentoGrid } from './BentoGrid';
 
 // Types & Constants
 export * from './types';
+

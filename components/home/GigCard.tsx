@@ -1,14 +1,13 @@
 /**
- * GigCard - Duolingo-style bouncy featured card
- * Simple, playful interactions
+ * GigCard - Featured card with subtle press feedback
+ * No bounce animations - clean and stable
  */
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
-    withSpring,
-    withSequence,
+    withTiming,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { KARYA_BLACK, KARYA_WHITE, KARYA_YELLOW, BADGE_COLORS, Gig } from './types';
@@ -23,50 +22,44 @@ interface Props {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function GigCard({ gig, index, onPress, onApply }: Props) {
-    // Card press animation
+    // Card press animation - subtle, no bounce
     const cardScale = useSharedValue(1);
-    const cardTranslateY = useSharedValue(0);
+    const cardOpacity = useSharedValue(1);
 
-    // Button press animation
+    // Button press animation - subtle, no bounce
     const buttonScale = useSharedValue(1);
+    const buttonOpacity = useSharedValue(1);
 
     const cardAnimatedStyle = useAnimatedStyle(() => ({
-        transform: [
-            { scale: cardScale.value },
-            { translateY: cardTranslateY.value },
-        ],
+        transform: [{ scale: cardScale.value }],
+        opacity: cardOpacity.value,
     }));
 
     const buttonAnimatedStyle = useAnimatedStyle(() => ({
         transform: [{ scale: buttonScale.value }],
+        opacity: buttonOpacity.value,
     }));
 
     const handleCardPressIn = () => {
-        cardScale.value = withSpring(0.97, { damping: 20, stiffness: 400 });
-        cardTranslateY.value = withSpring(2, { damping: 20, stiffness: 400 });
+        cardScale.value = withTiming(0.98, { duration: 100 });
+        cardOpacity.value = withTiming(0.9, { duration: 100 });
     };
 
     const handleCardPressOut = () => {
-        cardScale.value = withSequence(
-            withSpring(1.02, { damping: 12, stiffness: 500 }),
-            withSpring(1, { damping: 15, stiffness: 300 })
-        );
-        cardTranslateY.value = withSequence(
-            withSpring(-1, { damping: 12, stiffness: 500 }),
-            withSpring(0, { damping: 15, stiffness: 300 })
-        );
+        cardScale.value = withTiming(1, { duration: 150 });
+        cardOpacity.value = withTiming(1, { duration: 150 });
     };
 
     const handleButtonPressIn = () => {
-        buttonScale.value = withSpring(0.9, { damping: 20, stiffness: 500 });
+        buttonScale.value = withTiming(0.95, { duration: 100 });
+        buttonOpacity.value = withTiming(0.8, { duration: 100 });
     };
 
     const handleButtonPressOut = () => {
-        buttonScale.value = withSequence(
-            withSpring(1.08, { damping: 8, stiffness: 400 }),
-            withSpring(1, { damping: 12, stiffness: 300 })
-        );
+        buttonScale.value = withTiming(1, { duration: 150 });
+        buttonOpacity.value = withTiming(1, { duration: 150 });
     };
+
 
     const badgeColor = BADGE_COLORS[gig.collegeCode] || BADGE_COLORS.du;
 

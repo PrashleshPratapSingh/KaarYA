@@ -20,6 +20,19 @@ export const BADGE_COLORS = {
 export type CategoryType = 'all' | 'design' | 'writing' | 'tech' | 'marketing';
 export type MascotMood = 'happy' | 'excited' | 'thinking' | 'waving';
 
+// Poster Details for enhanced Apply Now modal
+export interface PosterDetails {
+    bio: string;
+    expertise: string[];
+    pastGigs: number;
+    rating: number;
+    reviewCount: number;
+    responseTime: string;
+    verified: boolean;
+    memberSince: string;
+    completionRate: number;
+}
+
 export interface Gig {
     id: string;
     title: string;
@@ -30,6 +43,7 @@ export interface Gig {
     category: CategoryType;
     timeAgo: string;
     applicants: number;
+    posterDetails?: PosterDetails;
 }
 
 import { Feather } from '@expo/vector-icons';

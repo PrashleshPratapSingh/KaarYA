@@ -1,10 +1,10 @@
 /**
- * GigGrid - Hybrid grid layout with featured hero + 2-column masonry
+ * GigGrid - Hybrid grid layout with horizontal carousel + Bento Grid
  */
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { GigCard } from './GigCard';
-import { GigCardCompact } from './GigCardCompact';
+import { FreshGigsCarousel } from './FreshGigsCarousel';
+import { BentoGrid } from './BentoGrid';
 import { EmptyState } from './EmptyState';
 import { KARYA_BLACK, Gig } from './types';
 
@@ -21,7 +21,9 @@ export function GigGrid({ gigs, refreshing = false, onRefresh, onGigPress, onApp
         return <EmptyState />;
     }
 
-    const [featuredGig, ...gridGigs] = gigs;
+    // First 2 gigs go to carousel, rest go to bento grid
+    const carouselGigs = gigs.slice(0, 2);
+    const gridGigs = gigs.slice(2);
 
     return (
         <ScrollView
@@ -45,29 +47,24 @@ export function GigGrid({ gigs, refreshing = false, onRefresh, onGigPress, onApp
                 <Text style={styles.gigCount}>{gigs.length} available</Text>
             </View>
 
-            {/* Featured Card */}
-            <GigCard
-                gig={featuredGig}
-                index={0}
-                onPress={() => onGigPress?.(featuredGig)}
-                onApply={() => onApply?.(featuredGig)}
+            {/* Horizontal Carousel */}
+            <FreshGigsCarousel
+                gigs={carouselGigs}
+                onGigPress={onGigPress}
+                onApply={onApply}
             />
 
-            {/* Masonry Grid */}
+            {/* Bento Grid */}
             {gridGigs.length > 0 && (
                 <>
                     <View style={styles.gridHeader}>
                         <Text style={styles.gridTitle}>MORE GIGS</Text>
                     </View>
-                    <View style={styles.grid}>
-                        {gridGigs.map((gig, index) => (
-                            <GigCardCompact
-                                key={gig.id}
-                                gig={gig}
-                                index={index + 1}
-                                onPress={() => onGigPress?.(gig)}
-                            />
-                        ))}
+                    <View style={styles.gridWrapper}>
+                        <BentoGrid
+                            gigs={gridGigs}
+                            onGigPress={onGigPress}
+                        />
                     </View>
                 </>
             )}
@@ -83,13 +80,14 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        paddingHorizontal: 20,
+        paddingBottom: 20,
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 16,
+        paddingHorizontal: 20,
     },
     sectionTitle: {
         fontSize: 22,
@@ -106,6 +104,7 @@ const styles = StyleSheet.create({
     gridHeader: {
         marginTop: 8,
         marginBottom: 12,
+        paddingHorizontal: 20,
     },
     gridTitle: {
         fontSize: 14,
@@ -114,9 +113,8 @@ const styles = StyleSheet.create({
         letterSpacing: 1.5,
         opacity: 0.5,
     },
-    grid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
+    gridWrapper: {
+        paddingHorizontal: 20,
     },
 });
+

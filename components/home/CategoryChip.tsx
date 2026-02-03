@@ -1,13 +1,13 @@
 /**
- * CategoryChip - Simple bouncy filter chip
+ * CategoryChip - Static filter chip with subtle press feedback
+ * No bouncing - stays within frame
  */
 import React from 'react';
 import { Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
-    withSpring,
-    withSequence,
+    withTiming,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { KARYA_BLACK, KARYA_WHITE, KARYA_YELLOW } from './types';
@@ -24,20 +24,23 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function CategoryChip({ label, icon, isActive = false, onPress }: Props) {
     const scale = useSharedValue(1);
+    const opacity = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
+        opacity: opacity.value,
     }));
 
     const handlePressIn = () => {
-        scale.value = withSpring(0.9, { damping: 20, stiffness: 400 });
+        // Subtle scale down - no bounce
+        scale.value = withTiming(0.96, { duration: 100 });
+        opacity.value = withTiming(0.8, { duration: 100 });
     };
 
     const handlePressOut = () => {
-        scale.value = withSequence(
-            withSpring(1.05, { damping: 10, stiffness: 500 }),
-            withSpring(1, { damping: 15, stiffness: 300 })
-        );
+        // Quick return to normal - no overshoot
+        scale.value = withTiming(1, { duration: 150 });
+        opacity.value = withTiming(1, { duration: 150 });
     };
 
     return (
