@@ -4,20 +4,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 // Components
-import { StashCard } from '@/components/my-work/stash/StashCard';
-import { TransactionHistory } from '@/components/my-work/stash/TransactionHistory';
-import { PortfolioGrid } from '@/components/my-work/portfolio/PortfolioGrid';
-import { ShareButton } from '@/components/my-work/portfolio/ShareButton';
-import { GigChatModal } from '@/components/my-work/pipeline/GigChatModal';
-import { FileUploadModal } from '@/components/my-work/pipeline/FileUploadModal';
-import { WithdrawModal } from '@/components/my-work/stash/WithdrawModal';
-import { GigDetailModal } from '@/components/my-work/pipeline/GigDetailModal';
-import { RoleSelection } from '@/components/my-work/RoleSelection';
-import { ProfileModal } from '@/components/my-work/ProfileModal';
+import { StashCard } from '../../components/my-work/stash/StashCard';
+import { TransactionHistory } from '../../components/my-work/stash/TransactionHistory';
+import { PortfolioGrid } from '../../components/my-work/portfolio/PortfolioGrid';
+import { ShareButton } from '../../components/my-work/portfolio/ShareButton';
+import { GigChatModal } from '../../components/my-work/pipeline/GigChatModal';
+import { FileUploadModal } from '../../components/my-work/pipeline/FileUploadModal';
+import { WithdrawModal } from '../../components/my-work/stash/WithdrawModal';
+import { GigDetailModal } from '../../components/my-work/pipeline/GigDetailModal';
+import { RoleSelection } from '../../components/my-work/RoleSelection';
+import { ProfileModal } from '../../components/my-work/ProfileModal';
 
 // Updated components
-import { OngoingGigCard } from '@/components/my-work/pipeline/OngoingGigCard';
-import { UpcomingGigCard } from '@/components/my-work/pipeline/UpcomingGigCard';
+import { OngoingGigCard } from '../../components/my-work/pipeline/OngoingGigCard';
+import { UpcomingGigCard } from '../../components/my-work/pipeline/UpcomingGigCard';
 
 // Data
 import {
@@ -28,8 +28,8 @@ import {
     mockClientGigs,
     mockClientUpcomingGigs,
     mockTalentProfiles,
-} from '@/lib/mock/mywork-data';
-import { Gig, ChatMessage, FileAttachment, TalentProfile } from '@/lib/types/mywork';
+} from '../../lib/mock/mywork-data';
+import { Gig, ChatMessage, FileAttachment, TalentProfile } from '../../lib/types/mywork';
 
 type Tab = 'stash' | 'pipeline' | 'portfolio';
 type ViewMode = 'selection' | 'client' | 'executor';
