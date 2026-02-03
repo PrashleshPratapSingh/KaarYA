@@ -4,15 +4,12 @@ import {
     Text,
     Pressable,
     ScrollView,
-    SafeAreaView,
-    StatusBar,
-    Image,
-    Alert,
+    StyleSheet,
+    Dimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Feather } from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker";
-import * as ImagePicker from "expo-image-picker";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -22,72 +19,56 @@ import Animated, {
 } from "react-native-reanimated";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+// Colors - consistent with all screens
+const COLORS = {
+    primary: "#d4f906",
+    primaryDark: "#ccf005",
+    karyaBlack: "#171811",
+    karyaYellow: "#d4f906",
+    white: "#FFFFFF",
+    backgroundLight: "#fffdf5",
+    accentRed: "#ff4d4d",
+    gray: "#666666",
+};
 
 interface AttachedFile {
+    id: string;
     name: string;
+    type: "image" | "pdf";
     size: string;
-    type: string;
-    uri: string;
 }
 
 export default function AttachmentsScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const params = useLocalSearchParams();
 
     const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
     const buttonScale = useSharedValue(1);
 
-    const formatFileSize = (bytes: number): string => {
-        if (bytes < 1024) return bytes + " B";
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    // Mock function - adds sample files when Browse is clicked
+    const addMockFiles = () => {
+        const mockFiles: AttachedFile[] = [
+            {
+                id: "1",
+                name: "brand_guidelines_v2.jpg",
+                type: "image",
+                size: "2.4 MB",
+            },
+            {
+                id: "2",
+                name: "project_brief_draft.pdf",
+                type: "pdf",
+                size: "540 KB",
+            },
+        ];
+        setAttachedFiles(mockFiles);
     };
 
-    const pickDocument = async () => {
-        try {
-            const result = await DocumentPicker.getDocumentAsync({
-                type: ["application/pdf", "image/*", "video/*"],
-                multiple: true,
-            });
-
-            if (!result.canceled && result.assets) {
-                const newFiles = result.assets.map((asset) => ({
-                    name: asset.name,
-                    size: formatFileSize(asset.size || 0),
-                    type: asset.mimeType || "unknown",
-                    uri: asset.uri,
-                }));
-                setAttachedFiles((prev) => [...prev, ...newFiles].slice(0, 5));
-            }
-        } catch (error) {
-            Alert.alert("Error", "Failed to pick document");
-        }
-    };
-
-    const pickImage = async () => {
-        try {
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.All,
-                allowsMultipleSelection: true,
-                quality: 0.8,
-            });
-
-            if (!result.canceled && result.assets) {
-                const newFiles = result.assets.map((asset, index) => ({
-                    name: `image_${Date.now()}_${index}.${asset.uri.split(".").pop()}`,
-                    size: formatFileSize(asset.fileSize || 0),
-                    type: asset.type === "video" ? "video/mp4" : "image/jpeg",
-                    uri: asset.uri,
-                }));
-                setAttachedFiles((prev) => [...prev, ...newFiles].slice(0, 5));
-            }
-        } catch (error) {
-            Alert.alert("Error", "Failed to pick image");
-        }
-    };
-
-    const removeFile = (index: number) => {
-        setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+    const removeFile = (id: string) => {
+        setAttachedFiles((prev) => prev.filter((file) => file.id !== id));
     };
 
     const handleReview = () => {
@@ -95,7 +76,7 @@ export default function AttachmentsScreen() {
             pathname: "/post-gig/review",
             params: {
                 ...params,
-                files: JSON.stringify(attachedFiles.map((f) => ({ name: f.name, size: f.size }))),
+                attachments: JSON.stringify(attachedFiles.map((f) => f.name)),
             },
         });
     };
@@ -105,7 +86,7 @@ export default function AttachmentsScreen() {
     }));
 
     const handleButtonPressIn = () => {
-        buttonScale.value = withSpring(0.96, { damping: 15, stiffness: 400 });
+        buttonScale.value = withSpring(0.98, { damping: 15, stiffness: 400 });
     };
 
     const handleButtonPressOut = () => {
@@ -113,40 +94,67 @@ export default function AttachmentsScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={styles.container}>
+            {/* Yellow Striped Background - Same as other screens */}
+            <View style={styles.stripedBackground}>
+                {[...Array(60)].map((_, i) => (
+                    <View key={i} style={[styles.stripe, { top: i * 20 - 300 }]} />
+                ))}
+            </View>
 
-            {/* Header */}
-            <View className="flex-row items-center justify-between px-5 py-4 bg-white border-b border-gray-100">
+            {/* Header - Consistent with other screens */}
+            <View
+                style={[
+                    styles.safeAreaTop,
+                    { height: insets.top > 0 ? insets.top : 0, backgroundColor: COLORS.white },
+                ]}
+            />
+            <View style={styles.header}>
+                {/* Back Button */}
                 <Pressable
                     onPress={() => router.back()}
-                    className="p-2"
+                    style={({ pressed }) => [
+                        styles.backButton,
+                        pressed && styles.backButtonPressed,
+                    ]}
                 >
-                    <Feather name="arrow-left" size={24} color="#000" />
+                    <MaterialCommunityIcons
+                        name="arrow-left"
+                        size={20}
+                        color={COLORS.karyaBlack}
+                    />
                 </Pressable>
-                <Text className="text-lg font-black tracking-tight">POST GIG</Text>
-                <View className="bg-[#D4FF00] rounded-full px-3 py-1">
-                    <Text className="text-sm font-bold">4/5</Text>
+
+                {/* Centered Title */}
+                <Text style={styles.headerTitle}>Post Gig</Text>
+
+                {/* Step Counter Capsule */}
+                <View style={styles.stepCapsule}>
+                    <Text style={styles.stepText}>4/5</Text>
                 </View>
             </View>
 
+            {/* Scrollable Content */}
             <ScrollView
-                className="flex-1 bg-white"
-                contentContainerStyle={{ paddingBottom: 120 }}
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Hero Title */}
+                {/* Hero Title - Same style as other screens */}
                 <Animated.View
                     entering={FadeInDown.delay(100).springify()}
-                    className="px-6 pt-8 pb-6"
+                    style={styles.heroContainer}
                 >
-                    <Text className="text-3xl font-black text-black">
-                        Show 'em what
-                    </Text>
-                    <View className="bg-[#D4FF00] self-start px-2 py-1 mt-1">
-                        <Text className="text-3xl font-black text-black">you need.</Text>
+                    <Text style={styles.heroText}>Show 'em what</Text>
+                    <View style={styles.needWrapper}>
+                        {/* White offset shadow */}
+                        <View style={styles.needShadow} />
+                        {/* Main box */}
+                        <View style={styles.needBox}>
+                            <Text style={styles.needText}>you need.</Text>
+                        </View>
                     </View>
-                    <Text className="text-base text-gray-600 mt-3">
+                    <Text style={styles.subtitle}>
                         Add reference files so they get it right.
                     </Text>
                 </Animated.View>
@@ -154,118 +162,485 @@ export default function AttachmentsScreen() {
                 {/* Upload Zone */}
                 <Animated.View
                     entering={FadeInDown.delay(200).springify()}
-                    className="mx-6 mb-6"
+                    style={styles.uploadSection}
                 >
-                    <Pressable
-                        onPress={pickDocument}
-                        className="border-2 border-dashed border-black rounded-3xl py-10 px-6 items-center bg-white"
-                    >
-                        {/* Upload Icon */}
-                        <View className="w-16 h-16 rounded-2xl bg-[#D4FF00] items-center justify-center mb-4">
-                            <Feather name="upload" size={28} color="#000" />
+                    <View style={styles.uploadZone}>
+                        {/* Upload Icon with neobrutalist style */}
+                        <View style={styles.uploadIconWrapper}>
+                            <View style={styles.uploadIconShadow} />
+                            <View style={styles.uploadIconBox}>
+                                <MaterialCommunityIcons
+                                    name="file-upload-outline"
+                                    size={36}
+                                    color={COLORS.karyaBlack}
+                                />
+                            </View>
                         </View>
 
-                        <Text className="text-xl font-black text-black mb-2">
-                            DRAG OR DROP
-                        </Text>
+                        <Text style={styles.uploadTitle}>DRAG OR DROP</Text>
 
-                        <View className="border border-black rounded-lg px-3 py-1 mb-4">
-                            <Text className="text-sm font-medium">PDF, JPG, MP4 accepted</Text>
+                        <View style={styles.fileTypeBadge}>
+                            <Text style={styles.fileTypeText}>PDF, JPG, MP4 accepted</Text>
                         </View>
 
                         <Pressable
-                            onPress={pickImage}
-                            className="bg-black rounded-full px-6 py-3"
+                            onPress={addMockFiles}
+                            style={({ pressed }) => [
+                                styles.browseButton,
+                                pressed && styles.browseButtonPressed,
+                            ]}
                         >
-                            <Text className="text-white font-bold">BROWSE FILES</Text>
+                            <Text style={styles.browseButtonText}>BROWSE FILES</Text>
                         </Pressable>
-                    </Pressable>
+                    </View>
                 </Animated.View>
 
-                {/* Attached Files */}
+                {/* Attached Files Grid - Polaroid Style */}
                 {attachedFiles.length > 0 && (
                     <Animated.View
                         entering={FadeInUp.delay(300).springify()}
-                        className="mx-6"
+                        style={styles.filesSection}
                     >
-                        <View className="flex-row items-center mb-4">
-                            <Feather name="paperclip" size={18} color="#000" />
-                            <Text className="text-sm font-bold text-black ml-2">
+                        <View style={styles.filesSectionHeader}>
+                            <MaterialCommunityIcons
+                                name="paperclip"
+                                size={20}
+                                color={COLORS.karyaBlack}
+                            />
+                            <Text style={styles.filesSectionTitle}>
                                 Attached Files ({attachedFiles.length})
                             </Text>
                         </View>
 
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            className="-mx-2"
-                        >
+                        <View style={styles.filesGrid}>
                             {attachedFiles.map((file, index) => (
                                 <View
-                                    key={index}
-                                    className="mx-2 w-36 bg-gray-50 rounded-2xl overflow-hidden border border-gray-200"
+                                    key={file.id}
+                                    style={[
+                                        styles.fileCard,
+                                        { transform: [{ rotate: index % 2 === 0 ? "-2deg" : "1deg" }] },
+                                    ]}
                                 >
-                                    {/* Preview */}
-                                    <View className="h-28 bg-gray-100 items-center justify-center relative">
-                                        {file.type.startsWith("image") ? (
-                                            <Image
-                                                source={{ uri: file.uri }}
-                                                className="w-full h-full"
-                                                resizeMode="cover"
-                                            />
-                                        ) : (
-                                            <View className="w-12 h-12 bg-white rounded-lg border border-gray-200 items-center justify-center">
-                                                <Feather
-                                                    name={file.type.includes("pdf") ? "file-text" : "file"}
-                                                    size={24}
-                                                    color="#666"
+                                    {/* File Preview */}
+                                    <View style={[
+                                        styles.filePreview,
+                                        file.type === "image" ? styles.imagePreviewBg : styles.pdfPreviewBg
+                                    ]}>
+                                        {file.type === "image" ? (
+                                            // Mock image preview - beige/tan colored box with document icon
+                                            <View style={styles.mockImagePreview}>
+                                                <MaterialCommunityIcons
+                                                    name="file-document-outline"
+                                                    size={32}
+                                                    color={COLORS.karyaBlack}
                                                 />
                                             </View>
+                                        ) : (
+                                            // PDF preview - greenish yellow with PDF icons
+                                            <View style={styles.filePlaceholder}>
+                                                <MaterialCommunityIcons
+                                                    name="file-pdf-box"
+                                                    size={40}
+                                                    color={COLORS.karyaBlack}
+                                                />
+                                                <View style={styles.pdfBadge}>
+                                                    <Text style={styles.pdfBadgeText}>PDF</Text>
+                                                </View>
+                                            </View>
                                         )}
-
-                                        {/* Delete Button */}
-                                        <Pressable
-                                            onPress={() => removeFile(index)}
-                                            className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 items-center justify-center"
-                                        >
-                                            <Feather name="x" size={14} color="#FFF" />
-                                        </Pressable>
                                     </View>
 
                                     {/* File Info */}
-                                    <View className="p-3">
-                                        <Text
-                                            className="text-xs font-medium text-black"
-                                            numberOfLines={1}
-                                        >
-                                            {file.name}
-                                        </Text>
-                                        <Text className="text-xs text-gray-400 mt-1">
-                                            {file.size}
-                                        </Text>
-                                    </View>
+                                    <Text style={styles.fileName} numberOfLines={1}>
+                                        {file.name}
+                                    </Text>
+                                    <Text style={styles.fileSize}>{file.size}</Text>
+
+                                    {/* Remove Button */}
+                                    <Pressable
+                                        onPress={() => removeFile(file.id)}
+                                        style={styles.removeButton}
+                                    >
+                                        <MaterialCommunityIcons
+                                            name="close"
+                                            size={16}
+                                            color={COLORS.white}
+                                        />
+                                    </Pressable>
                                 </View>
                             ))}
-                        </ScrollView>
+                        </View>
                     </Animated.View>
                 )}
             </ScrollView>
 
-            {/* Bottom CTA */}
-            <View className="absolute bottom-0 left-0 right-0 bg-white px-6 pb-8 pt-4 border-t border-gray-100">
+            {/* Fixed Bottom CTA - Same as other screens */}
+            <View style={styles.bottomContainer}>
                 <AnimatedPressable
                     onPress={handleReview}
                     onPressIn={handleButtonPressIn}
                     onPressOut={handleButtonPressOut}
-                    style={[buttonAnimatedStyle]}
-                    className="py-5 rounded-full flex-row items-center justify-center bg-[#00D4FF]"
+                    style={[buttonAnimatedStyle, styles.continueButton]}
                 >
-                    <Text className="text-black text-lg font-bold tracking-wide mr-2">
-                        REVIEW HUSTLE
-                    </Text>
-                    <Feather name="arrow-right" size={20} color="#000" />
+                    <Text style={styles.continueText}>Review Hustle</Text>
+                    <MaterialCommunityIcons
+                        name="arrow-right"
+                        size={24}
+                        color={COLORS.white}
+                    />
                 </AnimatedPressable>
             </View>
-        </SafeAreaView>
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.primary,
+    },
+    stripedBackground: {
+        ...StyleSheet.absoluteFillObject,
+        overflow: "hidden",
+        transform: [{ rotate: "45deg" }],
+    },
+    stripe: {
+        position: "absolute",
+        left: -200,
+        width: SCREEN_WIDTH * 3,
+        height: 10,
+        backgroundColor: COLORS.primaryDark,
+    },
+    safeAreaTop: {
+        width: "100%",
+    },
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: COLORS.white,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        borderBottomWidth: 4,
+        borderBottomColor: COLORS.karyaBlack,
+        zIndex: 50,
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: COLORS.white,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 2,
+    },
+    backButtonPressed: {
+        backgroundColor: COLORS.karyaYellow,
+        transform: [{ scale: 0.95 }],
+    },
+    headerTitle: {
+        flex: 1,
+        fontSize: 20,
+        fontWeight: "800",
+        textTransform: "uppercase",
+        letterSpacing: -0.5,
+        color: COLORS.karyaBlack,
+        textAlign: "center",
+    },
+    stepCapsule: {
+        backgroundColor: COLORS.karyaBlack,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    stepText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: COLORS.white,
+        letterSpacing: 0.5,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 120,
+    },
+    // Hero Section
+    heroContainer: {
+        paddingTop: 32,
+        paddingBottom: 24,
+    },
+    heroText: {
+        fontSize: 36,
+        fontWeight: "900",
+        letterSpacing: -1,
+        color: COLORS.karyaBlack,
+    },
+    needWrapper: {
+        alignSelf: "flex-start",
+        marginTop: 4,
+        marginBottom: 12,
+        position: "relative",
+    },
+    needShadow: {
+        position: "absolute",
+        top: 4,
+        left: 4,
+        right: -4,
+        bottom: -4,
+        backgroundColor: COLORS.karyaBlack,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+    },
+    needBox: {
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        transform: [{ rotate: "-1deg" }],
+        zIndex: 1,
+    },
+    needText: {
+        fontSize: 36,
+        fontWeight: "900",
+        letterSpacing: -1,
+        color: COLORS.karyaBlack,
+    },
+    subtitle: {
+        fontSize: 16,
+        fontWeight: "500",
+        color: "rgba(23, 24, 17, 0.7)",
+        marginTop: 4,
+    },
+    // Upload Section
+    uploadSection: {
+        marginBottom: 32,
+    },
+    uploadZone: {
+        backgroundColor: COLORS.backgroundLight,
+        borderRadius: 16,
+        borderWidth: 4,
+        borderStyle: "dashed",
+        borderColor: COLORS.karyaBlack,
+        paddingTop: 32,
+        paddingBottom: 40,
+        paddingHorizontal: 24,
+        alignItems: "center",
+        gap: 24,
+        overflow: "visible",
+    },
+    uploadIconWrapper: {
+        position: "relative",
+        width: 80,
+        height: 80,
+    },
+    uploadIconShadow: {
+        position: "absolute",
+        top: 4,
+        left: 4,
+        width: 76,
+        height: 76,
+        backgroundColor: COLORS.karyaBlack,
+        borderRadius: 12,
+    },
+    uploadIconBox: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: 76,
+        height: 76,
+        backgroundColor: COLORS.primary,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        alignItems: "center",
+        justifyContent: "center",
+        transform: [{ rotate: "3deg" }],
+    },
+    uploadTitle: {
+        fontSize: 24,
+        fontWeight: "900",
+        color: COLORS.karyaBlack,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+    },
+    fileTypeBadge: {
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.karyaBlack,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 2,
+    },
+    fileTypeText: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: COLORS.karyaBlack,
+    },
+    browseButton: {
+        backgroundColor: "#171811",
+        paddingHorizontal: 36,
+        paddingVertical: 16,
+        borderRadius: 28,
+        minWidth: 180,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    browseButtonPressed: {
+        backgroundColor: "#2a2b22",
+    },
+    browseButtonText: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#171811",
+        textTransform: "uppercase",
+        letterSpacing: 1.5,
+    },
+    // Files Section - Polaroid Style
+    filesSection: {
+        flex: 1,
+    },
+    filesSectionHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 16,
+        gap: 8,
+    },
+    filesSectionTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: COLORS.karyaBlack,
+    },
+    filesGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 16,
+    },
+    fileCard: {
+        width: (SCREEN_WIDTH - 56) / 2,
+        backgroundColor: COLORS.white,
+        padding: 12,
+        paddingBottom: 32,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+    },
+    filePreview: {
+        width: "100%",
+        aspectRatio: 1,
+        borderWidth: 1,
+        borderColor: COLORS.karyaBlack,
+        marginBottom: 8,
+        overflow: "hidden",
+    },
+    imagePreviewBg: {
+        backgroundColor: "#D4C4B0", // Beige/tan color like the reference
+    },
+    pdfPreviewBg: {
+        backgroundColor: "#E8F0D0", // Greenish yellow for PDF
+    },
+    mockImagePreview: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#D4C4B0",
+    },
+    filePlaceholder: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#E8F0D0",
+        gap: 4,
+    },
+    pdfBadge: {
+        backgroundColor: COLORS.karyaBlack,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+    },
+    pdfBadgeText: {
+        fontSize: 10,
+        fontWeight: "700",
+        color: COLORS.white,
+    },
+    fileName: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: COLORS.karyaBlack,
+    },
+    fileSize: {
+        fontSize: 10,
+        fontWeight: "700",
+        color: "#888",
+        marginTop: 2,
+    },
+    removeButton: {
+        position: "absolute",
+        top: -12,
+        right: -12,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: COLORS.accentRed,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 2,
+        zIndex: 10,
+    },
+    // Bottom Container - Same as index.tsx
+    bottomContainer: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 24,
+        paddingBottom: 24,
+        paddingTop: 48,
+        zIndex: 40,
+    },
+    continueButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: COLORS.karyaBlack,
+        paddingVertical: 16,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        gap: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    continueText: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: COLORS.white,
+        textTransform: "uppercase",
+        letterSpacing: 2,
+    },
+});
