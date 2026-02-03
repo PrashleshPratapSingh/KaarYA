@@ -1,17 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Text,
     TextInput,
     Pressable,
     ScrollView,
-    SafeAreaView,
-    StatusBar,
-    KeyboardAvoidingView,
-    Platform,
+    StyleSheet,
+    Dimensions,
+    Keyboard,
+    Modal,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -20,29 +21,64 @@ import Animated, {
 } from "react-native-reanimated";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+// Colors - consistent with index.tsx
+const COLORS = {
+    primary: "#d4f906",
+    primaryDark: "#ccf005",
+    karyaBlack: "#171811",
+    karyaYellow: "#d4f906",
+    karyaCobalt: "#2f45ff",
+    white: "#FFFFFF",
+    gray: "#666666",
+    lightGray: "#F5F5F5",
+    backgroundLight: "#f8f8f5",
+};
 
 const SUGGESTED_SKILLS: Record<string, string[]> = {
-    design: ["Logo Design", "Branding", "Illustration", "UI/UX", "Poster"],
-    video: ["Video Editing", "Motion Graphics", "Color Grading", "Thumbnail", "Reels"],
-    code: ["Web Dev", "Mobile App", "Backend", "Frontend", "API"],
-    marketing: ["Social Media", "SEO", "Content", "Ads", "Strategy"],
+    design: ["LogoDesign", "Branding", "Illustration", "UI/UX", "Poster"],
+    video: ["VideoEditing", "MotionGraphics", "ColorGrading", "Thumbnail", "Reels"],
+    code: ["WebDev", "MobileApp", "Backend", "Frontend", "API"],
+    marketing: ["SocialMedia", "SEO", "Content", "Ads", "Strategy"],
     writing: ["Copywriting", "Blog", "Script", "Technical", "Creative"],
-    other: ["Virtual Assistant", "Data Entry", "Research", "Translation"],
+    other: ["VirtualAssistant", "DataEntry", "Research", "Translation"],
 };
 
 export default function GigDetailsScreen() {
     const router = useRouter();
-    const { category } = useLocalSearchParams<{ category: string }>();
+    const insets = useSafeAreaInsets();
+    const { category, customCategory } = useLocalSearchParams<{
+        category: string;
+        customCategory: string;
+    }>();
 
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+    const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+    const [showAddSkillModal, setShowAddSkillModal] = useState(false);
+    const [customSkill, setCustomSkill] = useState("");
 
     const buttonScale = useSharedValue(1);
 
-    const suggestedSkills = SUGGESTED_SKILLS[category || "other"] || SUGGESTED_SKILLS.other;
+    const suggestedSkills =
+        SUGGESTED_SKILLS[category || "other"] || SUGGESTED_SKILLS.other;
 
-    const isFormValid = title.length >= 10 && description.length >= 30;
+    // Keyboard visibility listener
+    useEffect(() => {
+        const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+            setKeyboardVisible(true);
+        });
+        const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+            setKeyboardVisible(false);
+        });
+
+        return () => {
+            showSubscription.remove();
+            hideSubscription.remove();
+        };
+    }, []);
 
     const toggleSkill = (skill: string) => {
         setSelectedSkills((prev) =>
@@ -54,18 +90,28 @@ export default function GigDetailsScreen() {
         );
     };
 
-    const handleNext = () => {
-        if (isFormValid) {
-            router.push({
-                pathname: "/post-gig/budget",
-                params: {
-                    category,
-                    title,
-                    description,
-                    skills: selectedSkills.join(","),
-                },
-            });
+    const addCustomSkill = () => {
+        if (customSkill.trim() && selectedSkills.length < 5) {
+            const formattedSkill = customSkill.trim().replace(/\s+/g, "");
+            if (!selectedSkills.includes(formattedSkill)) {
+                setSelectedSkills((prev) => [...prev, formattedSkill]);
+            }
+            setCustomSkill("");
+            setShowAddSkillModal(false);
         }
+    };
+
+    const handleNext = () => {
+        router.push({
+            pathname: "/post-gig/budget",
+            params: {
+                category,
+                customCategory,
+                title,
+                description,
+                skills: selectedSkills.join(","),
+            },
+        });
     };
 
     const buttonAnimatedStyle = useAnimatedStyle(() => ({
@@ -73,7 +119,7 @@ export default function GigDetailsScreen() {
     }));
 
     const handleButtonPressIn = () => {
-        buttonScale.value = withSpring(0.96, { damping: 15, stiffness: 400 });
+        buttonScale.value = withSpring(0.98, { damping: 15, stiffness: 400 });
     };
 
     const handleButtonPressOut = () => {
@@ -81,147 +127,572 @@ export default function GigDetailsScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
-            {/* Header */}
-            <View className="flex-row items-center justify-between px-5 py-4 bg-white border-b border-gray-100">
-                <Pressable
-                    onPress={() => router.back()}
-                    className="w-12 h-12 rounded-full border-2 border-black items-center justify-center"
-                >
-                    <Feather name="arrow-left" size={20} color="#000" />
-                </Pressable>
-                <Text className="text-lg font-black italic tracking-tight">STEP 2/5</Text>
-                <View className="w-12" />
+        <View style={styles.container}>
+            {/* Yellow Striped Background - Full screen */}
+            <View style={styles.stripedBackground}>
+                {[...Array(60)].map((_, i) => (
+                    <View key={i} style={[styles.stripe, { top: i * 20 - 300 }]} />
+                ))}
             </View>
 
-            <KeyboardAvoidingView
-                className="flex-1"
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
+            {/* Header - Consistent with index.tsx */}
+            <View
+                style={[
+                    styles.safeAreaTop,
+                    { height: insets.top > 0 ? insets.top : 0, backgroundColor: COLORS.white },
+                ]}
+            />
+            <View style={styles.header}>
+                {/* Back Button */}
+                <Pressable
+                    onPress={() => router.back()}
+                    style={({ pressed }) => [
+                        styles.backButton,
+                        pressed && styles.backButtonPressed,
+                    ]}
+                >
+                    <MaterialCommunityIcons
+                        name="arrow-left"
+                        size={20}
+                        color={COLORS.karyaBlack}
+                    />
+                </Pressable>
+
+                {/* Centered Title */}
+                <Text style={styles.headerTitle}>Gig Details</Text>
+
+                {/* Step Counter Capsule */}
+                <View style={styles.stepCapsule}>
+                    <Text style={styles.stepText}>2/5</Text>
+                </View>
+            </View>
+
+            {/* Scrollable Content */}
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    { paddingBottom: isKeyboardVisible ? 20 : 180 },
+                ]}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
             >
-                {/* Yellow Header Section */}
-                <View className="bg-[#D4FF00] px-6 py-8">
-                    <Animated.View entering={FadeInDown.delay(100).springify()}>
-                        <Text className="text-3xl font-black text-black">
-                            What's the Gig?
-                        </Text>
-                        <Text className="text-base text-gray-700 mt-2">
-                            Tell us what you need done. Be specific!
-                        </Text>
-                    </Animated.View>
+                {/* Hero Title - Same style as "Pick Your Hustle" */}
+                <View style={styles.heroContainer}>
+                    <Text style={styles.heroText}>What's</Text>
+                    <View style={styles.gigWrapper}>
+                        {/* White offset shadow - positioned BEHIND */}
+                        <View style={styles.gigShadow} />
+                        {/* Main gig box - on top */}
+                        <View style={styles.gigBox}>
+                            <Text style={styles.gigText}>the gig?</Text>
+                        </View>
+                    </View>
                 </View>
 
-                <ScrollView
-                    className="flex-1 bg-white"
-                    contentContainerStyle={{ paddingBottom: 120 }}
-                    showsVerticalScrollIndicator={false}
-                >
-                    <View className="p-6 space-y-6">
-                        {/* Gig Title */}
-                        <Animated.View
-                            entering={FadeInDown.delay(150).springify()}
-                            style={{ marginBottom: 24 }}
-                        >
-                            <Text className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
-                                GIG TITLE
-                            </Text>
-                            <View className="bg-white border-2 border-black rounded-2xl px-4 py-4">
-                                <TextInput
-                                    value={title}
-                                    onChangeText={setTitle}
-                                    placeholder="e.g., Design a logo for my startup"
-                                    placeholderTextColor="#9CA3AF"
-                                    className="text-lg text-black"
-                                    maxLength={80}
-                                />
-                            </View>
-                            <Text className="text-xs text-gray-400 mt-2 text-right">
-                                {title.length}/80
-                            </Text>
-                        </Animated.View>
+                {/* Form Fields */}
+                <View style={styles.formContainer}>
+                    {/* Gig Title Input */}
+                    <Animated.View
+                        entering={FadeInDown.delay(150).springify()}
+                        style={styles.inputGroup}
+                    >
+                        <Text style={styles.inputLabel}>Gig Title</Text>
+                        <View style={styles.inputWrapper}>
+                            <TextInput
+                                value={title}
+                                onChangeText={setTitle}
+                                placeholder="e.g. Design a logo for my startup"
+                                placeholderTextColor="#9CA3AF"
+                                style={styles.textInput}
+                                maxLength={80}
+                            />
+                        </View>
+                    </Animated.View>
 
-                        {/* Description */}
-                        <Animated.View
-                            entering={FadeInDown.delay(200).springify()}
-                            style={{ marginBottom: 24 }}
-                        >
-                            <Text className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
-                                DESCRIPTION
-                            </Text>
-                            <View className="bg-white border-2 border-black rounded-2xl px-4 py-4">
-                                <TextInput
-                                    value={description}
-                                    onChangeText={setDescription}
-                                    placeholder="Describe the work in detail. What deliverables are you expecting?"
-                                    placeholderTextColor="#9CA3AF"
-                                    className="text-base text-black"
-                                    multiline
-                                    numberOfLines={5}
-                                    textAlignVertical="top"
-                                    style={{ minHeight: 120 }}
-                                />
-                            </View>
-                            <Text className="text-xs text-gray-400 mt-2 text-right">
-                                Min 30 characters ({description.length}/30)
-                            </Text>
-                        </Animated.View>
+                    {/* Description Textarea */}
+                    <Animated.View
+                        entering={FadeInDown.delay(200).springify()}
+                        style={styles.inputGroup}
+                    >
+                        <Text style={styles.inputLabel}>Description</Text>
+                        <View style={styles.textareaWrapper}>
+                            <TextInput
+                                value={description}
+                                onChangeText={setDescription}
+                                placeholder="Describe the work in detail. What deliverables are you expecting? What is the deadline?"
+                                placeholderTextColor="#9CA3AF"
+                                style={styles.textarea}
+                                multiline
+                                numberOfLines={6}
+                                textAlignVertical="top"
+                            />
+                        </View>
+                    </Animated.View>
 
-                        {/* Skills */}
-                        <Animated.View
-                            entering={FadeInDown.delay(250).springify()}
-                        >
-                            <Text className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
-                                SKILLS NEEDED (Select up to 5)
-                            </Text>
-                            <View className="flex-row flex-wrap">
-                                {suggestedSkills.map((skill, index) => (
+                    {/* Skills Section */}
+                    <Animated.View
+                        entering={FadeInDown.delay(250).springify()}
+                        style={styles.inputGroup}
+                    >
+                        <Text style={styles.inputLabel}>Skills Needed</Text>
+                        <View style={styles.skillsContainer}>
+                            {/* All Skills */}
+                            {[...selectedSkills, ...suggestedSkills.filter(s => !selectedSkills.includes(s))].map((skill) => {
+                                const isSelected = selectedSkills.includes(skill);
+                                return (
                                     <Pressable
                                         key={skill}
                                         onPress={() => toggleSkill(skill)}
-                                        className={`
-                      px-4 py-2 rounded-full mr-2 mb-3 border-2
-                      ${selectedSkills.includes(skill)
-                                                ? "bg-[#D4FF00] border-black"
-                                                : "bg-white border-gray-300"
-                                            }
-                    `}
+                                        style={({ pressed }) => [
+                                            styles.skillTag,
+                                            isSelected ? styles.skillTagActive : styles.skillTagInactive,
+                                            pressed && styles.skillTagPressed,
+                                        ]}
                                     >
-                                        <Text
-                                            className={`text-sm font-medium ${selectedSkills.includes(skill)
-                                                    ? "text-black"
-                                                    : "text-gray-600"
-                                                }`}
-                                        >
+                                        <Text style={isSelected ? styles.skillTextActive : styles.skillTextInactive}>
                                             #{skill}
                                         </Text>
+                                        {isSelected && (
+                                            <MaterialCommunityIcons
+                                                name="close"
+                                                size={14}
+                                                color={COLORS.white}
+                                            />
+                                        )}
                                     </Pressable>
-                                ))}
-                            </View>
-                        </Animated.View>
-                    </View>
-                </ScrollView>
+                                );
+                            })}
 
-                {/* Bottom CTA */}
-                <View className="absolute bottom-0 left-0 right-0 bg-white px-6 pb-8 pt-4 border-t border-gray-100">
+                            {/* Add Tag Button */}
+                            <Pressable
+                                onPress={() => setShowAddSkillModal(true)}
+                                style={styles.addTagButton}
+                            >
+                                <MaterialCommunityIcons
+                                    name="plus"
+                                    size={20}
+                                    color={COLORS.karyaBlack}
+                                />
+                            </Pressable>
+                        </View>
+                    </Animated.View>
+
+                    {/* Save Draft Link - Inside scroll */}
+                    <Pressable style={styles.saveDraftButton}>
+                        <Text style={styles.saveDraftText}>Save Draft</Text>
+                    </Pressable>
+                </View>
+            </ScrollView>
+
+            {/* Fixed Bottom CTA - Same as index.tsx Continue button */}
+            {!isKeyboardVisible && (
+                <View style={styles.bottomContainer}>
                     <AnimatedPressable
                         onPress={handleNext}
                         onPressIn={handleButtonPressIn}
                         onPressOut={handleButtonPressOut}
-                        disabled={!isFormValid}
-                        style={[buttonAnimatedStyle]}
-                        className={`
-              py-5 rounded-full flex-row items-center justify-center
-              ${isFormValid ? "bg-black" : "bg-gray-300"}
-            `}
+                        style={[buttonAnimatedStyle, styles.continueButton]}
                     >
-                        <Text className="text-white text-lg font-bold tracking-wide mr-2">
-                            NEXT STEP
-                        </Text>
-                        <Feather name="arrow-right" size={20} color="#FFFFFF" />
+                        <Text style={styles.continueText}>Continue</Text>
+                        <MaterialCommunityIcons
+                            name="arrow-right"
+                            size={24}
+                            color={COLORS.white}
+                        />
                     </AnimatedPressable>
                 </View>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+            )}
+
+            {/* Add Custom Skill Modal */}
+            <Modal
+                visible={showAddSkillModal}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setShowAddSkillModal(false)}
+            >
+                <Pressable
+                    style={styles.modalOverlay}
+                    onPress={() => setShowAddSkillModal(false)}
+                >
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Add Custom Skill</Text>
+                        <View style={styles.modalInputWrapper}>
+                            <TextInput
+                                value={customSkill}
+                                onChangeText={setCustomSkill}
+                                placeholder="Enter skill name..."
+                                placeholderTextColor="#9CA3AF"
+                                style={styles.modalInput}
+                                autoFocus
+                                onSubmitEditing={addCustomSkill}
+                            />
+                        </View>
+                        <View style={styles.modalButtons}>
+                            <Pressable
+                                onPress={() => setShowAddSkillModal(false)}
+                                style={styles.modalCancelButton}
+                            >
+                                <Text style={styles.modalCancelText}>Cancel</Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={addCustomSkill}
+                                style={styles.modalAddButton}
+                            >
+                                <Text style={styles.modalAddText}>Add</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </Pressable>
+            </Modal>
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.primary,
+    },
+    stripedBackground: {
+        ...StyleSheet.absoluteFillObject,
+        overflow: "hidden",
+        transform: [{ rotate: "45deg" }],
+    },
+    stripe: {
+        position: "absolute",
+        left: -200,
+        width: SCREEN_WIDTH * 3,
+        height: 10,
+        backgroundColor: COLORS.primaryDark,
+    },
+    safeAreaTop: {
+        width: "100%",
+    },
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: COLORS.white,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        borderBottomWidth: 4,
+        borderBottomColor: COLORS.karyaBlack,
+        zIndex: 50,
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: COLORS.white,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 2,
+    },
+    backButtonPressed: {
+        backgroundColor: COLORS.karyaYellow,
+        transform: [{ scale: 0.95 }],
+    },
+    headerTitle: {
+        flex: 1,
+        fontSize: 20,
+        fontWeight: "800",
+        textTransform: "uppercase",
+        letterSpacing: -0.5,
+        color: COLORS.karyaBlack,
+        textAlign: "center",
+    },
+    stepCapsule: {
+        backgroundColor: COLORS.karyaBlack,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    stepText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: COLORS.white,
+        letterSpacing: 0.5,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingHorizontal: 24,
+    },
+    // Hero Title - Same as "Pick Your Hustle" style
+    heroContainer: {
+        alignItems: "center",
+        paddingTop: 32,
+        paddingBottom: 24,
+    },
+    heroText: {
+        fontSize: 44,
+        fontWeight: "900",
+        lineHeight: 40,
+        letterSpacing: -2,
+        textTransform: "uppercase",
+        color: COLORS.karyaBlack,
+        textAlign: "center",
+    },
+    gigWrapper: {
+        marginTop: 4,
+        position: "relative",
+    },
+    gigShadow: {
+        position: "absolute",
+        top: 4,
+        left: 4,
+        right: -4,
+        bottom: -4,
+        backgroundColor: COLORS.white,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+    },
+    gigBox: {
+        backgroundColor: COLORS.karyaBlack,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        transform: [{ rotate: "-1deg" }],
+        zIndex: 1,
+    },
+    gigText: {
+        fontSize: 44,
+        fontWeight: "900",
+        letterSpacing: -2,
+        textTransform: "uppercase",
+        color: COLORS.karyaYellow,
+        lineHeight: 48,
+    },
+    formContainer: {
+        gap: 24,
+    },
+    inputGroup: {
+        marginBottom: 0,
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: COLORS.karyaBlack,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        marginBottom: 8,
+    },
+    inputWrapper: {
+        backgroundColor: COLORS.white,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        borderRadius: 8,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+    },
+    textInput: {
+        height: 56,
+        paddingHorizontal: 16,
+        fontSize: 18,
+        fontWeight: "500",
+        color: COLORS.karyaBlack,
+    },
+    textareaWrapper: {
+        backgroundColor: COLORS.white,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        borderRadius: 8,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+    },
+    textarea: {
+        minHeight: 160,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        fontSize: 18,
+        fontWeight: "500",
+        color: COLORS.karyaBlack,
+        lineHeight: 26,
+    },
+    skillsContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 12,
+    },
+    skillTag: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 999,
+        borderWidth: 2,
+        gap: 8,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 2,
+    },
+    skillTagActive: {
+        backgroundColor: COLORS.karyaBlack,
+        borderColor: COLORS.karyaBlack,
+    },
+    skillTagInactive: {
+        backgroundColor: COLORS.white,
+        borderColor: COLORS.karyaBlack,
+    },
+    skillTagPressed: {
+        transform: [{ scale: 0.95 }],
+    },
+    skillTextActive: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: COLORS.white,
+    },
+    skillTextInactive: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: COLORS.karyaBlack,
+    },
+    addTagButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        borderWidth: 2,
+        borderStyle: "dashed",
+        borderColor: COLORS.karyaBlack,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "transparent",
+    },
+    // Bottom Container - Same as index.tsx
+    bottomContainer: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 24,
+        paddingBottom: 24,
+        paddingTop: 48,
+        zIndex: 40,
+    },
+    continueButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: COLORS.karyaBlack,
+        paddingVertical: 16,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        gap: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    continueText: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: COLORS.white,
+        textTransform: "uppercase",
+        letterSpacing: 2,
+    },
+    saveDraftButton: {
+        alignSelf: "center",
+        paddingVertical: 16,
+        marginTop: 24,
+    },
+    saveDraftText: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: COLORS.karyaBlack,
+        textDecorationLine: "underline",
+        textTransform: "uppercase",
+        letterSpacing: 1,
+    },
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 24,
+    },
+    modalContent: {
+        width: "100%",
+        backgroundColor: COLORS.white,
+        borderRadius: 16,
+        borderWidth: 3,
+        borderColor: COLORS.karyaBlack,
+        padding: 24,
+        shadowColor: COLORS.karyaBlack,
+        shadowOffset: { width: 6, height: 6 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 8,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "800",
+        color: COLORS.karyaBlack,
+        textAlign: "center",
+        marginBottom: 16,
+    },
+    modalInputWrapper: {
+        backgroundColor: COLORS.lightGray,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        borderRadius: 8,
+        marginBottom: 20,
+    },
+    modalInput: {
+        height: 50,
+        paddingHorizontal: 16,
+        fontSize: 16,
+        fontWeight: "500",
+        color: COLORS.karyaBlack,
+    },
+    modalButtons: {
+        flexDirection: "row",
+        gap: 12,
+    },
+    modalCancelButton: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        alignItems: "center",
+    },
+    modalCancelText: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: COLORS.karyaBlack,
+    },
+    modalAddButton: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 8,
+        backgroundColor: COLORS.karyaBlack,
+        borderWidth: 2,
+        borderColor: COLORS.karyaBlack,
+        alignItems: "center",
+    },
+    modalAddText: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: COLORS.white,
+    },
+});
