@@ -75,4 +75,5 @@ export interface TalentProfile {
     completedGigs: number;
     badges: string[];
     lastHired?: string;
+    rank: 'Rookie' | 'Pro Hustler' | 'G.O.A.T.';
 }

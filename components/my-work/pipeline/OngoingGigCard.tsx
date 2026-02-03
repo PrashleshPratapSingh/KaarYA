@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { Gig } from '../../../lib/types/mywork';
+import { Gig } from '@/lib/types/mywork';
 import Svg, { Circle } from 'react-native-svg';
 
 interface OngoingGigCardProps {
     gig: Gig;
     onOpenChat: () => void;
     onOpenUpload: () => void;
+    onPressProfile?: () => void;
 }
 
-export function OngoingGigCard({ gig, onOpenChat, onOpenUpload }: OngoingGigCardProps) {
+export function OngoingGigCard({ gig, onOpenChat, onOpenUpload, onPressProfile }: OngoingGigCardProps) {
     const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
     useEffect(() => {
@@ -97,7 +98,10 @@ export function OngoingGigCard({ gig, onOpenChat, onOpenUpload }: OngoingGigCard
             {/* Gig Info */}
             <View className="items-center mb-6">
                 <Text className="text-xl font-extrabold text-karya-black text-center">{gig.title}</Text>
-                <Text className="text-sm text-gray-400 font-medium mt-1">{gig.clientName}</Text>
+                <Pressable onPress={onPressProfile} className="flex-row items-center gap-1.5 mt-1 active:opacity-60">
+                    <Text className="text-sm text-gray-400 font-bold">{gig.clientName}</Text>
+                    <Feather name="external-link" size={10} color="#9CA3AF" />
+                </Pressable>
             </View>
 
             {/* Upload Button - Yellow like reference */}

@@ -1,4 +1,44 @@
-import { Gig, CompletedGig, WalletData, Transaction, ChatMessage } from '../types/mywork';
+import { Gig, CompletedGig, WalletData, Transaction, ChatMessage, TalentProfile } from '../types/mywork';
+
+// Mock Talent Profiles
+export const mockTalentProfiles: Record<string, TalentProfile> = {
+    'executor1': {
+        id: 'executor1',
+        name: 'Rohan K.',
+        avatar: 'https://i.pravatar.cc/150?u=executor1',
+        rating: 4.9,
+        completedGigs: 42,
+        badges: ['SPEED DEMON', 'PERFECTIONIST'],
+        rank: 'Pro Hustler',
+    },
+    'executor2': {
+        id: 'executor2',
+        name: 'Aria Singh',
+        avatar: 'https://i.pravatar.cc/150?u=executor2',
+        rating: 5.0,
+        completedGigs: 89,
+        badges: ['PIXEL PERFECT', 'MVP'],
+        rank: 'G.O.A.T.',
+    },
+    'client1': {
+        id: 'client1',
+        name: 'TechStart Inc.',
+        avatar: 'https://i.pravatar.cc/150?u=client1',
+        rating: 4.5,
+        completedGigs: 12,
+        badges: ['QUICK PAYER', 'CLEAR BRIEF'],
+        rank: 'Pro Hustler',
+    },
+    'newbie1': {
+        id: 'newbie1',
+        name: 'Sam T.',
+        avatar: 'https://i.pravatar.cc/150?u=newbie1',
+        rating: 4.0,
+        completedGigs: 2,
+        badges: ['EAGER'],
+        rank: 'Rookie',
+    },
+};
 
 // Mock Chat Messages
 export const mockChatMessages: Record<string, ChatMessage[]> = {

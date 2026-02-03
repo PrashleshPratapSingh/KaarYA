@@ -4,19 +4,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 // Components
-import { StashCard } from '../../components/my-work/stash/StashCard';
-import { TransactionHistory } from '../../components/my-work/stash/TransactionHistory';
-import { PortfolioGrid } from '../../components/my-work/portfolio/PortfolioGrid';
-import { ShareButton } from '../../components/my-work/portfolio/ShareButton';
-import { GigChatModal } from '../../components/my-work/pipeline/GigChatModal';
-import { FileUploadModal } from '../../components/my-work/pipeline/FileUploadModal';
-import { WithdrawModal } from '../../components/my-work/stash/WithdrawModal';
-import { GigDetailModal } from '../../components/my-work/pipeline/GigDetailModal';
-import { RoleSelection } from '../../components/my-work/RoleSelection';
+import { StashCard } from '@/components/my-work/stash/StashCard';
+import { TransactionHistory } from '@/components/my-work/stash/TransactionHistory';
+import { PortfolioGrid } from '@/components/my-work/portfolio/PortfolioGrid';
+import { ShareButton } from '@/components/my-work/portfolio/ShareButton';
+import { GigChatModal } from '@/components/my-work/pipeline/GigChatModal';
+import { FileUploadModal } from '@/components/my-work/pipeline/FileUploadModal';
+import { WithdrawModal } from '@/components/my-work/stash/WithdrawModal';
+import { GigDetailModal } from '@/components/my-work/pipeline/GigDetailModal';
+import { RoleSelection } from '@/components/my-work/RoleSelection';
+import { ProfileModal } from '@/components/my-work/ProfileModal';
 
 // Updated components
-import { OngoingGigCard } from '../../components/my-work/pipeline/OngoingGigCard';
-import { UpcomingGigCard } from '../../components/my-work/pipeline/UpcomingGigCard';
+import { OngoingGigCard } from '@/components/my-work/pipeline/OngoingGigCard';
+import { UpcomingGigCard } from '@/components/my-work/pipeline/UpcomingGigCard';
 
 // Data
 import {
@@ -26,8 +27,9 @@ import {
     mockCompletedGigs,
     mockClientGigs,
     mockClientUpcomingGigs,
-} from '../../lib/mock/mywork-data';
-import { Gig, ChatMessage, FileAttachment } from '../../lib/types/mywork';
+    mockTalentProfiles,
+} from '@/lib/mock/mywork-data';
+import { Gig, ChatMessage, FileAttachment, TalentProfile } from '@/lib/types/mywork';
 
 type Tab = 'stash' | 'pipeline' | 'portfolio';
 type ViewMode = 'selection' | 'client' | 'executor';
@@ -36,10 +38,14 @@ export default function MyWorkScreen() {
     const [viewMode, setViewMode] = useState<ViewMode>('selection');
     const [activeTab, setActiveTab] = useState<Tab>('pipeline');
     const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
+    const [selectedProfile, setSelectedProfile] = useState<TalentProfile | null>(null);
+
+    // UI States
     const [chatModalVisible, setChatModalVisible] = useState(false);
     const [uploadModalVisible, setUploadModalVisible] = useState(false);
     const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
     const [detailModalVisible, setDetailModalVisible] = useState(false);
+    const [profileModalVisible, setProfileModalVisible] = useState(false);
 
     // State for gigs
     const [ongoingGigs, setOngoingGigs] = useState(mockOngoingGigs);
@@ -64,7 +70,14 @@ export default function MyWorkScreen() {
         return () => clearInterval(interval);
     }, [ongoingGigs, upcomingGigs]);
 
-    // Handlers
+
+    // Profile Handlers
+    const handleOpenProfile = (userId: string) => {
+        const profile = mockTalentProfiles[userId] || mockTalentProfiles['executor1']; // fallback
+        setSelectedProfile(profile);
+        setProfileModalVisible(true);
+    };
+
     const handleOpenChat = (gig: Gig) => {
         setSelectedGig(gig);
         setChatModalVisible(true);
@@ -167,7 +180,11 @@ export default function MyWorkScreen() {
                     </Text>
 
                     {mockClientGigs.map((gig) => (
-                        <View key={gig.id} className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
+                        <Pressable
+                            key={gig.id}
+                            onPress={() => handleOpenProfile('executor1')} // Simulating clicking assigned person
+                            className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-50 active:scale-[0.98]"
+                        >
                             <View className="flex-row justify-between items-start mb-2">
                                 <View className="bg-green-100 px-2 py-1 rounded-md">
                                     <Text className="text-[10px] font-bold text-green-700 uppercase">IN PROGRESS</Text>
@@ -175,13 +192,19 @@ export default function MyWorkScreen() {
                                 <Text className="text-base font-extrabold text-karya-black">₹{gig.amount.toLocaleString('en-IN')}</Text>
                             </View>
                             <Text className="text-xl font-extrabold text-karya-black mb-1">{gig.title}</Text>
-                            <Text className="text-xs text-gray-400 font-bold mb-4">Deadline: {new Date(gig.deadline).toLocaleDateString()}</Text>
+
+                            <View className="flex-row items-center gap-2 mb-4">
+                                <View className="w-5 h-5 bg-karya-yellow rounded-full items-center justify-center">
+                                    <Feather name="user" size={10} color="black" />
+                                </View>
+                                <Text className="text-xs text-gray-400 font-bold">Assigned to: <Text className="text-karya-black">Rohan K.</Text></Text>
+                            </View>
 
                             <View className="bg-gray-100 h-2 rounded-full overflow-hidden mb-2">
                                 <View className="h-full bg-karya-black" style={{ width: `${gig.progress}%` }} />
                             </View>
                             <Text className="text-[10px] text-right font-bold text-gray-400">{gig.progress}% Complete</Text>
-                        </View>
+                        </Pressable>
                     ))}
 
                     <Text className="text-sm font-bold text-karya-black/60 mb-4 px-1 uppercase tracking-wide mt-4">
@@ -189,7 +212,7 @@ export default function MyWorkScreen() {
                     </Text>
 
                     {mockClientUpcomingGigs.map((gig) => (
-                        <UpcomingGigCard key={gig.id} gig={gig} />
+                        <UpcomingGigCard key={gig.id} gig={gig} onPress={() => handleOpenProfile('newbie1')} />
                     ))}
                 </ScrollView>
             )}
@@ -272,6 +295,7 @@ export default function MyWorkScreen() {
                                             gig={ongoingGigs[0]}
                                             onOpenChat={() => handleOpenChat(ongoingGigs[0])}
                                             onOpenUpload={() => handleOpenUpload(ongoingGigs[0])}
+                                            onPressProfile={() => handleOpenProfile('client1')}
                                         />
                                     </View>
                                 )}
@@ -324,6 +348,12 @@ export default function MyWorkScreen() {
                 onWithdraw={handleWithdraw}
             />
 
+            <ProfileModal
+                visible={profileModalVisible}
+                onClose={() => setProfileModalVisible(false)}
+                profile={selectedProfile}
+            />
+
             {selectedGig && (
                 <>
                     <GigChatModal
@@ -351,6 +381,7 @@ export default function MyWorkScreen() {
                     />
                 </>
             )}
+
         </SafeAreaView>
     );
 }
