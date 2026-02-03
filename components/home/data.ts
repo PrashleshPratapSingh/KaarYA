@@ -6,7 +6,7 @@ import { Gig } from './types';
 export const SAMPLE_GIGS: Gig[] = [
     {
         id: '1',
-        title: 'Design a Brutalist Poster for College Fest',
+        title: 'Design a Event Poster for College Fest',
         budget: 1500,
         postedBy: 'Aria S.',
         college: 'NIFT DELHI',
@@ -15,7 +15,7 @@ export const SAMPLE_GIGS: Gig[] = [
         timeAgo: '2h ago',
         applicants: 5,
         posterDetails: {
-            bio: 'Final year Fashion Comms student. Obsessed with experimental typography. Need someone who acts fast and gets the brutalist aesthetic fr.',
+            bio: 'Final year Fashion Comms student. Obsessed with experimental typography. Need someone who acts fast and gets the event aesthetic fr.',
             expertise: ['Poster Design', 'Typography', 'Adobe Suite'],
             pastGigs: 12,
             rating: 4.8,

@@ -288,7 +288,7 @@ export default function OnboardingSkills() {
                             {/* Submit Button */}
                             <View className="pt-4 pb-0">
                                 <TouchableOpacity
-                                    onPress={() => router.push('/(tabs)')}
+                                    onPress={() => router.push('/onboarding/story')}
                                     className="w-full bg-black h-24 items-center justify-center flex-row gap-5 border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] active:translate-y-1 active:shadow-none transition-all rounded-[30px]"
                                 >
                                     <Text className="font-display text-4xl uppercase tracking-widest italic text-white leading-none">Stamp it & Go</Text>
