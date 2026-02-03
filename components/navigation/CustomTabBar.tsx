@@ -66,7 +66,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
     const { height } = useWindowDimensions();
 
     const animatedStyle = useAnimatedStyle(() => {
-        const fadeLimit = height * 0.3;
+        const fadeLimit = height * 0.15;
         const opacity = interpolate(
             scrollY.value,
             [0, fadeLimit],

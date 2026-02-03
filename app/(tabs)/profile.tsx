@@ -1,10 +1,14 @@
-import { useState, useRef, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, Switch, Pressable, Animated } from "react-native";
+import { useState, useRef, useCallback } from "react";
+import { View, Text, TouchableOpacity, Image, Modal, Switch, Pressable, ScrollView } from "react-native";
+import Animated, { useAnimatedScrollHandler, useAnimatedStyle, interpolate, Extrapolate } from "react-native-reanimated";
+import { useTabBarContext } from '../../app/context/TabBarContext';
+import { useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5, Feather, MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from "react-native-reanimated";
+// Removed unused ReAnimated import since we are using 'Animated' from 'react-native-reanimated' above
+// import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing } from "react-native-reanimated";
 
 export default function ProfileScreen() {
     const [showSettings, setShowSettings] = useState(false);
@@ -52,38 +56,52 @@ export default function ProfileScreen() {
     const [showTerms, setShowTerms] = useState(false);
 
     // Scroll animation
-    const scrollY = useRef(new Animated.Value(0)).current;
+    const { scrollY } = useTabBarContext();
 
-    // Screen entry animation
-    const entryOpacity = useSharedValue(0);
-    const entryScale = useSharedValue(0.96);
-    const entryTranslateY = useSharedValue(20);
+    useFocusEffect(
+        useCallback(() => {
+            // Reset scrollY to 0 when screen is focused to ensure tab bar is visible
+            scrollY.value = 0;
+        }, [])
+    );
 
-    useEffect(() => {
-        // Trigger entry animation on mount
-        entryOpacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
-        entryScale.value = withSpring(1, { damping: 20, stiffness: 300 });
-        entryTranslateY.value = withSpring(0, { damping: 20, stiffness: 300 });
-    }, []);
+    const curveStyle = useAnimatedStyle(() => {
+        const translateY = interpolate(
+            scrollY.value,
+            [-150, -50, 0, 50],
+            [-60, -20, 0, 30],
+            Extrapolate.CLAMP
+        );
+        const scaleX = interpolate(
+            scrollY.value,
+            [-100, 0],
+            [1.3, 1],
+            Extrapolate.CLAMP
+        );
+        return {
+            transform: [
+                { translateY },
+                { scaleX }
+            ]
+        };
+    });
 
-    const screenAnimatedStyle = useAnimatedStyle(() => ({
-        opacity: entryOpacity.value,
-        transform: [
-            { scale: entryScale.value },
-            { translateY: entryTranslateY.value },
-        ],
-    }));
+    const scrollHandler = useAnimatedScrollHandler({
+        onScroll: (event) => {
+            scrollY.value = event.contentOffset.y;
+        },
+    });
+
+    // Removed screenAnimatedStyle logic for simplicity as it was creating duplicate ReAnimated imports/logic
+
 
     return (
-        <ReAnimated.View style={[{ flex: 1, backgroundColor: '#FFE600' }, screenAnimatedStyle]}>
+        <View className="flex-1 bg-[#FFE600]">
             <Animated.ScrollView
                 className="flex-1"
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 20 }}
-                onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                    { useNativeDriver: true }
-                )}
+                onScroll={scrollHandler}
                 scrollEventThrottle={16}
             >
                 {/* Header - Black Top, Yellow Curve Bottom */}
@@ -106,24 +124,7 @@ export default function ProfileScreen() {
                         {/* Yellow Curve Coming Up from Bottom */}
                         <Animated.View
                             className="absolute bottom-0 left-0 right-0 h-28 bg-[#FFE600] rounded-t-[100px]"
-                            style={{
-                                transform: [
-                                    {
-                                        translateY: scrollY.interpolate({
-                                            inputRange: [-150, -50, 0, 50],
-                                            outputRange: [-60, -20, 0, 30],
-                                            extrapolate: 'clamp',
-                                        }),
-                                    },
-                                    {
-                                        scaleX: scrollY.interpolate({
-                                            inputRange: [-100, 0],
-                                            outputRange: [1.3, 1],
-                                            extrapolate: 'clamp',
-                                        }),
-                                    },
-                                ],
-                            }}
+                            style={curveStyle}
                         />
 
                     </View>
@@ -2489,6 +2490,6 @@ export default function ProfileScreen() {
                     </View>
                 </Modal>
             </Modal>
-        </ReAnimated.View>
+        </View>
     );
 }

@@ -2,10 +2,10 @@
  * KaarYa Home Screen
  * Clean main screen with functional Apply and Notification
  */
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { StatusBar } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useTabBarContext } from '../../app/context/TabBarContext';
 
@@ -84,6 +84,12 @@ export default function HomeScreen() {
       scrollY.value = event.contentOffset.y;
     },
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollY.value = 0;
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
