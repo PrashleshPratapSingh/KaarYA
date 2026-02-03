@@ -6,6 +6,8 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAnimatedScrollHandler } from 'react-native-reanimated';
+import { useTabBarContext } from '../../app/context/TabBarContext';
 
 // Import components from home folder
 import {
@@ -76,6 +78,13 @@ export default function HomeScreen() {
     router.push('/messages');
   };
 
+  const { scrollY } = useTabBarContext();
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={KARYA_YELLOW} />
@@ -109,6 +118,7 @@ export default function HomeScreen() {
         onRefresh={onRefresh}
         onGigPress={handleGigPress}
         onApply={handleApply}
+        onScroll={scrollHandler}
       />
 
       {/* Gig Detail Modal */}

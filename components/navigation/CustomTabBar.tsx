@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'r
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle, interpolate, Extrapolate } from 'react-native-reanimated';
+import { useTabBarContext } from '../../app/context/TabBarContext';
 
 const COLORS = {
     black: '#000000',
@@ -60,8 +62,31 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
     const { width } = useWindowDimensions();
     const sizes = getResponsiveSizes(width);
 
+    const { scrollY } = useTabBarContext();
+    const { height } = useWindowDimensions();
+
+    const animatedStyle = useAnimatedStyle(() => {
+        const fadeLimit = height * 0.3;
+        const opacity = interpolate(
+            scrollY.value,
+            [0, fadeLimit],
+            [1, 0],
+            Extrapolate.CLAMP
+        );
+        const translateY = interpolate(
+            scrollY.value,
+            [0, fadeLimit],
+            [0, 100],
+            Extrapolate.CLAMP
+        );
+        return {
+            opacity,
+            transform: [{ translateY }],
+        };
+    });
+
     return (
-        <View style={[styles.container, { bottom: insets.bottom + 10 }]}>
+        <Animated.View style={[styles.container, { bottom: insets.bottom + 10 }, animatedStyle]} pointerEvents="box-none">
             <View style={[
                 styles.pill,
                 {
@@ -154,7 +179,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
                     );
                 })}
             </View>
-        </View>
+        </Animated.View>
     );
 }
 

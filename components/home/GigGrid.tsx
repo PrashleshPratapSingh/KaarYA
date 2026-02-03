@@ -2,7 +2,8 @@
  * GigGrid - Hybrid grid layout with horizontal carousel + Bento Grid
  */
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { FreshGigsCarousel } from './FreshGigsCarousel';
 import { BentoGrid } from './BentoGrid';
 import { EmptyState } from './EmptyState';
@@ -14,9 +15,10 @@ interface Props {
     onRefresh?: () => void;
     onGigPress?: (gig: Gig) => void;
     onApply?: (gig: Gig) => void;
+    onScroll?: any; // Using any for Reanimated scroll handler compatibility
 }
 
-export function GigGrid({ gigs, refreshing = false, onRefresh, onGigPress, onApply }: Props) {
+export function GigGrid({ gigs, refreshing = false, onRefresh, onGigPress, onApply, onScroll }: Props) {
     if (gigs.length === 0) {
         return <EmptyState />;
     }
@@ -26,10 +28,12 @@ export function GigGrid({ gigs, refreshing = false, onRefresh, onGigPress, onApp
     const gridGigs = gigs.slice(2);
 
     return (
-        <ScrollView
+        <Animated.ScrollView
             style={styles.container}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
             refreshControl={
                 onRefresh ? (
                     <RefreshControl
@@ -71,7 +75,7 @@ export function GigGrid({ gigs, refreshing = false, onRefresh, onGigPress, onApp
 
             {/* Bottom spacer for tab bar */}
             <View style={{ height: 100 }} />
-        </ScrollView>
+        </Animated.ScrollView>
     );
 }
 
