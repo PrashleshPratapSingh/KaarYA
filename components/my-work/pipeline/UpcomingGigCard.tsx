@@ -5,15 +5,19 @@ import { Gig } from '../../../lib/types/mywork';
 
 interface UpcomingGigCardProps {
     gig: Gig;
+    onPress?: () => void;
 }
 
-export function UpcomingGigCard({ gig }: UpcomingGigCardProps) {
+export function UpcomingGigCard({ gig, onPress }: UpcomingGigCardProps) {
     const dateObj = gig.startTime ? new Date(gig.startTime) : new Date();
     const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
     const dayNum = dateObj.getDate();
 
     return (
-        <View className="bg-white rounded-2xl p-4 mb-3 flex-row items-center gap-4 shadow-sm">
+        <Pressable
+            onPress={onPress}
+            className="bg-white rounded-2xl p-4 mb-3 flex-row items-center gap-4 shadow-sm active:bg-gray-50"
+        >
             {/* Date Badge */}
             <View className="bg-karya-yellow rounded-xl w-14 h-16 items-center justify-center">
                 <Text className="text-[10px] font-bold text-karya-black/60 uppercase">{dayName}</Text>
@@ -36,6 +40,6 @@ export function UpcomingGigCard({ gig }: UpcomingGigCardProps) {
             </View>
 
             <Feather name="chevron-right" size={20} color="#00000030" />
-        </View>
+        </Pressable>
     );
 }

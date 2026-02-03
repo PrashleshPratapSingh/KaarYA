@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, Pressable, TextInput } from 'react-native';
+import { Modal, View, Text, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 interface WithdrawModalProps {
@@ -9,7 +9,7 @@ interface WithdrawModalProps {
     onWithdraw: (amount: number, upiId: string) => void;
 }
 
-export function WithdrawModal({ visible, onClose, balance, onWithdraw }: WithdrawModalProps) {
+export const WithdrawModal = React.memo(function WithdrawModal({ visible, onClose, balance, onWithdraw }: WithdrawModalProps) {
     const [upiId, setUpiId] = React.useState('');
     const [amount, setAmount] = React.useState('');
     const [step, setStep] = React.useState<'input' | 'success'>('input');
@@ -29,7 +29,11 @@ export function WithdrawModal({ visible, onClose, balance, onWithdraw }: Withdra
 
     return (
         <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
-            <View className="flex-1 bg-black/50 justify-end">
+            {/* Wrap with KeyboardAvoidingView to handle keyboard occlusion */}
+            <KeyboardAvoidingView
+                className="flex-1 bg-black/50 justify-end"
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
                 <View className="bg-white rounded-t-[32px] p-6 pb-10">
                     <View className="w-12 h-1 bg-gray-200 rounded-full self-center mb-6" />
 
@@ -43,37 +47,41 @@ export function WithdrawModal({ visible, onClose, balance, onWithdraw }: Withdra
                             </Text>
 
                             {/* Amount Input */}
-                            <View className="bg-gray-50 rounded-2xl p-4 mb-4">
+                            <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-100">
                                 <Text className="text-[10px] font-bold text-gray-400 uppercase mb-2">Amount</Text>
                                 <View className="flex-row items-center">
                                     <Text className="text-2xl font-extrabold text-karya-black">₹</Text>
                                     <TextInput
-                                        className="flex-1 text-2xl font-extrabold text-karya-black ml-1"
+                                        className="flex-1 text-2xl font-extrabold text-karya-black ml-1 pt-0 pb-0 h-10"
                                         placeholder={balance.toString()}
-                                        placeholderTextColor="#00000030"
-                                        keyboardType="numeric"
+                                        placeholderTextColor="#D1D5DB"
+                                        keyboardType="number-pad"
                                         value={amount}
                                         onChangeText={setAmount}
+                                        maxLength={10}
+                                        selectionColor="#FFE500"
                                     />
                                 </View>
                             </View>
 
                             {/* UPI ID Input */}
-                            <View className="bg-gray-50 rounded-2xl p-4 mb-6">
+                            <View className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100">
                                 <Text className="text-[10px] font-bold text-gray-400 uppercase mb-2">UPI ID</Text>
                                 <TextInput
-                                    className="text-base font-bold text-karya-black"
+                                    className="text-base font-bold text-karya-black pt-0 pb-0 h-8"
                                     placeholder="yourname@upi"
-                                    placeholderTextColor="#00000030"
+                                    placeholderTextColor="#D1D5DB"
                                     value={upiId}
                                     onChangeText={setUpiId}
                                     autoCapitalize="none"
+                                    autoCorrect={false}
+                                    selectionColor="#FFE500"
                                 />
                             </View>
 
                             <Pressable
                                 onPress={handleWithdraw}
-                                className="bg-karya-black py-4 rounded-2xl items-center mb-3"
+                                className="bg-karya-black py-4 rounded-2xl items-center mb-3 shadow-md"
                             >
                                 <Text className="text-white font-extrabold text-base">WITHDRAW NOW</Text>
                             </Pressable>
@@ -112,7 +120,7 @@ export function WithdrawModal({ visible, onClose, balance, onWithdraw }: Withdra
                         </>
                     )}
                 </View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
-}
+});
