@@ -40,27 +40,93 @@ const COLORS = {
     lightGray: "#F5F5F5",
 };
 
-// Predefined "Other" subcategories for search
+// Predefined "Other" subcategories for search - comprehensive list
 const OTHER_CATEGORIES = [
+    // Admin & Support
     "Virtual Assistant",
     "Data Entry",
+    "Customer Support",
+    "Email Management",
+    "Calendar Management",
+    "Project Management",
     "Research",
+
+    // Writing & Translation
     "Translation",
     "Transcription",
-    "Customer Support",
-    "Consulting",
+    "Proofreading",
+    "Content Writing",
+    "Copywriting",
+    "Technical Writing",
+    "Resume Writing",
+    "Ghostwriting",
+    "Blog Writing",
+    "SEO Writing",
+
+    // Creative & Media
     "Photography",
-    "Music & Audio",
+    "Music Production",
+    "Audio Editing",
     "Voice Over",
+    "Podcast Editing",
+    "Sound Design",
     "Animation",
+    "2D Animation",
+    "3D Animation",
+    "Motion Graphics",
     "3D Modeling",
+    "Product Visualization",
+
+    // Tech & Development
     "Game Development",
     "AI & Machine Learning",
-    "Blockchain",
-    "Legal",
+    "Blockchain Development",
+    "Cybersecurity",
+    "Cloud Services",
+    "DevOps",
+    "Database Management",
+    "API Development",
+    "QA Testing",
+    "IT Support",
+
+    // Business & Consulting
+    "Consulting",
+    "Business Strategy",
+    "Financial Consulting",
+    "Legal Consulting",
+    "Tax Services",
     "Accounting",
+    "Bookkeeping",
     "HR & Recruiting",
-    "Project Management",
+    "Career Coaching",
+
+    // Learning & Education
+    "Tutoring",
+    "Online Courses",
+    "Language Teaching",
+    "Academic Writing",
+    "Presentation Design",
+
+    // Lifestyle & Personal
+    "Fitness Coaching",
+    "Nutrition Planning",
+    "Life Coaching",
+    "Event Planning",
+    "Travel Planning",
+    "Personal Styling",
+
+    // E-commerce
+    "Product Listing",
+    "Amazon FBA",
+    "Dropshipping",
+    "Inventory Management",
+
+    // Real Estate
+    "Virtual Tours",
+    "Floor Plans",
+    "Real Estate Photography",
+
+    // Other
     "Other",
 ];
 
@@ -333,7 +399,7 @@ export default function CategorySelectionScreen() {
                         style={styles.modalBackdrop}
                         onPress={() => setShowOtherModal(false)}
                     />
-                    <View style={[styles.modalContent, { paddingBottom: insets.bottom + 24 }]}>
+                    <View style={styles.modalContent}>
                         {/* Modal Header */}
                         <View style={styles.modalHeader}>
                             <View style={styles.modalHandle} />
@@ -396,26 +462,33 @@ export default function CategorySelectionScreen() {
                         {/* Category List */}
                         <ScrollView
                             style={styles.categoryList}
+                            contentContainerStyle={styles.categoryListContent}
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled"
                         >
-                            {filteredCategories.map((category, index) => (
-                                <Pressable
-                                    key={category}
-                                    onPress={() => handleOtherCategorySelect(category)}
-                                    style={({ pressed }) => [
-                                        styles.categoryItem,
-                                        pressed && styles.categoryItemPressed,
-                                    ]}
-                                >
-                                    <Text style={styles.categoryItemText}>{category}</Text>
-                                    <MaterialCommunityIcons
-                                        name="chevron-right"
-                                        size={20}
-                                        color={COLORS.gray}
-                                    />
-                                </Pressable>
-                            ))}
+                            {filteredCategories.length > 0 ? (
+                                filteredCategories.map((category) => (
+                                    <Pressable
+                                        key={category}
+                                        onPress={() => handleOtherCategorySelect(category)}
+                                        style={({ pressed }) => [
+                                            styles.categoryItem,
+                                            pressed && styles.categoryItemPressed,
+                                        ]}
+                                        hitSlop={8}
+                                    >
+                                        <Text style={styles.categoryItemText} numberOfLines={1}>
+                                            {category}
+                                        </Text>
+                                    </Pressable>
+                                ))
+                            ) : (
+                                <View style={styles.emptyContainer}>
+                                    <MaterialCommunityIcons name="magnify-close" size={48} color={COLORS.gray} />
+                                    <Text style={styles.emptyText}>No matching categories</Text>
+                                </View>
+                            )}
+                            <View style={{ height: 40 }} />
                         </ScrollView>
                     </View>
                 </KeyboardAvoidingView>
@@ -651,7 +724,9 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        maxHeight: "80%",
+        maxHeight: "85%",
+        minHeight: 400,
+        paddingBottom: 34, // Safe area fallback
         shadowColor: "#000",
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.15,
@@ -724,25 +799,47 @@ const styles = StyleSheet.create({
         color: COLORS.karyaCobalt,
     },
     categoryList: {
+        height: 350,
+    },
+    categoryListContent: {
         paddingHorizontal: 24,
-        maxHeight: 300,
+        paddingBottom: 40,
     },
     categoryItem: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingVertical: 16,
+        paddingVertical: 18,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.lightGray,
+        borderBottomColor: "#F0F0F0",
+        width: "100%",
     },
     categoryItemPressed: {
         backgroundColor: COLORS.lightGray,
-        marginHorizontal: -24,
-        paddingHorizontal: 24,
+        borderRadius: 8,
     },
     categoryItemText: {
         fontSize: 16,
-        fontWeight: "500",
+        fontWeight: "600",
         color: COLORS.karyaBlack,
+        flex: 1,
+    },
+    chevronContainer: {
+        marginLeft: 12,
+        width: 32,
+        height: 32,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    emptyContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 60,
+        gap: 16,
+    },
+    emptyText: {
+        fontSize: 16,
+        fontWeight: "500",
+        color: COLORS.gray,
     },
 });

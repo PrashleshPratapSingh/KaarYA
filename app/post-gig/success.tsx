@@ -200,7 +200,7 @@ export default function SuccessScreen() {
                         onPressIn={handleButtonPressIn}
                         onPressOut={handleButtonPressOut}
                         style={[buttonAnimatedStyle]}
-                        className="py-5 rounded-full flex-row items-center justify-center bg-[#3D3D3D] mb-3"
+                        className="py-5 rounded-full flex-row items-center justify-center bg-black mb-3"
                     >
                         <Text className="text-white text-lg font-bold tracking-wide mr-2">
                             VIEW GIG
