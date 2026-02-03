@@ -4,51 +4,51 @@ import { Feather } from '@expo/vector-icons';
 
 interface StashCardProps {
     balance: number;
+    pendingPayment: number;
     onWithdraw?: () => void;
 }
 
-export function StashCard({ balance, onWithdraw }: StashCardProps) {
+export function StashCard({ balance, pendingPayment, onWithdraw }: StashCardProps) {
     return (
-        <View className="bg-karya-black rounded-3xl p-6 mb-5" style={{ minHeight: 200 }}>
+        <View className="bg-karya-black rounded-[40px] p-7 mb-6 shadow-xl overflow-hidden">
             {/* Header */}
-            <View className="flex-row items-center justify-between mb-6">
+            <View className="flex-row items-center justify-between mb-8">
                 <View>
-                    <Text className="text-lg font-extrabold text-white tracking-tight">KARYA</Text>
-                    <Text className="text-xs font-bold text-white/60">BANK</Text>
+                    <Text className="text-xl font-extrabold text-white tracking-widest italic">KARYA</Text>
+                    <Text className="text-[10px] font-bold text-white/40 uppercase tracking-[4px]">DIGITAL ASSET</Text>
                 </View>
-                <View className="flex-row items-center gap-2">
-                    <View className="w-8 h-8 bg-karya-yellow rounded-full items-center justify-center">
-                        <Feather name="moon" size={14} color="black" />
-                    </View>
-                    <View className="w-8 h-8 bg-white/10 rounded-full items-center justify-center">
-                        <Feather name="user" size={14} color="white" />
-                    </View>
+                <View className="bg-white/10 px-3 py-1.5 rounded-full">
+                    <Text className="text-[10px] font-extrabold text-white/60">ACTIVE HUB</Text>
                 </View>
             </View>
 
-            {/* Balance Section */}
-            <View className="bg-karya-yellow rounded-2xl p-5 mb-4">
-                <Text className="text-[10px] font-bold text-karya-black/50 uppercase tracking-wider mb-2">
-                    TOTAL BALANCE
-                </Text>
+            {/* Balances Grid */}
+            <View className="mb-8">
+                <View className="mb-6">
+                    <Text className="text-[10px] font-bold text-white/40 uppercase mb-2 tracking-widest">Available Stash</Text>
+                    <Text className="text-5xl font-extrabold text-karya-yellow tracking-tight">₹{balance.toLocaleString('en-IN')}</Text>
+                </View>
 
-                <Text className="text-5xl font-extrabold text-karya-black tracking-tight mb-6">
-                    ₹{balance.toLocaleString('en-IN')}
-                </Text>
+                <View className="h-[1px] bg-white/10 w-full mb-6" />
 
-                <Pressable
-                    onPress={onWithdraw}
-                    className="bg-white rounded-xl py-3 flex-row items-center justify-center gap-2 shadow-sm"
-                >
-                    <Text className="text-sm font-extrabold text-karya-black">WITHDRAW</Text>
-                    <Feather name="chevron-right" size={18} color="black" />
-                </Pressable>
+                <View className="flex-row items-center justify-between">
+                    <View>
+                        <Text className="text-[10px] font-bold text-white/40 uppercase mb-1 tracking-widest">Pending Payment</Text>
+                        <Text className="text-2xl font-extrabold text-white">₹{(pendingPayment).toLocaleString('en-IN')}</Text>
+                        <Text className="text-[9px] font-bold text-karya-yellow/60 uppercase mt-1">Incoming from committed work</Text>
+                    </View>
+                    <Feather name="trending-up" size={24} color="#FFE500" opacity={0.5} />
+                </View>
             </View>
 
-            <View className="flex-row items-center justify-between px-2">
-                <Text className="text-[10px] text-white/40 font-medium">**** 8829</Text>
-                <Text className="text-[10px] text-white/60 font-bold uppercase">STUDENT SAVER</Text>
-            </View>
+            {/* Actions */}
+            <Pressable
+                onPress={onWithdraw}
+                className="bg-white rounded-[24px] py-5 flex-row items-center justify-center gap-3 shadow-lg active:scale-[0.98] transition-all"
+            >
+                <Text className="text-sm font-extrabold text-karya-black tracking-widest uppercase">WITHDRAW</Text>
+                <Feather name="arrow-up-right" size={18} color="black" />
+            </Pressable>
         </View>
     );
 }

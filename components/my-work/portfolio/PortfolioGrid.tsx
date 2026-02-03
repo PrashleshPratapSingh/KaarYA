@@ -5,9 +5,10 @@ import { CompletedGig } from '../../../lib/types/mywork';
 
 interface PortfolioGridProps {
     completedGigs: CompletedGig[];
+    onGigPress: (gig: CompletedGig) => void;
 }
 
-export function PortfolioGrid({ completedGigs }: PortfolioGridProps) {
+export function PortfolioGrid({ completedGigs, onGigPress }: PortfolioGridProps) {
     if (completedGigs.length === 0) {
         return (
             <View className="bg-white rounded-3xl items-center justify-center py-16 px-8">
@@ -25,7 +26,7 @@ export function PortfolioGrid({ completedGigs }: PortfolioGridProps) {
     return (
         <View className="flex-1">
             {completedGigs.map((gig) => (
-                <CompletedGigCard key={gig.id} gig={gig} />
+                <CompletedGigCard key={gig.id} gig={gig} onPressProfile={() => onGigPress(gig)} />
             ))}
         </View>
     );
