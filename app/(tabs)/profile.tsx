@@ -547,7 +547,7 @@ export default function ProfileScreen() {
                                         setShowBank(true);
                                     }}
                                 >
-                                    <View className="w-12 h-12 rounded-2xl bg-black items-center justify-center mb-2">
+                                    <View className="w-12 h-12 rounded-2xl bg-[#3B82F6] items-center justify-center mb-2">
                                         <MaterialCommunityIcons name="bank" size={24} color="white" />
                                     </View>
                                     <Text className="text-black font-bold text-sm">Bank</Text>
@@ -561,7 +561,7 @@ export default function ProfileScreen() {
                                         setShowVerified(true);
                                     }}
                                 >
-                                    <View className="w-12 h-12 rounded-2xl bg-black items-center justify-center mb-2">
+                                    <View className="w-12 h-12 rounded-2xl bg-[#22C55E] items-center justify-center mb-2">
                                         <MaterialIcons name="verified-user" size={24} color="white" />
                                     </View>
                                     <Text className="text-black font-bold text-sm">Verified</Text>
@@ -575,7 +575,7 @@ export default function ProfileScreen() {
                                         setShowSafety(true);
                                     }}
                                 >
-                                    <View className="w-12 h-12 rounded-2xl bg-black items-center justify-center mb-2">
+                                    <View className="w-12 h-12 rounded-2xl bg-[#F97316] items-center justify-center mb-2">
                                         <MaterialIcons name="security" size={24} color="white" />
                                     </View>
                                     <Text className="text-black font-bold text-sm">Safety</Text>
@@ -587,7 +587,7 @@ export default function ProfileScreen() {
                             <View className="bg-white rounded-2xl p-5 mb-6 border-2 border-black">
                                 <View className="flex-row items-center justify-between">
                                     <View className="flex-row items-center gap-4">
-                                        <View className="w-14 h-14 rounded-2xl bg-black items-center justify-center">
+                                        <View className="w-14 h-14 rounded-2xl bg-[#8B5CF6] items-center justify-center">
                                             <MaterialCommunityIcons name="ghost" size={28} color={ghostMode ? "#FFE600" : "white"} />
                                         </View>
                                         <View>
@@ -601,7 +601,7 @@ export default function ProfileScreen() {
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                             setGhostMode(val);
                                         }}
-                                        trackColor={{ false: '#ccc', true: 'black' }}
+                                        trackColor={{ false: '#E5E5E5', true: '#8B5CF6' }}
                                         thumbColor={ghostMode ? '#FFE600' : 'white'}
                                     />
                                 </View>
@@ -616,7 +616,7 @@ export default function ProfileScreen() {
                                         setShowNotifications(true);
                                     }}
                                 >
-                                    <View className="w-10 h-10 rounded-xl bg-black items-center justify-center">
+                                    <View className="w-10 h-10 rounded-xl bg-[#EF4444] items-center justify-center">
                                         <Ionicons name="notifications" size={20} color="white" />
                                     </View>
                                     <Text className="text-black font-medium text-base ml-4 flex-1">Notifications</Text>
@@ -633,7 +633,7 @@ export default function ProfileScreen() {
                                         setShowPrivacy(true);
                                     }}
                                 >
-                                    <View className="w-10 h-10 rounded-xl bg-black items-center justify-center">
+                                    <View className="w-10 h-10 rounded-xl bg-[#14B8A6] items-center justify-center">
                                         <Ionicons name="shield-checkmark" size={20} color="white" />
                                     </View>
                                     <Text className="text-black font-medium text-base ml-4 flex-1">Privacy & Data</Text>
@@ -647,7 +647,7 @@ export default function ProfileScreen() {
                                         setShowHelp(true);
                                     }}
                                 >
-                                    <View className="w-10 h-10 rounded-xl bg-black items-center justify-center">
+                                    <View className="w-10 h-10 rounded-xl bg-[#0EA5E9] items-center justify-center">
                                         <Ionicons name="help-buoy" size={20} color="white" />
                                     </View>
                                     <Text className="text-black font-medium text-base ml-4 flex-1">Help & Support</Text>
@@ -661,7 +661,7 @@ export default function ProfileScreen() {
                                         setShowTerms(true);
                                     }}
                                 >
-                                    <View className="w-10 h-10 rounded-xl bg-black items-center justify-center">
+                                    <View className="w-10 h-10 rounded-xl bg-[#6B7280] items-center justify-center">
                                         <Ionicons name="document-text" size={20} color="white" />
                                     </View>
                                     <Text className="text-black font-medium text-base ml-4 flex-1">Terms & Conditions</Text>
@@ -671,7 +671,7 @@ export default function ProfileScreen() {
 
                             {/* Log Out */}
                             <TouchableOpacity className="bg-black rounded-2xl py-4 flex-row items-center justify-center gap-2">
-                                <Ionicons name="log-out" size={20} color="white" />
+                                <Ionicons name="log-out" size={20} color="#FFE600" />
                                 <Text className="text-white font-bold text-base">Log Out</Text>
                             </TouchableOpacity>
                         </ScrollView>
