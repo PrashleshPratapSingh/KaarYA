@@ -217,8 +217,6 @@ export default function OnboardingCommunity() {
                             <View className="w-2.5 h-2.5 bg-black/20 rounded-full" />
                         </View>
 
-                        {/* Home Indicator */}
-                        <View className="mt-8 w-36 h-1.5 bg-black/90 rounded-full" />
                     </Animated.View>
                 )}
             </View>

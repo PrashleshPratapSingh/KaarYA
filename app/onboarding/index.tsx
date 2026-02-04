@@ -69,7 +69,6 @@ export default function OnboardingIndex() {
                         <View className="w-2.5 h-2.5 bg-black/20 rounded-full" />
                     </View>
 
-                    <View className="w-32 h-1.5 bg-black/80 rounded-full mt-2" />
                 </Animated.View>
             </View>
         </View>
