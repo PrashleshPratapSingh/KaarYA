@@ -86,6 +86,35 @@ export default function OnboardingStory() {
         router.replace('/(tabs)');
     };
 
+    // Go to next scene
+    const handleNext = () => {
+        if (currentIndex < SCENES.length - 1) {
+            setCurrentIndex(prev => prev + 1);
+        } else {
+            router.replace('/(tabs)');
+        }
+    };
+
+    // Go to previous scene
+    const handlePrev = () => {
+        if (currentIndex > 0) {
+            setCurrentIndex(prev => prev - 1);
+        }
+    };
+
+    // Handle tap based on position
+    const handleTap = (event: any) => {
+        const tapX = event.nativeEvent.locationX;
+        const screenWidth = width;
+
+        // Left third = go back, Right two-thirds = go forward
+        if (tapX < screenWidth / 3) {
+            handlePrev();
+        } else {
+            handleNext();
+        }
+    };
+
     const handlePressIn = () => {
         lottieRef.current?.pause();
     };
@@ -96,6 +125,9 @@ export default function OnboardingStory() {
 
     return (
         <Pressable
+            onPress={handleTap}
+            onLongPress={() => { }} // Keep long press for pause
+            delayLongPress={200}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             style={{ flex: 1, backgroundColor: activeScene.bg }}
