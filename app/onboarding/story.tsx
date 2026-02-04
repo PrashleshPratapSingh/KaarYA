@@ -171,7 +171,13 @@ export default function OnboardingStory() {
                         key={`anim-${currentIndex}`}
                         entering={FadeIn.duration(600)}
                         exiting={FadeOut.duration(400)}
-                        style={{ width: width, height: width, alignItems: 'center', justifyContent: 'center', marginTop: currentIndex === 0 ? -height * 0.10 : 0 }}
+                        style={{
+                            width: width,
+                            height: width,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginTop: currentIndex === 0 ? -height * 0.10 : currentIndex === 2 ? -height * 0.05 : 0
+                        }}
                     >
                         <LottieView
                             ref={lottieRef}
