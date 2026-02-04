@@ -249,38 +249,38 @@ export default function ProfileScreen() {
 
                         {/* XP Progress Circle */}
                         <TouchableOpacity
-                            className="flex-1 bg-black rounded-2xl p-4 items-center justify-center"
+                            className="flex-1 bg-white rounded-2xl p-4 items-center justify-center border-2 border-black"
                             onPress={() => setShowLevelUp(true)}
-                            style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 }}
+                            style={{ shadowColor: "#000", shadowOffset: { width: 3, height: 3 }, shadowOpacity: 0.15, shadowRadius: 0, elevation: 3 }}
                         >
-                            <View className="w-14 h-14 rounded-full border-[3px] border-[#FFE600] items-center justify-center mb-2">
-                                <Text className="text-[#FFE600] font-black text-lg">42</Text>
+                            <View className="w-14 h-14 rounded-full border-[3px] border-black items-center justify-center mb-2">
+                                <Text className="text-black font-black text-lg">42</Text>
                             </View>
-                            <Text className="text-white/60 text-[10px] font-bold tracking-widest">LEVEL</Text>
+                            <Text className="text-black/60 text-[10px] font-bold tracking-widest">LEVEL</Text>
                         </TouchableOpacity>
 
                         {/* Wallet / Earnings */}
                         <TouchableOpacity
-                            className="flex-1 bg-black rounded-2xl p-4 items-center justify-center"
+                            className="flex-1 bg-white rounded-2xl p-4 items-center justify-center border-2 border-black"
                             onPress={() => setShowStats(true)}
-                            style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 }}
+                            style={{ shadowColor: "#000", shadowOffset: { width: 3, height: 3 }, shadowOpacity: 0.15, shadowRadius: 0, elevation: 3 }}
                         >
-                            <View className="w-14 h-14 rounded-full bg-[#FFE600] items-center justify-center mb-2">
+                            <View className="w-14 h-14 rounded-full bg-[#FFE600] items-center justify-center mb-2 border-2 border-black">
                                 <MaterialCommunityIcons name="wallet" size={24} color="black" />
                             </View>
-                            <Text className="text-white/60 text-[10px] font-bold tracking-widest">WALLET</Text>
+                            <Text className="text-black/60 text-[10px] font-bold tracking-widest">WALLET</Text>
                         </TouchableOpacity>
 
                         {/* Rating Star */}
                         <TouchableOpacity
-                            className="flex-1 bg-black rounded-2xl p-4 items-center justify-center"
+                            className="flex-1 bg-white rounded-2xl p-4 items-center justify-center border-2 border-black"
                             onPress={() => setShowRating(true)}
-                            style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 }}
+                            style={{ shadowColor: "#000", shadowOffset: { width: 3, height: 3 }, shadowOpacity: 0.15, shadowRadius: 0, elevation: 3 }}
                         >
-                            <View className="w-14 h-14 rounded-full border-[3px] border-white/30 items-center justify-center mb-2">
-                                <Text className="text-white font-black text-lg">4.9</Text>
+                            <View className="w-14 h-14 rounded-full border-[3px] border-black/30 items-center justify-center mb-2">
+                                <Text className="text-black font-black text-lg">4.9</Text>
                             </View>
-                            <Text className="text-white/60 text-[10px] font-bold tracking-widest">RATING</Text>
+                            <Text className="text-black/60 text-[10px] font-bold tracking-widest">RATING</Text>
                         </TouchableOpacity>
                     </View>
 
