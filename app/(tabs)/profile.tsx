@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { View, Text, TouchableOpacity, Image, Modal, Switch, Pressable, ScrollView } from "react-native";
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, interpolate, Extrapolate } from "react-native-reanimated";
 import { useTabBarContext } from '../../app/context/TabBarContext';
@@ -79,48 +79,50 @@ export default function ProfileScreen() {
     const [showHelp, setShowHelp] = useState(false);
     const [showTerms, setShowTerms] = useState(false);
 
-    // Load user data from AsyncStorage
-    useEffect(() => {
-        const loadUserData = async () => {
-            try {
-                const savedData = await AsyncStorage.getItem(STORAGE_KEY);
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    setUserData({
-                        name: data.name || '',
-                        email: data.email || '',
-                        phone: data.phone || '',
-                        university: data.university || '',
-                        gradYear: data.gradYear || '',
-                        bio: data.bio || '',
-                        image: data.image || null,
-                        skills: data.skills || [],
-                        isVerified: data.isVerified || false,
-                    });
+    // Load user data from AsyncStorage - refresh on focus
+    useFocusEffect(
+        useCallback(() => {
+            const loadUserData = async () => {
+                try {
+                    const savedData = await AsyncStorage.getItem(STORAGE_KEY);
+                    if (savedData) {
+                        const data = JSON.parse(savedData);
+                        setUserData({
+                            name: data.name || '',
+                            email: data.email || '',
+                            phone: data.phone || '',
+                            university: data.university || '',
+                            gradYear: data.gradYear || '',
+                            bio: data.bio || '',
+                            image: data.image || null,
+                            skills: data.skills || [],
+                            isVerified: data.isVerified || false,
+                        });
 
-                    // Convert skills to activeSkills format with random colors
-                    const colors = ['#FF69B4', '#BFFF00', '#87CEEB', '#FFD700', '#FF6B6B', '#4ECDC4', '#9B59B6'];
-                    if (data.skills && data.skills.length > 0) {
-                        const formattedSkills = data.skills.map((skill: string, index: number) => ({
-                            id: String(index + 1),
-                            name: skill,
-                            color: colors[index % colors.length],
-                            vouches: Math.floor(Math.random() * 15),
-                            verified: true,
-                            highDemand: index < 2,
-                        }));
-                        setActiveSkills(formattedSkills);
+                        // Convert skills to activeSkills format with random colors
+                        const colors = ['#FF69B4', '#BFFF00', '#87CEEB', '#FFD700', '#FF6B6B', '#4ECDC4', '#9B59B6'];
+                        if (data.skills && data.skills.length > 0) {
+                            const formattedSkills = data.skills.map((skill: string, index: number) => ({
+                                id: String(index + 1),
+                                name: skill,
+                                color: colors[index % colors.length],
+                                vouches: Math.floor(Math.random() * 15),
+                                verified: true,
+                                highDemand: index < 2,
+                            }));
+                            setActiveSkills(formattedSkills);
+                        }
                     }
+                } catch (error) {
+                    console.error('Failed to load user data:', error);
+                } finally {
+                    setIsLoading(false);
                 }
-            } catch (error) {
-                console.error('Failed to load user data:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+            };
 
-        loadUserData();
-    }, []);
+            loadUserData();
+        }, [])
+    );
 
     // Scroll animation
     const { scrollY } = useTabBarContext();
@@ -1730,15 +1732,27 @@ export default function ProfileScreen() {
                                 >
                                     <View className="flex-row items-center mb-4">
                                         <View className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden border-2" style={{ borderColor: selectedTheme === 'neon' ? '#00FFFF' : '#000' }}>
-                                            <Image
-                                                source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200' }}
-                                                className="w-full h-full"
-                                                resizeMode="cover"
-                                            />
+                                            {userData.image ? (
+                                                <Image
+                                                    source={{ uri: userData.image }}
+                                                    className="w-full h-full"
+                                                    resizeMode="cover"
+                                                />
+                                            ) : (
+                                                <View className="w-full h-full bg-black items-center justify-center">
+                                                    <Text className="text-white font-bold text-xl">
+                                                        {userData.name ? userData.name.charAt(0).toUpperCase() : '?'}
+                                                    </Text>
+                                                </View>
+                                            )}
                                         </View>
                                         <View className="ml-3">
-                                            <Text className="font-bold text-lg" style={{ color: selectedTheme === 'neon' ? '#fff' : '#000' }}>ARIA SINGH</Text>
-                                            <Text className="text-xs" style={{ color: selectedTheme === 'neon' ? '#00FFFF' : '#000', opacity: 0.6 }}>@ARIADESIGNS • Lvl 42</Text>
+                                            <Text className="font-bold text-lg" style={{ color: selectedTheme === 'neon' ? '#fff' : '#000' }}>
+                                                {userData.name ? userData.name.toUpperCase() : 'YOUR NAME'}
+                                            </Text>
+                                            <Text className="text-xs" style={{ color: selectedTheme === 'neon' ? '#00FFFF' : '#000', opacity: 0.6 }}>
+                                                {userData.email ? `@${userData.email.split('@')[0].toUpperCase()}` : '@USERNAME'} • Lvl 42
+                                            </Text>
                                         </View>
                                     </View>
 
