@@ -139,7 +139,8 @@ export default function MessagesListScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFF9E6" />
+            <StatusBar barStyle="dark-content" backgroundColor="#FFE600" />
+            {/* Yellow Header Area */}
             <View style={styles.headerContainer}>
                 <Text style={styles.headerTitle}>Messages</Text>
                 <View style={styles.searchBar}>
@@ -152,13 +153,16 @@ export default function MessagesListScreen() {
                 </View>
             </View>
 
-            <FlatList
-                data={MOCK_CHATS}
-                renderItem={renderItem}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-            />
+            {/* White Chat List Area */}
+            <View style={styles.chatListContainer}>
+                <FlatList
+                    data={MOCK_CHATS}
+                    renderItem={renderItem}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                />
+            </View>
         </SafeAreaView>
     );
 }
@@ -166,12 +170,13 @@ export default function MessagesListScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFF9E6',
+        backgroundColor: '#FFE600',
     },
     headerContainer: {
         paddingHorizontal: 20,
         paddingTop: 20,
-        paddingBottom: 16,
+        paddingBottom: 20,
+        backgroundColor: '#FFE600',
     },
     headerTitle: {
         fontSize: 28,
@@ -182,10 +187,12 @@ const styles = StyleSheet.create({
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.9)',
+        backgroundColor: '#fff',
         paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 12,
+        paddingVertical: 12,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#000',
     },
     searchInput: {
         flex: 1,
@@ -193,7 +200,15 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#000',
     },
+    chatListContainer: {
+        flex: 1,
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        marginTop: 8,
+    },
     listContent: {
+        paddingTop: 12,
         paddingBottom: 100,
     },
     chatItem: {
