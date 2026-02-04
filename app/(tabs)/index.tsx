@@ -3,11 +3,12 @@
  * Clean main screen with functional Apply and Notification
  */
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Modal, Text, Image, TouchableOpacity, Pressable } from 'react-native';
 import { StatusBar } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useTabBarContext } from '../../app/context/TabBarContext';
+import * as Haptics from 'expo-haptics';
 
 // Import components from home folder
 import {
@@ -24,6 +25,9 @@ import {
 // Import sample data
 import { SAMPLE_GIGS } from '../../components/home/data';
 
+// Ghost mascot image
+const GhostMascot = require('../../assets/images/Ghost Massacre.png');
+
 export default function HomeScreen() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
@@ -32,6 +36,9 @@ export default function HomeScreen() {
   // Modal state
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Filter gigs by category
   const filteredGigs = SAMPLE_GIGS.filter(
@@ -66,11 +73,16 @@ export default function HomeScreen() {
   // Send application
   const handleSendApplication = () => {
     setModalVisible(false);
-    Alert.alert(
-      '🎉 Application Sent!',
-      `Your application for "${selectedGig?.title}" has been sent to ${selectedGig?.postedBy}. They'll get back to you soon!`,
-      [{ text: 'Awesome!', style: 'default' }]
-    );
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    setTimeout(() => {
+      setShowSuccessModal(true);
+    }, 300);
+  };
+
+  // Close success modal
+  const handleCloseSuccess = () => {
+    setShowSuccessModal(false);
   };
 
   // Notification press
@@ -134,6 +146,40 @@ export default function HomeScreen() {
         onClose={() => setModalVisible(false)}
         onApply={handleSendApplication}
       />
+
+      {/* Success Modal with Ghost Mascot */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseSuccess}
+      >
+        <Pressable style={styles.successOverlay} onPress={handleCloseSuccess}>
+          <View style={styles.successContainer}>
+            {/* Ghost Mascot */}
+            <Image
+              source={GhostMascot}
+              style={styles.ghostImage}
+              resizeMode="contain"
+            />
+
+            {/* Success Text */}
+            <Text style={styles.successTitle}>Application Sent!</Text>
+            <Text style={styles.successSubtitle}>
+              {selectedGig?.postedBy} will get back to you soon
+            </Text>
+
+            {/* Got it button */}
+            <TouchableOpacity
+              style={styles.gotItButton}
+              onPress={handleCloseSuccess}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.gotItText}>Got it!</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -150,5 +196,48 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     paddingHorizontal: 20,
     gap: 10,
+  },
+  // Success Modal Styles
+  successOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    marginHorizontal: 32,
+  },
+  ghostImage: {
+    width: 240,
+    height: 200,
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  successSubtitle: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  gotItButton: {
+    backgroundColor: '#000',
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    borderRadius: 16,
+  },
+  gotItText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
