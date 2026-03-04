@@ -1,8 +1,8 @@
 /**
  * GigDetailModal - Splash transition with comprehensive poster portfolio
  */
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, ScrollView, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Modal, ScrollView, Dimensions, Alert, ActivityIndicator } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -13,6 +13,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { KARYA_BLACK, KARYA_WHITE, KARYA_YELLOW, BADGE_COLORS, Gig } from './types';
+import { useRouter } from 'expo-router';
+import { useAuth } from '../../app/context/AuthContext';
+import { getOrCreateChat } from '../../lib/messaging';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -20,10 +23,12 @@ interface Props {
     visible: boolean;
     gig: Gig | null;
     onClose: () => void;
-    onApply: () => void;
 }
 
-export function GigDetailModal({ visible, gig, onClose, onApply }: Props) {
+export function GigDetailModal({ visible, gig, onClose }: Props) {
+    const router = useRouter();
+    const { user } = useAuth();
+    const [isCreatingChat, setIsCreatingChat] = useState(false);
     // Splash circle animation
     const splashScale = useSharedValue(0);
     const contentOpacity = useSharedValue(0);
@@ -81,6 +86,49 @@ export function GigDetailModal({ visible, gig, onClose, onApply }: Props) {
 
     const handleClosePressOut = () => {
         closeButtonScale.value = withTiming(1, { duration: 150 });
+    };
+
+    const handleContactClient = async () => {
+        if (!gig) return;
+
+        if (!user) {
+            Alert.alert(
+                "Sign In Required",
+                "You need to sign in to message clients.",
+                [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Sign In", onPress: () => { onClose(); router.push('/onboarding'); } }
+                ]
+            );
+            return;
+        }
+
+        try {
+            setIsCreatingChat(true);
+            // In a real app, gig.postedBy would ideally be a user ID, but we'll use the name for now
+            // as a placeholder ID since we don't have the full poster user object attached to the gig yet.
+            const posterDummyId = gig.postedBy.toLowerCase().replace(/\s+/g, '-');
+
+            const chatId = await getOrCreateChat(
+                posterDummyId, // otherUserId
+                gig.postedBy,  // otherUserName
+                null,          // otherUserAvatar
+                user.displayName || 'Me', // currentUserName
+                gig.id,        // gigId
+                gig.title      // gigTitle
+            );
+
+            onClose();
+            router.push({
+                pathname: '/chat/[id]',
+                params: { id: chatId, name: gig.postedBy }
+            });
+        } catch (error) {
+            console.error("Error creating chat:", error);
+            Alert.alert("Error", "Could not start chat. Please try again.");
+        } finally {
+            setIsCreatingChat(false);
+        }
     };
 
     if (!gig) return null;
@@ -271,12 +319,19 @@ export function GigDetailModal({ visible, gig, onClose, onApply }: Props) {
                         <Animated.View style={applyButtonStyle}>
                             <Pressable
                                 style={styles.applyButton}
-                                onPress={onApply}
+                                onPress={handleContactClient}
                                 onPressIn={handleApplyPressIn}
                                 onPressOut={handleApplyPressOut}
+                                disabled={isCreatingChat}
                             >
-                                <Text style={styles.applyButtonText}>SEND APPLICATION</Text>
-                                <Feather name="send" size={18} color={KARYA_YELLOW} />
+                                {isCreatingChat ? (
+                                    <ActivityIndicator color={KARYA_YELLOW} />
+                                ) : (
+                                    <>
+                                        <Text style={styles.applyButtonText}>MESSAGE CLIENT</Text>
+                                        <Feather name="message-square" size={18} color={KARYA_YELLOW} />
+                                    </>
+                                )}
                             </Pressable>
                         </Animated.View>
                     </ScrollView>

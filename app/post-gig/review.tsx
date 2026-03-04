@@ -6,6 +6,8 @@ import {
     ScrollView,
     StyleSheet,
     Dimensions,
+    Alert,
+    ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -16,6 +18,7 @@ import Animated, {
     withSpring,
     FadeInDown,
 } from "react-native-reanimated";
+import { createGig } from "../../lib/queries";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -53,12 +56,16 @@ export default function ReviewScreen() {
     const params = useLocalSearchParams();
 
     const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const buttonScale = useSharedValue(1);
 
     // Parse params
     const category = params.category as string;
+    const title = (params.title as string) || "Untitled Gig";
+    const description = (params.description as string) || "";
     const amount = params.amount as string;
     const deadline = params.deadline as string;
+    const skillsParam = params.skills as string;
 
     // Parse attachments from params or use mock
     const attachments = useMemo(() => {
@@ -97,9 +104,35 @@ export default function ReviewScreen() {
 
     const categoryInfo = CATEGORY_NAMES[category] || CATEGORY_NAMES.design;
 
-    const handleBlastLive = () => {
-        if (agreedToTerms) {
+    const handleBlastLive = async () => {
+        if (!agreedToTerms || isSubmitting) return;
+
+        setIsSubmitting(true);
+        try {
+            // Parse skills
+            let skills: string[] = [];
+            try { skills = skillsParam ? JSON.parse(skillsParam) : []; } catch { }
+
+            await createGig({
+                title,
+                description,
+                category: category || 'other',
+                budgetAmount: parseInt(amount || '5000'),
+                skills,
+                deadline: deadline || undefined,
+                urgency: 'normal',
+            });
+
             router.push("/post-gig/success");
+        } catch (error: any) {
+            console.error('Failed to create gig:', error);
+            Alert.alert(
+                'Could not post gig',
+                error?.message || 'Please check your connection and try again.',
+                [{ text: 'OK' }]
+            );
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -329,26 +362,32 @@ export default function ReviewScreen() {
                     onPress={handleBlastLive}
                     onPressIn={handleButtonPressIn}
                     onPressOut={handleButtonPressOut}
-                    disabled={!agreedToTerms}
+                    disabled={!agreedToTerms || isSubmitting}
                     style={[
                         buttonAnimatedStyle,
                         styles.continueButton,
-                        !agreedToTerms && styles.continueButtonDisabled,
+                        (!agreedToTerms || isSubmitting) && styles.continueButtonDisabled,
                     ]}
                 >
-                    <Text
-                        style={[
-                            styles.continueText,
-                            !agreedToTerms && styles.continueTextDisabled,
-                        ]}
-                    >
-                        Make it Live
-                    </Text>
-                    <MaterialCommunityIcons
-                        name="arrow-right"
-                        size={24}
-                        color={agreedToTerms ? COLORS.white : "#888888"}
-                    />
+                    {isSubmitting ? (
+                        <ActivityIndicator color={COLORS.white} size="small" />
+                    ) : (
+                        <>
+                            <Text
+                                style={[
+                                    styles.continueText,
+                                    !agreedToTerms && styles.continueTextDisabled,
+                                ]}
+                            >
+                                Make it Live
+                            </Text>
+                            <MaterialCommunityIcons
+                                name="arrow-right"
+                                size={24}
+                                color={agreedToTerms ? COLORS.white : "#888888"}
+                            />
+                        </>
+                    )}
                 </AnimatedPressable>
             </View>
         </View>

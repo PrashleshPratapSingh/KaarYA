@@ -2,7 +2,7 @@
  * KaarYa Home Screen
  * Clean main screen with functional Apply and Notification
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Modal, Text, Image, TouchableOpacity, Pressable } from 'react-native';
 import { StatusBar } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -22,7 +22,10 @@ import {
   Gig,
 } from '../../components/home';
 
-// Import sample data
+// Firestore queries
+import { fetchGigs, gigRowToGig } from '../../lib/queries';
+
+// Fallback sample data (shown when Firestore is empty or offline)
 import { SAMPLE_GIGS } from '../../components/home/data';
 
 // Ghost mascot image
@@ -32,6 +35,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [gigs, setGigs] = useState<Gig[]>(SAMPLE_GIGS); // Start with sample data
 
   // Modal state
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
@@ -40,17 +44,37 @@ export default function HomeScreen() {
   // Success modal state
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Filter gigs by category
-  const filteredGigs = SAMPLE_GIGS.filter(
+  // Fetch gigs from Firestore
+  const loadGigs = useCallback(async () => {
+    try {
+      const rows = await fetchGigs(activeCategory !== 'all' ? activeCategory : undefined);
+      if (rows.length > 0) {
+        setGigs(rows.map(gigRowToGig) as Gig[]);
+      } else {
+        // Firestore empty — keep showing sample data
+        setGigs(SAMPLE_GIGS);
+      }
+    } catch (error) {
+      console.log('Firestore fetch failed, using sample data:', error);
+      setGigs(SAMPLE_GIGS);
+    }
+  }, [activeCategory]);
+
+  // Load on mount and when category changes
+  useEffect(() => {
+    loadGigs();
+  }, [loadGigs]);
+
+  // Filter gigs by category (for sample data fallback)
+  const filteredGigs = gigs.filter(
     (gig) => activeCategory === 'all' || gig.category === activeCategory
   );
 
   // Pull to refresh handler
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
+    await loadGigs();
+    setRefreshing(false);
   };
 
   // Category change handler
@@ -144,7 +168,6 @@ export default function HomeScreen() {
         visible={modalVisible}
         gig={selectedGig}
         onClose={() => setModalVisible(false)}
-        onApply={handleSendApplication}
       />
 
       {/* Success Modal with Ghost Mascot */}

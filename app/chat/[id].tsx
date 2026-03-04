@@ -21,54 +21,58 @@ import { ProfileDetailsModal } from '../../components/messaging/ProfileDetailsMo
 import * as Clipboard from 'expo-clipboard';
 import { Message, User } from '../../types/messaging';
 import { BrandColors } from '../../constants/Colors';
+import { onMessagesChanged, sendMessage, markChatAsRead, type ChatMessage } from '../../lib/messaging';
+import { useAuth } from '../context/AuthContext';
 
 export default function ChatRoomScreen() {
     const router = useRouter();
     const { id, name } = useLocalSearchParams();
+    const { user } = useAuth();
+    const chatId = typeof id === 'string' ? id : '';
 
-    // Mock Messages (In real app, fetch based on ID)
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: '1',
-            text: 'Hey! Just checking in on the progress for the landing page hero section. How\'s it looking?',
-            senderId: 'other',
-            createdAt: Date.now() - 600000,
-            type: 'text',
-            status: 'read',
-        },
-        {
-            id: '2',
-            text: 'Finished the desktop layout! Moving on to responsive versions now. Should be ready for review by EOD.',
-            senderId: 'me',
-            createdAt: Date.now() - 300000,
-            type: 'text',
-            status: 'read',
-        },
-        {
-            id: '3',
-            text: 'Perfect. Please send over the Figma link once you have the mobile screens done. 🔥',
-            senderId: 'other',
-            createdAt: Date.now() - 60000,
-            type: 'text',
-            status: 'read',
-        },
-    ]);
+    const [messages, setMessages] = useState<Message[]>([]);
 
     const currentUser: User = {
-        id: 'me',
+        id: user?.uid || 'me',
         name: 'You',
         status: 'online',
     };
 
-    const displayName = typeof name === 'string' ? name : 'Alex Rivera';
+    const displayName = typeof name === 'string' ? name : 'User';
 
     const otherUser: User = {
-        id: 'other',
+        id: 'other', // We don't have the exact ID here easily without fetching the thread, but we just need name for display
         name: displayName,
         status: 'online',
     };
 
     const flatListRef = useRef<FlatList>(null);
+
+    // Subscribe to real-time messages
+    useEffect(() => {
+        if (!chatId || !user) return;
+
+        // Mark chat as read when opening
+        markChatAsRead(chatId).catch(console.error);
+
+        const unsubscribe = onMessagesChanged(chatId, (fetchedMessages: ChatMessage[]) => {
+            const mappedMessages: Message[] = fetchedMessages.map(m => ({
+                id: m.id,
+                text: m.text,
+                senderId: m.senderId,
+                createdAt: new Date(m.createdAt).getTime(),
+                type: m.type,
+                status: m.status,
+                mediaUrl: m.mediaUrl,
+            }));
+            setMessages(mappedMessages);
+
+            // Mark as read again if new messages come in while screen is open
+            markChatAsRead(chatId).catch(console.error);
+        });
+
+        return () => unsubscribe();
+    }, [chatId, user]);
 
     useEffect(() => {
         if (messages.length > 0) {
@@ -78,29 +82,26 @@ export default function ChatRoomScreen() {
         }
     }, [messages]);
 
-    const handleSendMessage = (text: string) => {
-        const newMessage: Message = {
-            id: Date.now().toString(),
-            text,
-            senderId: currentUser.id,
-            createdAt: Date.now(),
-            type: 'text',
-            status: 'sent',
-        };
-        setMessages((prev) => [...prev, newMessage]);
+    const handleSendMessage = async (text: string) => {
+        if (!chatId) return;
+        try {
+            await sendMessage(chatId, text, 'text');
+        } catch (error) {
+            console.error('Failed to send text message:', error);
+            Alert.alert('Error', 'Failed to send message');
+        }
     };
 
-    const handleSendAudio = (uri: string, duration: number) => {
-        const newMessage: Message = {
-            id: Date.now().toString(),
-            senderId: currentUser.id,
-            createdAt: Date.now(),
-            type: 'audio',
-            mediaUrl: uri,
-            duration,
-            status: 'sent',
-        };
-        setMessages((prev) => [...prev, newMessage]);
+    const handleSendAudio = async (uri: string, duration: number) => {
+        if (!chatId) return;
+        try {
+            // In a real app, you'd upload this URI to Firebase Storage first
+            // and pass the download URL to sendMessage
+            await sendMessage(chatId, 'Audio message', 'audio', uri);
+        } catch (error) {
+            console.error('Failed to send audio message:', error);
+            Alert.alert('Error', 'Failed to send audio');
+        }
     };
 
     const handleAttachFile = (uri: string, type: string) => {

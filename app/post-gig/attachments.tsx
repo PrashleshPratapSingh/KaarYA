@@ -6,6 +6,7 @@ import {
     ScrollView,
     StyleSheet,
     Dimensions,
+    Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -17,6 +18,7 @@ import Animated, {
     FadeInDown,
     FadeInUp,
 } from "react-native-reanimated";
+import * as DocumentPicker from "expo-document-picker";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -38,6 +40,7 @@ interface AttachedFile {
     name: string;
     type: "image" | "pdf";
     size: string;
+    uri?: string; // Local file URI for upload
 }
 
 export default function AttachmentsScreen() {
@@ -48,23 +51,35 @@ export default function AttachmentsScreen() {
     const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
     const buttonScale = useSharedValue(1);
 
-    // Mock function - adds sample files when Browse is clicked
-    const addMockFiles = () => {
-        const mockFiles: AttachedFile[] = [
-            {
-                id: "1",
-                name: "brand_guidelines_v2.jpg",
-                type: "image",
-                size: "2.4 MB",
-            },
-            {
-                id: "2",
-                name: "project_brief_draft.pdf",
-                type: "pdf",
-                size: "540 KB",
-            },
-        ];
-        setAttachedFiles(mockFiles);
+    // Real file picker using expo-document-picker
+    const browseFiles = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: ["image/*", "application/pdf", "video/*"],
+                multiple: true,
+                copyToCacheDirectory: true,
+            });
+
+            if (!result.canceled && result.assets) {
+                const newFiles: AttachedFile[] = result.assets.map((asset, index) => ({
+                    id: `${Date.now()}-${index}`,
+                    name: asset.name || `file_${index}`,
+                    type: asset.mimeType?.startsWith("image") ? "image" as const : "pdf" as const,
+                    size: asset.size ? formatFileSize(asset.size) : "Unknown",
+                    uri: asset.uri,
+                }));
+                setAttachedFiles((prev) => [...prev, ...newFiles]);
+            }
+        } catch (error) {
+            Alert.alert("Error", "Failed to pick files. Please try again.");
+        }
+    };
+
+    /** Format bytes to human-readable size */
+    const formatFileSize = (bytes: number): string => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     };
 
     const removeFile = (id: string) => {
@@ -184,7 +199,7 @@ export default function AttachmentsScreen() {
                         </View>
 
                         <Pressable
-                            onPress={addMockFiles}
+                            onPress={browseFiles}
                             style={({ pressed }) => [
                                 styles.browseButton,
                                 pressed && styles.browseButtonPressed,

@@ -1,8 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar, SafeAreaView, TextInput } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, SafeAreaView, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BrandColors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { onChatsChanged, type ChatThread } from '../../lib/messaging';
+import { useAuth } from '../context/AuthContext';
 
 interface ChatPreview {
     id: string;
@@ -14,65 +16,60 @@ interface ChatPreview {
     avatarColor: string;
 }
 
-const MOCK_CHATS: ChatPreview[] = [
-    {
-        id: '1',
-        name: 'Alex Rivera',
-        lastMessage: 'Perfect. Please send over the Figma link...',
-        time: '23:32',
-        unreadCount: 0,
-        type: 'text',
-        avatarColor: BrandColors.yellow,
-    },
-    {
-        id: '2',
-        name: 'Sarah Jenkins',
-        lastMessage: 'The wireframes look great! Approved.',
-        time: '14:20',
-        unreadCount: 2,
-        type: 'text',
-        avatarColor: '#26A69A',
-    },
-    {
-        id: '3',
-        name: 'Michael Chen',
-        lastMessage: 'Photo',
-        time: 'Yesterday',
-        unreadCount: 0,
-        type: 'photo',
-        avatarColor: '#5C6BC0',
-    },
-    {
-        id: '4',
-        name: 'Emily Carter',
-        lastMessage: 'Can we reschedule the sprint meeting?',
-        time: 'Yesterday',
-        unreadCount: 1,
-        type: 'text',
-        avatarColor: '#AB47BC',
-    },
-    {
-        id: '5',
-        name: 'David Ross',
-        lastMessage: 'Contract signed. Lets start monday.',
-        time: 'Mon',
-        unreadCount: 0,
-        type: 'text',
-        avatarColor: '#78909C',
-    },
-    {
-        id: '6',
-        name: 'Jessica Wong',
-        lastMessage: 'Audio Message',
-        time: 'Mon',
-        unreadCount: 0,
-        type: 'audio',
-        avatarColor: '#8D6E63',
-    },
-];
-
 export default function MessagesListScreen() {
     const router = useRouter();
+    const { user } = useAuth();
+    const [chats, setChats] = useState<ChatPreview[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+
+        const unsubscribe = onChatsChanged((threads: ChatThread[]) => {
+            const mappedChats: ChatPreview[] = threads.map(thread => {
+                // Determine the other participant
+                const isUser1 = thread.participantIds[0] === user.uid;
+                const otherName = isUser1 ? thread.participantNames[1] : thread.participantNames[0];
+                const otherAvatar = isUser1 ? thread.participantAvatars?.[1] : thread.participantAvatars?.[0];
+                const unreadKey = `unread_${user.uid}` as keyof ChatThread;
+
+                // Format time (e.g. "14:20" or "Yesterday" or "Mon")
+                let timeStr = '';
+                if (thread.lastMessageAt) {
+                    const date = new Date(thread.lastMessageAt);
+                    const now = new Date();
+                    const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                    if (isToday) {
+                        timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    } else {
+                        timeStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    }
+                }
+
+                // Temporary deterministic color based on ID length
+                const colors = [BrandColors.yellow, '#26A69A', '#5C6BC0', '#AB47BC', '#78909C', '#8D6E63'];
+                const avatarColor = colors[thread.id.length % colors.length];
+
+                return {
+                    id: thread.id,
+                    name: otherName || 'Unknown User',
+                    lastMessage: thread.lastMessage || 'No messages yet',
+                    time: timeStr,
+                    unreadCount: (thread.unreadCounts?.[user.uid] as number) || 0,
+                    type: thread.lastMessage.startsWith('📎') ? 'photo' : 'text', // basic fallback logic
+                    avatarColor: avatarColor,
+                };
+            });
+
+            setChats(mappedChats);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
 
     const handleChatPress = (chatId: string, name: string) => {
         router.push({
@@ -131,7 +128,7 @@ export default function MessagesListScreen() {
                 </View>
             </TouchableOpacity>
             {/* Separator line */}
-            {index < MOCK_CHATS.length - 1 && (
+            {index < chats.length - 1 && (
                 <View style={styles.separator} />
             )}
         </>
@@ -155,13 +152,39 @@ export default function MessagesListScreen() {
 
             {/* White Chat List Area */}
             <View style={styles.chatListContainer}>
-                <FlatList
-                    data={MOCK_CHATS}
-                    renderItem={renderItem}
-                    keyExtractor={item => item.id}
-                    contentContainerStyle={styles.listContent}
-                    showsVerticalScrollIndicator={false}
-                />
+                {loading ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size="large" color="#000" />
+                    </View>
+                ) : !user ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
+                        <Ionicons name="lock-closed" size={64} color="rgba(0,0,0,0.2)" />
+                        <Text style={{ textAlign: 'center', marginTop: 16, fontSize: 16, color: 'rgba(0,0,0,0.5)', marginBottom: 24 }}>
+                            Sign in to view your messages and chat with clients.
+                        </Text>
+                        <TouchableOpacity
+                            onPress={() => router.push('/onboarding')}
+                            style={{ backgroundColor: '#000', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 24 }}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Sign In</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : chats.length === 0 ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
+                        <Ionicons name="chatbubbles-outline" size={64} color="rgba(0,0,0,0.2)" />
+                        <Text style={{ textAlign: 'center', marginTop: 16, fontSize: 16, color: 'rgba(0,0,0,0.5)' }}>
+                            No messages yet. When you apply for a gig or a client contacts you, chats will appear here.
+                        </Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={chats}
+                        renderItem={renderItem}
+                        keyExtractor={item => item.id}
+                        contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={false}
+                    />
+                )}
             </View>
         </SafeAreaView>
     );

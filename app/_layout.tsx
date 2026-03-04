@@ -1,10 +1,11 @@
 import "../global.css";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
+import { SplashScreen, Stack, useRouter } from "expo-router";
 import { vars } from "nativewind";
 import { memo, useEffect } from "react";
 import { View, StyleSheet, StatusBar } from "react-native";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -77,7 +78,11 @@ export default memo(function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
 });
 
 const theme = vars({
@@ -85,7 +90,33 @@ const theme = vars({
   "--theme-bg": "rgba(230,230,230,1)",
 });
 
+// ──────────────────────────────────────────────────────────────────────────────
+// AUTH GATING — This is the "bouncer" of the app
+//
+// It checks: "is this user logged in?"
+// • YES → skip onboarding, go straight to Home Feed
+// • NO  → show onboarding / login
+// • STILL CHECKING → show nothing (splash screen stays visible)
+//
+// router.replace() is used instead of router.push() so the user
+// can't press "back" to get to the wrong screen.
+// ──────────────────────────────────────────────────────────────────────────────
 function RootLayoutNav() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return; // Still checking auth state — do nothing
+
+    if (user) {
+      // User is logged in → go to main app
+      router.replace('/(tabs)');
+    } else {
+      // User is NOT logged in → show onboarding
+      router.replace('/onboarding');
+    }
+  }, [user, loading]);
+
   return (
     <View style={[theme, StyleSheet.absoluteFill]}>
       <StatusBar hidden={true} />

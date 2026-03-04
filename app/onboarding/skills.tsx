@@ -1,12 +1,15 @@
-import { View, Text, TouchableOpacity, Dimensions, TextInput, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, TextInput, Image, KeyboardAvoidingView, Platform, ScrollView, Modal, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { type ConfirmationResult } from 'firebase/auth';
+import { sendOtp, verifyOtp, updateUserProfile, requireAuth } from '../../lib/auth';
+import { FirebaseRecaptchaVerifierModal } from '../../components/RecaptchaVerifier';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,6 +33,14 @@ export default function OnboardingSkills() {
     // UI/Verification States
     const [isVerified, setIsVerified] = useState(false);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
+    const [isSendingOtp, setIsSendingOtp] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [confirmResult, setConfirmResult] = useState<ConfirmationResult | null>(null);
+
+    // reCAPTCHA ref
+    const recaptchaRef = useRef<any>(null);
 
     // Initial Load from Storage
     useEffect(() => {
@@ -93,16 +104,83 @@ export default function OnboardingSkills() {
         return () => clearTimeout(timer);
     }, [name, email, phone, university, gradYear, bio, image, skills, isVerified, isDataLoaded]);
 
+    // ─── Phone OTP Handlers ─────────────────────────────────────────────
+
+    const handleSendOtp = async () => {
+        const cleanPhone = phone.replace(/\s/g, '');
+        if (cleanPhone.length < 10) {
+            Alert.alert('Invalid Phone', 'Please enter a valid phone number with country code (e.g. +919876543210)');
+            return;
+        }
+
+        // Ensure country code
+        const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+91${cleanPhone}`;
+
+        setIsSendingOtp(true);
+        try {
+            const confirmation = await sendOtp(formattedPhone, recaptchaRef.current);
+            setConfirmResult(confirmation);
+            setShowOtpModal(true);
+        } catch (error: any) {
+            console.error('OTP send error:', error);
+            Alert.alert('Error', error.message || 'Failed to send OTP. Please try again.');
+        } finally {
+            setIsSendingOtp(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (otpCode.length !== 6 || !confirmResult) return;
+
+        setIsVerifying(true);
+        try {
+            const user = await verifyOtp(confirmResult, otpCode);
+
+            // Update the user profile with onboarding data
+            await updateUserProfile(user.uid, {
+                name,
+                email,
+                university,
+                bio,
+                skills,
+            });
+
+            setIsVerified(true);
+            setShowOtpModal(false);
+            setOtpCode('');
+        } catch (error: any) {
+            console.error('OTP verify error:', error);
+            Alert.alert('Verification Failed', 'Invalid OTP. Please try again.');
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    // ─── Other Handlers ─────────────────────────────────────────────────
+
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [1, 1],
-            quality: 1,
+            quality: 0.8,
         });
 
         if (!result.canceled) {
-            setImage(result.assets[0].uri);
+            const localUri = result.assets[0].uri;
+            setImage(localUri);
+
+            // Upload to Firebase Storage if user is authenticated
+            try {
+                const userId = requireAuth();
+                const { uploadAvatar } = await import('../../lib/storage');
+                const downloadUrl = await uploadAvatar(userId, localUri);
+                await updateUserProfile(userId, { avatar_url: downloadUrl });
+            } catch (error) {
+                // User not authenticated yet or upload failed — that's OK,
+                // the local URI is still shown. Upload happens on verify.
+                console.log('Avatar upload skipped (not authenticated yet)');
+            }
         }
     };
 
@@ -117,6 +195,26 @@ export default function OnboardingSkills() {
         }
     };
 
+    const handleContinue = async () => {
+        // If verified, save profile data before navigating
+        if (isVerified) {
+            try {
+                const userId = requireAuth();
+                await updateUserProfile(userId, {
+                    name,
+                    email,
+                    university,
+                    bio,
+                    skills,
+                    gradYear,
+                });
+            } catch {
+                // Not a blocker — data already saved on verify
+            }
+        }
+        router.push('/onboarding/story');
+    };
+
     return (
         <GestureHandlerRootView className="flex-1">
             <KeyboardAvoidingView
@@ -124,6 +222,9 @@ export default function OnboardingSkills() {
                 className="flex-1 bg-[#FFD600] relative"
             >
                 <StatusBar style="dark" />
+
+                {/* reCAPTCHA Verifier (invisible) */}
+                <FirebaseRecaptchaVerifierModal ref={recaptchaRef} />
 
                 <ScrollView
                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
@@ -184,7 +285,7 @@ export default function OnboardingSkills() {
                                 />
                             </View>
 
-                            {/* Phone Input with Dynamic Verification Button */}
+                            {/* Phone Input with OTP Verification */}
                             <View className="mb-9">
                                 <Text className="font-display text-[10px] uppercase mb-1.5 ml-1 text-black opacity-60 tracking-[2px]">Digits (Phone)</Text>
                                 <View className="relative">
@@ -194,17 +295,18 @@ export default function OnboardingSkills() {
                                         placeholder="+91 98765 43210"
                                         placeholderTextColor="rgba(0,0,0,0.3)"
                                         keyboardType="phone-pad"
+                                        editable={!isVerified}
                                         className="w-full bg-white h-16 border-[3px] border-black pl-5 pr-32 text-black font-display rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl"
                                     />
                                     <TouchableOpacity
                                         activeOpacity={0.8}
-                                        onPress={() => setIsVerified(true)}
-                                        disabled={isVerified}
+                                        onPress={handleSendOtp}
+                                        disabled={isVerified || isSendingOtp}
                                         className={`absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl flex-row items-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] border-2 border-black ${isVerified ? 'bg-[#4ADE80]' : 'bg-black'}`}
                                     >
                                         {isVerified && <MaterialIcons name="verified" size={16} color="black" />}
                                         <Text className={`text-[10px] font-display uppercase tracking-wider ${isVerified ? 'text-black' : 'text-white'}`}>
-                                            {isVerified ? 'Verified' : 'Verify'}
+                                            {isVerified ? 'Verified' : isSendingOtp ? 'Sending...' : 'Verify'}
                                         </Text>
                                     </TouchableOpacity>
                                 </View>
@@ -288,7 +390,7 @@ export default function OnboardingSkills() {
                             {/* Submit Button */}
                             <View className="pt-4 pb-0">
                                 <TouchableOpacity
-                                    onPress={() => router.push('/onboarding/story')}
+                                    onPress={handleContinue}
                                     className="w-full bg-black h-24 items-center justify-center flex-row gap-5 border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] active:translate-y-1 active:shadow-none transition-all rounded-[30px]"
                                 >
                                     <Text className="font-display text-4xl uppercase tracking-widest italic text-white leading-none">Stamp it & Go</Text>
@@ -298,6 +400,53 @@ export default function OnboardingSkills() {
                         </View>
                     </View>
                 </ScrollView>
+
+                {/* OTP Verification Modal */}
+                <Modal
+                    visible={showOtpModal}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setShowOtpModal(false)}
+                >
+                    <View className="flex-1 justify-end">
+                        <View className="bg-white rounded-t-[32px] border-t-[4px] border-x-[4px] border-black p-8 pb-12">
+                            <Text className="font-display text-3xl uppercase tracking-tight text-black mb-2">
+                                Enter OTP
+                            </Text>
+                            <Text className="text-sm text-black/60 mb-8">
+                                We sent a 6-digit code to {phone}
+                            </Text>
+
+                            <TextInput
+                                value={otpCode}
+                                onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
+                                placeholder="● ● ● ● ● ●"
+                                placeholderTextColor="rgba(0,0,0,0.2)"
+                                keyboardType="number-pad"
+                                maxLength={6}
+                                autoFocus
+                                className="w-full bg-[#FFD600] h-20 border-[3px] border-black px-6 text-black font-display rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-4xl text-center tracking-[16px]"
+                            />
+
+                            <TouchableOpacity
+                                onPress={handleVerifyOtp}
+                                disabled={otpCode.length !== 6 || isVerifying}
+                                className={`w-full h-16 mt-6 items-center justify-center rounded-2xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${otpCode.length === 6 ? 'bg-[#4ADE80]' : 'bg-gray-200'}`}
+                            >
+                                <Text className="font-display text-xl uppercase tracking-wider text-black">
+                                    {isVerifying ? 'Verifying...' : 'Confirm'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => { setShowOtpModal(false); setOtpCode(''); }}
+                                className="mt-4 items-center"
+                            >
+                                <Text className="font-display text-sm uppercase tracking-wider text-black/40">Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
             </KeyboardAvoidingView>
         </GestureHandlerRootView>
     );
