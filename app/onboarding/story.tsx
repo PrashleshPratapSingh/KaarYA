@@ -4,6 +4,23 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import LottieView from 'lottie-react-native';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutUp, ZoomIn, ZoomOut } from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useOAuth } from '@clerk/clerk-expo';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+
+// Warm up the android browser to improve UX
+// https://docs.expo.dev/guides/authentication/#improving-user-experience
+export const useWarmUpBrowser = () => {
+    useEffect(() => {
+        void WebBrowser.warmUpAsync();
+        return () => {
+            void WebBrowser.coolDownAsync();
+        };
+    }, []);
+};
+
+WebBrowser.maybeCompleteAuthSession();
 
 const { width, height } = Dimensions.get('window');
 
@@ -68,6 +85,32 @@ export default function OnboardingStory() {
     const router = useRouter();
     const [currentIndex, setCurrentIndex] = useState(0);
     const lottieRef = useRef<LottieView>(null);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+    useWarmUpBrowser();
+
+    // Clerk OAuth hook for Google
+    const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+
+    const handleGoogleSignIn = React.useCallback(async () => {
+        try {
+            setIsAuthenticating(true);
+            const { createdSessionId, setActive } = await startOAuthFlow({
+                redirectUrl: Linking.createURL('/(tabs)', { scheme: 'com.kaarya.studentmarketplace' }),
+            });
+
+            if (createdSessionId && setActive) {
+                await setActive({ session: createdSessionId });
+                // Note: Layout nav will handle the router.replace based on AuthContext!
+            } else {
+                // Use signIn or signUp for next steps such as MFA
+            }
+        } catch (err) {
+            console.error('OAuth error', err);
+        } finally {
+            setIsAuthenticating(false);
+        }
+    }, []);
 
     const activeScene = SCENES[currentIndex];
 
@@ -76,22 +119,20 @@ export default function OnboardingStory() {
         if (currentIndex < SCENES.length - 1) {
             setCurrentIndex(prev => prev + 1);
         } else {
-            // End of story
-            router.replace('/(tabs)');
+            // End of story - do nothing, show login button
         }
     };
 
     // Manual skip
     const handleSkip = () => {
-        router.replace('/(tabs)');
+        // Skip straight to the last screen to show login
+        setCurrentIndex(SCENES.length - 1);
     };
 
     // Go to next scene
     const handleNext = () => {
         if (currentIndex < SCENES.length - 1) {
             setCurrentIndex(prev => prev + 1);
-        } else {
-            router.replace('/(tabs)');
         }
     };
 
@@ -192,7 +233,7 @@ export default function OnboardingStory() {
                     </Animated.View>
 
                     {/* Text Overlay */}
-                    <View className="absolute bottom-10 w-full px-8 pointer-events-none">
+                    <View className="absolute bottom-10 w-full px-8" pointerEvents="box-none">
                         <Animated.View
                             key={`text-${currentIndex}`}
                             entering={SlideInDown.duration(600).springify()}
@@ -211,6 +252,24 @@ export default function OnboardingStory() {
                                 {activeScene.text}
                             </Text>
                         </Animated.View>
+
+                        {/* Final Screen Google Login Button */}
+                        {currentIndex === SCENES.length - 1 && (
+                            <Animated.View entering={FadeIn.delay(500).duration(800)} className="mt-8 items-center">
+                                <TouchableOpacity
+                                    className="flex-row items-center justify-center bg-white px-8 py-4 rounded-full shadow-lg border-2 border-slate-100"
+                                    disabled={isAuthenticating}
+                                    onPress={handleGoogleSignIn}
+                                >
+                                    <View className="mr-3">
+                                        <MaterialCommunityIcons name="google" size={24} color="#DB4437" />
+                                    </View>
+                                    <Text className="font-bold text-black text-lg">
+                                        {isAuthenticating ? 'Signing in...' : 'Continue with Google'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </Animated.View>
+                        )}
                     </View>
                 </View>
 

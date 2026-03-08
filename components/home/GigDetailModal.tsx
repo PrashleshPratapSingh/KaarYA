@@ -110,10 +110,11 @@ export function GigDetailModal({ visible, gig, onClose }: Props) {
             const posterDummyId = gig.postedBy.toLowerCase().replace(/\s+/g, '-');
 
             const chatId = await getOrCreateChat(
+                user.uid,      // currentUserId
                 posterDummyId, // otherUserId
                 gig.postedBy,  // otherUserName
                 null,          // otherUserAvatar
-                user.displayName || 'Me', // currentUserName
+                user.name || 'Me', // currentUserName
                 gig.id,        // gigId
                 gig.title      // gigTitle
             );

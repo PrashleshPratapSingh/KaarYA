@@ -7,9 +7,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useState, useEffect, useRef } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { type ConfirmationResult } from 'firebase/auth';
-import { sendOtp, verifyOtp, updateUserProfile, requireAuth } from '../../lib/auth';
-import { FirebaseRecaptchaVerifierModal } from '../../components/RecaptchaVerifier';
+import { useAuth } from '../context/AuthContext';
+import { updateUserProfile } from '../../lib/auth';
+// Removed legacy Firebase auth
+// import { FirebaseRecaptchaVerifierModal } from '../../components/RecaptchaVerifier';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,6 +19,7 @@ const STORAGE_KEY = '@kaarya_onboarding_data';
 export default function OnboardingSkills() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const { user } = useAuth();
 
     // Form States
     const [name, setName] = useState('');
@@ -37,9 +39,8 @@ export default function OnboardingSkills() {
     const [isVerifying, setIsVerifying] = useState(false);
     const [showOtpModal, setShowOtpModal] = useState(false);
     const [otpCode, setOtpCode] = useState('');
-    const [confirmResult, setConfirmResult] = useState<ConfirmationResult | null>(null);
 
-    // reCAPTCHA ref
+    // reCAPTCHA ref (Removed)
     const recaptchaRef = useRef<any>(null);
 
     // Initial Load from Storage
@@ -118,23 +119,25 @@ export default function OnboardingSkills() {
 
         setIsSendingOtp(true);
         try {
-            const confirmation = await sendOtp(formattedPhone, recaptchaRef.current);
-            setConfirmResult(confirmation);
-            setShowOtpModal(true);
+            // Mock OTP for now since Clerk will handle auth later if we need it
+            setTimeout(() => {
+                setShowOtpModal(true);
+                setIsSendingOtp(false);
+            }, 500);
         } catch (error: any) {
             console.error('OTP send error:', error);
             Alert.alert('Error', error.message || 'Failed to send OTP. Please try again.');
-        } finally {
             setIsSendingOtp(false);
         }
     };
 
     const handleVerifyOtp = async () => {
-        if (otpCode.length !== 6 || !confirmResult) return;
+        if (otpCode.length !== 6) return;
 
         setIsVerifying(true);
         try {
-            const user = await verifyOtp(confirmResult, otpCode);
+            // Mock verification
+            if (!user) throw new Error("Not authenticated");
 
             // Update the user profile with onboarding data
             await updateUserProfile(user.uid, {
@@ -172,7 +175,8 @@ export default function OnboardingSkills() {
 
             // Upload to Firebase Storage if user is authenticated
             try {
-                const userId = requireAuth();
+                if (!user) throw new Error('Not authenticated');
+                const userId = user.uid;
                 const { uploadAvatar } = await import('../../lib/storage');
                 const downloadUrl = await uploadAvatar(userId, localUri);
                 await updateUserProfile(userId, { avatar_url: downloadUrl });
@@ -199,7 +203,8 @@ export default function OnboardingSkills() {
         // If verified, save profile data before navigating
         if (isVerified) {
             try {
-                const userId = requireAuth();
+                if (!user) throw new Error('Not authenticated');
+                const userId = user.uid;
                 await updateUserProfile(userId, {
                     name,
                     email,
@@ -223,8 +228,7 @@ export default function OnboardingSkills() {
             >
                 <StatusBar style="dark" />
 
-                {/* reCAPTCHA Verifier (invisible) */}
-                <FirebaseRecaptchaVerifierModal ref={recaptchaRef} />
+                {/* reCAPTCHA Verifier (Removed) */}
 
                 <ScrollView
                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}

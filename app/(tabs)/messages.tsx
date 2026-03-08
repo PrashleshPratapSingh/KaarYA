@@ -28,7 +28,7 @@ export default function MessagesListScreen() {
             return;
         }
 
-        const unsubscribe = onChatsChanged((threads: ChatThread[]) => {
+        const unsubscribe = onChatsChanged(user.uid, (threads: ChatThread[]) => {
             const mappedChats: ChatPreview[] = threads.map(thread => {
                 // Determine the other participant
                 const isUser1 = thread.participantIds[0] === user.uid;

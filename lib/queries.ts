@@ -16,7 +16,6 @@ import {
     type DocumentData,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { requireAuth } from './auth';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -201,8 +200,7 @@ export async function createGig(gig: {
     skills?: string[];
     deadline?: string;    // ISO date
     urgency?: string;
-}): Promise<GigRow> {
-    const userId = requireAuth();
+}, userId: string): Promise<GigRow> {
 
     // Map form category to DB category enum
     const categoryMap: Record<string, string> = {

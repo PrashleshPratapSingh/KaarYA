@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, Pressable, TextInput, FlatList, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { ChatMessage } from '../../lib/types/mywork';
+import { ChatMessage } from '../../../lib/types/mywork';
 
 interface GigChatModalProps {
     visible: boolean;
@@ -39,8 +39,8 @@ export function GigChatModal({
 
                 <View
                     className={`px-5 py-4 max-w-[80%] rounded-2xl shadow-sm ${isMe
-                            ? 'bg-white rounded-tr-none'
-                            : 'bg-karya-yellow rounded-tl-none'
+                        ? 'bg-white rounded-tr-none'
+                        : 'bg-karya-yellow rounded-tl-none'
                         }`}
                     style={{ elevation: 2 }}
                 >

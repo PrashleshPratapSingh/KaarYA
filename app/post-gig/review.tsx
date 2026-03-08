@@ -19,6 +19,7 @@ import Animated, {
     FadeInDown,
 } from "react-native-reanimated";
 import { createGig } from "../../lib/queries";
+import { useAuth } from "../context/AuthContext";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -54,6 +55,7 @@ export default function ReviewScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const params = useLocalSearchParams();
+    const { user } = useAuth();
 
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,7 +123,7 @@ export default function ReviewScreen() {
                 skills,
                 deadline: deadline || undefined,
                 urgency: 'normal',
-            });
+            }, user?.uid || '');
 
             router.push("/post-gig/success");
         } catch (error: any) {

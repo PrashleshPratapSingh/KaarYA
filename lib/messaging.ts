@@ -23,7 +23,6 @@ import {
     type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { requireAuth } from './auth';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -58,6 +57,7 @@ export interface ChatMessage {
  * Get or create a chat thread between two users (optionally tied to a gig).
  */
 export async function getOrCreateChat(
+    currentUserId: string,
     otherUserId: string,
     otherUserName: string,
     otherUserAvatar: string | null,
@@ -65,7 +65,6 @@ export async function getOrCreateChat(
     gigId?: string,
     gigTitle?: string
 ): Promise<string> {
-    const currentUserId = requireAuth();
 
     // Check if a chat already exists between these users (for this gig if specified)
     const chatsRef = collection(db, 'chats');
@@ -115,8 +114,7 @@ export async function getOrCreateChat(
 /**
  * Fetch all chat threads for the current user.
  */
-export async function fetchChats(): Promise<ChatThread[]> {
-    const currentUserId = requireAuth();
+export async function fetchChats(currentUserId: string): Promise<ChatThread[]> {
 
     const chatsRef = collection(db, 'chats');
     const q = query(
@@ -145,9 +143,9 @@ export async function fetchChats(): Promise<ChatThread[]> {
  * Listen to chat threads in real-time.
  */
 export function onChatsChanged(
+    currentUserId: string,
     callback: (chats: ChatThread[]) => void
 ): Unsubscribe {
-    const currentUserId = requireAuth();
 
     const chatsRef = collection(db, 'chats');
     const q = query(
@@ -180,12 +178,12 @@ export function onChatsChanged(
  * Send a text message in a chat.
  */
 export async function sendMessage(
+    currentUserId: string,
     chatId: string,
     text: string,
     type: 'text' | 'image' | 'audio' = 'text',
     mediaUrl?: string
 ): Promise<string> {
-    const currentUserId = requireAuth();
 
     const messageData = {
         chatId,
@@ -255,8 +253,7 @@ export function onMessagesChanged(
 /**
  * Mark all messages in a chat as read for the current user.
  */
-export async function markChatAsRead(chatId: string): Promise<void> {
-    const currentUserId = requireAuth();
+export async function markChatAsRead(currentUserId: string, chatId: string): Promise<void> {
 
     const chatRef = doc(db, 'chats', chatId);
     await updateDoc(chatRef, {

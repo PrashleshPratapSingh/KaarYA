@@ -3,10 +3,9 @@
  * Central hub for all Firebase services used in KaarYA.
  */
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// Removed: firebase/auth and AsyncStorage since Clerk handles auth now
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -21,10 +20,7 @@ const firebaseConfig = {
 // Initialize Firebase (prevent re-init on hot reload)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Auth with AsyncStorage persistence for React Native
-const auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
-});
+// Removed Auth initialization
 
 // Firestore database
 const db = getFirestore(app);
@@ -32,4 +28,4 @@ const db = getFirestore(app);
 // Cloud Storage
 const storage = getStorage(app);
 
-export { app, auth, db, storage };
+export { app, db, storage };

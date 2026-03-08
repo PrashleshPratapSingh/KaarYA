@@ -53,7 +53,7 @@ export default function ChatRoomScreen() {
         if (!chatId || !user) return;
 
         // Mark chat as read when opening
-        markChatAsRead(chatId).catch(console.error);
+        markChatAsRead(user.uid, chatId).catch(console.error);
 
         const unsubscribe = onMessagesChanged(chatId, (fetchedMessages: ChatMessage[]) => {
             const mappedMessages: Message[] = fetchedMessages.map(m => ({
@@ -68,7 +68,7 @@ export default function ChatRoomScreen() {
             setMessages(mappedMessages);
 
             // Mark as read again if new messages come in while screen is open
-            markChatAsRead(chatId).catch(console.error);
+            markChatAsRead(user.uid, chatId).catch(console.error);
         });
 
         return () => unsubscribe();
@@ -83,9 +83,9 @@ export default function ChatRoomScreen() {
     }, [messages]);
 
     const handleSendMessage = async (text: string) => {
-        if (!chatId) return;
+        if (!chatId || !user) return;
         try {
-            await sendMessage(chatId, text, 'text');
+            await sendMessage(user.uid, chatId, text, 'text');
         } catch (error) {
             console.error('Failed to send text message:', error);
             Alert.alert('Error', 'Failed to send message');
@@ -93,11 +93,11 @@ export default function ChatRoomScreen() {
     };
 
     const handleSendAudio = async (uri: string, duration: number) => {
-        if (!chatId) return;
+        if (!chatId || !user) return;
         try {
             // In a real app, you'd upload this URI to Firebase Storage first
             // and pass the download URL to sendMessage
-            await sendMessage(chatId, 'Audio message', 'audio', uri);
+            await sendMessage(user.uid, chatId, 'Audio message', 'audio', uri);
         } catch (error) {
             console.error('Failed to send audio message:', error);
             Alert.alert('Error', 'Failed to send audio');

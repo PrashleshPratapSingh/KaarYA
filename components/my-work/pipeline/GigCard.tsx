@@ -48,9 +48,9 @@ export function GigCard({ gig, onPress }: GigCardProps) {
                 {/* Action Row */}
                 <View className="flex-row gap-3">
                     <View className="flex-1">
-                        <DeliverableUploadButton gigId={gig.id} />
+                        <DeliverableUploadButton gigId={gig.id} onPress={() => { }} />
                     </View>
-                    <ChatBubble unreadCount={unreadMessages} gigId={gig.id} />
+                    <ChatBubble unreadCount={unreadMessages} gigId={gig.id} onPress={() => { }} />
                 </View>
             </BrutalistCard>
         </Pressable>

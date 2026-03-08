@@ -3,12 +3,19 @@
  * Wraps Firebase Auth and exposes user state + helpers.
  */
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { type User } from 'firebase/auth';
-import { onAuthChange, signOutUser } from '../../lib/auth';
+import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-expo';
+
+export interface AppUser {
+    uid: string;
+    email?: string;
+    phone?: string;
+    name?: string;
+    avatarUrl?: string;
+}
 
 interface AuthContextValue {
-    /** The currently signed-in Firebase user, or null */
-    user: User | null;
+    /** The currently signed-in user, or null */
+    user: AppUser | null;
     /** True while we're still checking if a persisted session exists */
     loading: boolean;
     /** Sign out the current user */
@@ -22,24 +29,35 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { isLoaded: isAuthLoaded, signOut } = useClerkAuth();
+    const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
 
+    const [user, setUser] = useState<AppUser | null>(null);
+
+    // Map Clerk user to our AppUser format to avoid breaking existing Firebase references
     useEffect(() => {
-        const unsubscribe = onAuthChange((firebaseUser) => {
-            setUser(firebaseUser);
-            setLoading(false);
-        });
-        return unsubscribe;
-    }, []);
+        if (!isUserLoaded) return;
+
+        if (clerkUser) {
+            setUser({
+                uid: clerkUser.id,
+                email: clerkUser.primaryEmailAddress?.emailAddress,
+                phone: clerkUser.primaryPhoneNumber?.phoneNumber,
+                name: clerkUser.fullName || '',
+                avatarUrl: clerkUser.imageUrl,
+            });
+        } else {
+            setUser(null);
+        }
+    }, [clerkUser, isUserLoaded]);
 
     const logout = async () => {
-        await signOutUser();
+        await signOut();
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, logout }}>
+        <AuthContext.Provider value={{ user, loading: !isAuthLoaded || !isUserLoaded, logout }}>
             {children}
         </AuthContext.Provider>
     );
