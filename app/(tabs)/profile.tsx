@@ -8,6 +8,7 @@ import { BlurView } from "expo-blur";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5, Feather, MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/app/context/AuthContext';
 
 // Storage key for onboarding data
 const STORAGE_KEY = '@kaarya_onboarding_data';
@@ -38,6 +39,7 @@ export default function ProfileScreen() {
         skills: [],
         isVerified: false,
     });
+    const { user, logout } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
 
     const [showSettings, setShowSettings] = useState(false);
@@ -88,13 +90,13 @@ export default function ProfileScreen() {
                     if (savedData) {
                         const data = JSON.parse(savedData);
                         setUserData({
-                            name: data.name || '',
-                            email: data.email || '',
-                            phone: data.phone || '',
+                            name: user?.name || data.name || '',
+                            email: user?.email || data.email || '',
+                            phone: user?.phone || data.phone || '',
                             university: data.university || '',
                             gradYear: data.gradYear || '',
                             bio: data.bio || '',
-                            image: data.image || null,
+                            image: user?.avatarUrl || data.image || null,
                             skills: data.skills || [],
                             isVerified: data.isVerified || false,
                         });
@@ -121,7 +123,7 @@ export default function ProfileScreen() {
             };
 
             loadUserData();
-        }, [])
+        }, [user])
     );
 
     // Scroll animation
@@ -670,7 +672,14 @@ export default function ProfileScreen() {
                             </View>
 
                             {/* Log Out */}
-                            <TouchableOpacity className="bg-black rounded-2xl py-4 flex-row items-center justify-center gap-2">
+                            <TouchableOpacity
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    logout();
+                                    setShowSettings(false);
+                                }}
+                                className="bg-black rounded-2xl py-4 flex-row items-center justify-center gap-2"
+                            >
                                 <Ionicons name="log-out" size={20} color="#FFE600" />
                                 <Text className="text-white font-bold text-base">Log Out</Text>
                             </TouchableOpacity>

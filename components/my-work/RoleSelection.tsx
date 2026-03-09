@@ -5,9 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface RoleSelectionProps {
     onSelectRole: (role: 'client' | 'executor') => void;
+    userName?: string;
 }
 
-export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
+export function RoleSelection({ onSelectRole, userName }: RoleSelectionProps) {
     return (
         <SafeAreaView className="flex-1 bg-karya-yellow px-6 justify-center">
             {/* Header */}
@@ -18,7 +19,7 @@ export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
                     </Text>
                 </View>
                 <Text className="text-4xl font-extrabold text-karya-black text-center mb-2 tracking-tight">
-                    Ready to Start?
+                    {userName ? `Ready, ${userName.split(' ')[0]}?` : 'Ready to Start?'}
                 </Text>
                 <Text className="text-sm font-medium text-karya-black/60 text-center">
                     Choose your role in the ecosystem.

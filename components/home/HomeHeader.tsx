@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/app/context/AuthContext';
 import { KARYA_BLACK, KARYA_WHITE } from './types';
 
 interface Props {
@@ -12,30 +12,11 @@ interface Props {
 }
 
 const ACCENT_YELLOW = '#FACC15';
-const STORAGE_KEY = '@kaarya_onboarding_data';
-
 export function HomeHeader({ onNotificationPress }: Props) {
-    const [userName, setUserName] = useState<string>('');
+    const { user } = useAuth();
 
-    useEffect(() => {
-        const loadUserName = async () => {
-            try {
-                const savedData = await AsyncStorage.getItem(STORAGE_KEY);
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    if (data.name) {
-                        // Get first name only for cleaner display
-                        const firstName = data.name.split(' ')[0];
-                        setUserName(firstName.toUpperCase());
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load username:', error);
-            }
-        };
-
-        loadUserName();
-    }, []);
+    // Derive the first name directly from the Clerk context
+    const userName = user?.name ? user.name.split(' ')[0].toUpperCase() : '';
 
     return (
         <View style={styles.header}>

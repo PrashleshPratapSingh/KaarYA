@@ -25,8 +25,7 @@ import {
 // Firestore queries
 import { subscribeToOpenGigs, gigRowToGig } from '../../lib/queries';
 
-// Fallback sample data (shown when Firestore is empty or offline)
-import { SAMPLE_GIGS } from '../../components/home/data';
+
 
 // Ghost mascot image
 const GhostMascot = require('../../assets/images/Ghost Massacre.png');
@@ -35,7 +34,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [refreshing, setRefreshing] = useState(false);
-  const [gigs, setGigs] = useState<Gig[]>(SAMPLE_GIGS); // Start with sample data
+  const [gigs, setGigs] = useState<Gig[]>([]); // Start empty
 
   // Modal state
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
@@ -50,17 +49,12 @@ export default function HomeScreen() {
     const unsubscribe = subscribeToOpenGigs(
       activeCategory !== 'all' ? activeCategory : undefined,
       (rows) => {
-        if (rows.length > 0) {
-          const liveGigs = rows.map(gigRowToGig) as Gig[];
-          // Keep mock data at the bottom for testing/visuals
-          setGigs([...liveGigs, ...SAMPLE_GIGS]);
-        } else {
-          setGigs(SAMPLE_GIGS);
-        }
+        const liveGigs = rows.map(gigRowToGig) as Gig[];
+        setGigs(liveGigs);
       },
       (error) => {
-        console.log('Firestore listener failed, using sample data:', error);
-        setGigs(SAMPLE_GIGS);
+        console.log('Firestore listener failed:', error);
+        setGigs([]);
       }
     );
 

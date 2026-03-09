@@ -299,57 +299,6 @@ export async function createGig(gig: {
     } as GigRow;
 }
 
-// ─── Messaging Queries ──────────────────────────────────────────────────────
-
-export interface ChatMessageRow {
-    id: string;
-    gig_id: string;
-    sender_id: string;
-    sender_name: string;
-    sender_role: 'client' | 'executor';
-    message: string;
-    created_at: string;
-    is_read: boolean;
-}
-
-/**
- * Real-time listener for messages on a specific gig.
- */
-export function subscribeToGigMessages(
-    gigId: string,
-    onUpdate: (messages: ChatMessageRow[]) => void
-) {
-    const messagesRef = collection(db, 'messages');
-    const q = query(messagesRef, where('gig_id', '==', gigId), orderBy('created_at', 'asc'));
-
-    return onSnapshot(q, (snapshot) => {
-        const msgs = snapshot.docs.map(doc => docToObj<ChatMessageRow>(doc));
-        onUpdate(msgs);
-    });
-}
-
-/**
- * Send a message for a gig.
- */
-export async function sendGigMessage(message: {
-    gig_id: string;
-    sender_id: string;
-    sender_name: string;
-    sender_role: 'client' | 'executor';
-    text: string;
-}) {
-    const rawData = {
-        gig_id: message.gig_id,
-        sender_id: message.sender_id,
-        sender_name: message.sender_name,
-        sender_role: message.sender_role,
-        message: message.text,
-        is_read: false,
-        created_at: serverTimestamp()
-    };
-    await addDoc(collection(db, 'messages'), rawData);
-}
-
 
 // ─── Utility Functions ──────────────────────────────────────────────────────
 

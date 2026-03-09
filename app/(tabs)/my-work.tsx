@@ -21,32 +21,28 @@ import { UpcomingGigCard } from '@/components/my-work/pipeline/UpcomingGigCard';
 import { HustleGoalCard } from '@/components/my-work/stash/HustleGoalCard';
 
 // Data
-import {
-    mockWalletData,
-    mockOngoingGigs,
-    mockUpcomingGigs,
-    mockCompletedGigs,
-    mockClientGigs,
-    mockClientUpcomingGigs,
-    mockTalentProfiles,
-} from '@/lib/mock/mywork-data';
 import { Gig, ChatMessage, FileAttachment, TalentProfile } from '@/lib/types/mywork';
 
 // Firestore Realtime integration
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { gigRowToGig, subscribeToGigMessages, sendGigMessage, type GigRow } from '@/lib/queries';
-
-// We'll use a mocked user ID for demonstration purposes until Auth is hooked up
-const MOCK_USER_ID = 'seed-user-001';
+import { gigRowToGig, type GigRow } from '@/lib/queries';
+import { getOrCreateChat, onMessagesChanged, sendMessage } from '@/lib/messaging';
+import { useAuth } from '@/app/context/AuthContext';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 type Tab = 'stash' | 'pipeline' | 'portfolio';
 type ViewMode = 'selection' | 'client' | 'executor';
 
 export default function MyWorkScreen() {
+    const { user, loading } = useAuth();
+    const router = useRouter();
+
     const [viewMode, setViewMode] = useState<ViewMode>('selection');
     const [activeTab, setActiveTab] = useState<Tab>('pipeline');
     const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
+    const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [selectedProfile, setSelectedProfile] = useState<TalentProfile | null>(null);
 
     // UI States
@@ -65,19 +61,19 @@ export default function MyWorkScreen() {
     ];
 
     // State for gigs
-    const [ongoingGigs, setOngoingGigs] = useState<Gig[]>(mockOngoingGigs);
-    const [upcomingGigs, setUpcomingGigs] = useState<Gig[]>(mockUpcomingGigs);
+    const [ongoingGigs, setOngoingGigs] = useState<Gig[]>([]);
+    const [upcomingGigs, setUpcomingGigs] = useState<Gig[]>([]);
 
     // Fetch real-time gigs from Firestore for Pipeline
     useEffect(() => {
-        if (viewMode !== 'executor' && viewMode !== 'client') return;
+        if (!user || (viewMode !== 'executor' && viewMode !== 'client')) return;
 
         const qRef = collection(db, 'gigs');
 
         // Listen to gigs where we are involved
         const q = query(
             qRef,
-            where(viewMode === 'client' ? 'client_id' : 'executor_id', '==', MOCK_USER_ID)
+            where(viewMode === 'client' ? 'client_id' : 'executor_id', '==', user.uid)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -90,7 +86,7 @@ export default function MyWorkScreen() {
                     id: doc.id,
                     title: data.title,
                     clientName: "Rohan K.", // Mocked for now
-                    clientId: data.client_id || MOCK_USER_ID,
+                    clientId: data.client_id || user.uid,
                     amount: (data.budget_min ?? 0) / 100,
                     status: data.status as 'ongoing' | 'upcoming' | 'completed',
                     dueDate: data.deadline ? new Date(data.deadline).toLocaleDateString() : 'TBD',
@@ -108,18 +104,16 @@ export default function MyWorkScreen() {
             const liveOngoing = liveGigs.filter(g => g.status === 'ongoing');
             const liveUpcoming = liveGigs.filter(g => g.status === 'upcoming');
 
-            // Merge with mocks
-            setOngoingGigs([...liveOngoing, ...mockOngoingGigs]);
-            setUpcomingGigs([...liveUpcoming, ...mockUpcomingGigs]);
+            setOngoingGigs(liveOngoing);
+            setUpcomingGigs(liveUpcoming);
         }, (error) => {
             console.error("Firestore Error in pipeline:", error);
-            // Fallback back to pure mock data
-            setOngoingGigs(mockOngoingGigs);
-            setUpcomingGigs(mockUpcomingGigs);
+            setOngoingGigs([]);
+            setUpcomingGigs([]);
         });
 
         return () => unsubscribe();
-    }, [viewMode]);
+    }, [viewMode, user]);
 
     // Auto-transition upcoming gigs to ongoing
     useEffect(() => {
@@ -143,13 +137,35 @@ export default function MyWorkScreen() {
 
     // Profile Handlers
     const handleOpenProfile = (userId: string) => {
-        const profile = mockTalentProfiles[userId] || mockTalentProfiles['executor1']; // fallback
-        setSelectedProfile(profile);
+        // Mock profile logic disabled for now until user profiles are in DB
         setProfileModalVisible(true);
     };
 
-    const handleOpenChat = (gig: Gig) => {
+    const handleOpenChat = async (gig: Gig) => {
         setSelectedGig(gig);
+
+        // If it's a real gig, get or create the global chat thread
+        if (!gig.id.startsWith('gig-') && user) {
+            try {
+                // In a real app, you'd pull the actual other user's ID/Name from the Gig data
+                const otherUserId = viewMode === 'client' ? 'executor1' : 'client1';
+                const otherUserName = viewMode === 'client' ? 'Executor User' : gig.clientName;
+
+                const chatId = await getOrCreateChat(
+                    user.uid,
+                    otherUserId,
+                    otherUserName,
+                    null, // avatar
+                    user.name || (viewMode === 'client' ? 'Client' : 'Executor User'),
+                    gig.id,
+                    gig.title
+                );
+                setActiveChatId(chatId);
+            } catch (error) {
+                console.error("Failed to initialize chat:", error);
+            }
+        }
+
         setChatModalVisible(true);
     };
 
@@ -157,29 +173,33 @@ export default function MyWorkScreen() {
     useEffect(() => {
         if (!selectedGig || !chatModalVisible) return;
 
-        const unsubscribe = subscribeToGigMessages(selectedGig.id, (msgs) => {
-            // Convert to UI format
-            const uiMessages: ChatMessage[] = msgs.map(m => ({
-                id: m.id,
-                gigId: m.gig_id,
-                senderId: m.sender_id,
-                senderName: m.sender_name,
-                senderRole: m.sender_role,
-                message: m.message,
-                timestamp: m.created_at,
-                isRead: m.is_read
-            }));
+        // If it's a real gig, use the global messaging listener
+        if (!selectedGig.id.startsWith('gig-') && activeChatId && user) {
+            const unsubscribe = onMessagesChanged(activeChatId, (msgs) => {
+                // Convert global ChatMessage to UI ChatMessage
+                const uiMessages: ChatMessage[] = msgs.map(m => ({
+                    id: m.id,
+                    gigId: selectedGig.id,
+                    senderId: m.senderId,
+                    senderName: m.senderId === user.uid ? 'You' : (viewMode === 'client' ? 'Executor' : selectedGig.clientName),
+                    senderRole: m.senderId === user.uid
+                        ? (viewMode === 'client' ? 'client' : 'executor')
+                        : (viewMode === 'client' ? 'executor' : 'client'),
+                    message: m.text,
+                    timestamp: m.createdAt,
+                    isRead: m.status === 'read'
+                }));
 
-            setSelectedGig(prev => {
-                if (!prev) return prev;
-                // Only update if messages actually changed
-                if (prev.chatMessages?.length === uiMessages.length) return prev;
-                return { ...prev, chatMessages: uiMessages };
+                setSelectedGig(prev => {
+                    if (!prev) return prev;
+                    if (prev.chatMessages?.length === uiMessages.length) return prev;
+                    return { ...prev, chatMessages: uiMessages };
+                });
             });
-        });
 
-        return () => unsubscribe();
-    }, [selectedGig?.id, chatModalVisible]);
+            return () => unsubscribe();
+        }
+    }, [selectedGig?.id, chatModalVisible, activeChatId]);
 
     const handleOpenUpload = (gig: Gig) => {
         setSelectedGig(gig);
@@ -218,18 +238,19 @@ export default function MyWorkScreen() {
             return;
         }
 
-        // Real Firestore Gig Workflow
-        try {
-            await sendGigMessage({
-                gig_id: selectedGig.id,
-                sender_id: MOCK_USER_ID,
-                sender_name: viewMode === 'client' ? 'Client' : 'Executor User',
-                sender_role: viewMode === 'client' ? 'client' : 'executor',
-                text
-            });
-            // Result will automatically sync back via subscribeToGigMessages useEffect
-        } catch (error) {
-            console.error("Failed to send message:", error);
+        // Real Firestore Global Chat Workflow
+        if (activeChatId && user) {
+            try {
+                await sendMessage(
+                    user.uid,
+                    activeChatId,
+                    text,
+                    'text'
+                );
+                // Result will automatically sync back via onMessagesChanged useEffect
+            } catch (error) {
+                console.error("Failed to send message:", error);
+            }
         }
     };
 
@@ -257,9 +278,35 @@ export default function MyWorkScreen() {
         </Pressable>
     );
 
+    // Loading/Auth State UI
+    if (loading) {
+        return (
+            <SafeAreaView className="flex-1 bg-karya-yellow justify-center items-center">
+                <Text>Loading Workspace...</Text>
+            </SafeAreaView>
+        );
+    }
+
+    if (!user) {
+        return (
+            <SafeAreaView className="flex-1 bg-karya-yellow justify-center items-center p-10">
+                <Ionicons name="lock-closed" size={64} color="rgba(0,0,0,0.2)" />
+                <Text className="text-center mt-4 text-base text-black/50 mb-6 font-medium">
+                    Please log in to view your gigs, manage invoices, and sync your workflow.
+                </Text>
+                <Pressable
+                    onPress={() => router.push('/onboarding')}
+                    className="bg-black py-3 px-8 rounded-full active:opacity-80"
+                >
+                    <Text className="text-white font-bold">Sign In</Text>
+                </Pressable>
+            </SafeAreaView>
+        );
+    }
+
     // Initial Selection Screen
     if (viewMode === 'selection') {
-        return <RoleSelection onSelectRole={setViewMode} />;
+        return <RoleSelection onSelectRole={setViewMode} userName={user.name || undefined} />;
     }
 
     return (
@@ -310,41 +357,53 @@ export default function MyWorkScreen() {
                         ACTIVE ASSIGNMENTS
                     </Text>
 
-                    {mockClientGigs.map((gig) => (
-                        <Pressable
-                            key={gig.id}
-                            onPress={() => handleOpenProfile('executor1')} // Simulating clicking assigned person
-                            className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-50 active:scale-[0.98]"
-                        >
-                            <View className="flex-row justify-between items-start mb-2">
-                                <View className="bg-green-100 px-2 py-1 rounded-md">
-                                    <Text className="text-[10px] font-bold text-green-700 uppercase">IN PROGRESS</Text>
+                    {ongoingGigs.length > 0 ? (
+                        ongoingGigs.map((gig) => (
+                            <Pressable
+                                key={gig.id}
+                                onPress={() => handleOpenChat(gig)}
+                                className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-50 active:scale-[0.98]"
+                            >
+                                <View className="flex-row justify-between items-start mb-2">
+                                    <View className="bg-green-100 px-2 py-1 rounded-md">
+                                        <Text className="text-[10px] font-bold text-green-700 uppercase">{gig.status}</Text>
+                                    </View>
+                                    <Text className="text-base font-extrabold text-karya-black">₹{gig.amount.toLocaleString('en-IN')}</Text>
                                 </View>
-                                <Text className="text-base font-extrabold text-karya-black">₹{gig.amount.toLocaleString('en-IN')}</Text>
-                            </View>
-                            <Text className="text-xl font-extrabold text-karya-black mb-1">{gig.title}</Text>
+                                <Text className="text-xl font-extrabold text-karya-black mb-1">{gig.title}</Text>
 
-                            <View className="flex-row items-center gap-2 mb-4">
-                                <View className="w-5 h-5 bg-karya-yellow rounded-full items-center justify-center">
-                                    <Feather name="user" size={10} color="black" />
+                                <View className="flex-row items-center gap-2 mb-4">
+                                    <View className="w-5 h-5 bg-karya-yellow rounded-full items-center justify-center">
+                                        <Feather name="user" size={10} color="black" />
+                                    </View>
+                                    <Text className="text-xs text-gray-400 font-bold">Client: <Text className="text-karya-black">{gig.clientName}</Text></Text>
                                 </View>
-                                <Text className="text-xs text-gray-400 font-bold">Assigned to: <Text className="text-karya-black">Rohan K.</Text></Text>
-                            </View>
 
-                            <View className="bg-gray-100 h-2 rounded-full overflow-hidden mb-2">
-                                <View className="h-full bg-karya-black" style={{ width: `${gig.progress}%` }} />
-                            </View>
-                            <Text className="text-[10px] text-right font-bold text-gray-400">{gig.progress}% Complete</Text>
-                        </Pressable>
-                    ))}
+                                <View className="bg-gray-100 h-2 rounded-full overflow-hidden mb-2">
+                                    <View className="h-full bg-karya-black" style={{ width: `${gig.progress}%` }} />
+                                </View>
+                                <Text className="text-[10px] text-right font-bold text-gray-400">{gig.progress}% Complete</Text>
+                            </Pressable>
+                        ))
+                    ) : (
+                        <View className="py-10 items-center">
+                            <Text className="text-gray-400 font-bold">No active assignments found.</Text>
+                        </View>
+                    )}
 
                     <Text className="text-sm font-bold text-karya-black/60 mb-4 px-1 uppercase tracking-wide mt-4">
                         UPCOMING LAUNCHES
                     </Text>
 
-                    {mockClientUpcomingGigs.map((gig) => (
-                        <UpcomingGigCard key={gig.id} gig={gig} onPress={() => handleOpenProfile('newbie1')} />
-                    ))}
+                    {upcomingGigs.length > 0 ? (
+                        upcomingGigs.map((gig) => (
+                            <UpcomingGigCard key={gig.id} gig={gig} onPress={() => handleOpenChat(gig)} />
+                        ))
+                    ) : (
+                        <View className="py-10 items-center">
+                            <Text className="text-gray-400 font-bold">No upcoming launches found.</Text>
+                        </View>
+                    )}
                 </ScrollView>
             )}
 
@@ -404,7 +463,7 @@ export default function MyWorkScreen() {
                                     <Text className="text-xs font-bold text-karya-yellow bg-karya-black px-2 py-1 rounded-md">View All</Text>
                                 </View>
 
-                                <TransactionHistory transactions={mockWalletData.transactions} />
+                                <TransactionHistory transactions={[]} />
                             </ScrollView>
                         )}
 
@@ -456,7 +515,7 @@ export default function MyWorkScreen() {
                                     <Text className="text-sm font-bold text-karya-black/60 uppercase tracking-wide">YOUR HUSTLE HISTORY</Text>
                                 </View>
                                 <PortfolioGrid
-                                    completedGigs={mockCompletedGigs}
+                                    completedGigs={[]}
                                     onGigPress={(gig) => handleOpenProfile(gig.clientId)}
                                 />
                             </ScrollView>
