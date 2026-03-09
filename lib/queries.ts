@@ -13,6 +13,7 @@ import {
     where,
     orderBy,
     serverTimestamp,
+    onSnapshot,
     type DocumentData,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -145,6 +146,64 @@ export async function fetchGigs(category?: string): Promise<GigRow[]> {
 }
 
 /**
+ * Subscribe to open gigs for real-time updates on the home feed.
+ */
+export function subscribeToOpenGigs(
+    category: string | undefined,
+    onUpdate: (gigs: GigRow[]) => void,
+    onError?: (error: Error) => void
+) {
+    const gigsRef = collection(db, 'gigs');
+    const constraints: any[] = [
+        where('status', '==', 'open'),
+        orderBy('created_at', 'desc'),
+    ];
+
+    if (category && category !== 'all') {
+        constraints.push(where('category', '==', category));
+    }
+
+    const q = query(gigsRef, ...constraints);
+
+    return onSnapshot(q, async (snapshot) => {
+        try {
+            const gigs = snapshot.docs.map((d) => docToObj<GigRow>(d));
+
+            // Fetch client data for newly updated gigs separately
+            const clientIds = [...new Set(gigs.map((g) => g.client_id))];
+            const clientMap: Record<string, GigRow['client']> = {};
+
+            await Promise.all(
+                clientIds.map(async (cid) => {
+                    try {
+                        const user = await fetchUser(cid);
+                        clientMap[cid] = {
+                            id: user.id,
+                            name: user.name,
+                            university: user.university,
+                            avatar_url: user.avatar_url,
+                            rating_avg: user.rating_avg,
+                            rating_count: user.rating_count,
+                            gigs_completed: user.gigs_completed,
+                            is_verified: user.is_verified,
+                            bio: user.bio,
+                        };
+                    } catch {
+                        // Ignore
+                    }
+                })
+            );
+
+            onUpdate(gigs.map((g) => ({ ...g, client: clientMap[g.client_id] })));
+        } catch (err) {
+            if (onError) onError(err as Error);
+        }
+    }, (error) => {
+        if (onError) onError(error);
+    });
+}
+
+/**
  * Fetch a single gig by ID with client details.
  */
 export async function fetchGigById(id: string): Promise<GigRow> {
@@ -239,6 +298,58 @@ export async function createGig(gig: {
         created_at: new Date().toISOString(),
     } as GigRow;
 }
+
+// ─── Messaging Queries ──────────────────────────────────────────────────────
+
+export interface ChatMessageRow {
+    id: string;
+    gig_id: string;
+    sender_id: string;
+    sender_name: string;
+    sender_role: 'client' | 'executor';
+    message: string;
+    created_at: string;
+    is_read: boolean;
+}
+
+/**
+ * Real-time listener for messages on a specific gig.
+ */
+export function subscribeToGigMessages(
+    gigId: string,
+    onUpdate: (messages: ChatMessageRow[]) => void
+) {
+    const messagesRef = collection(db, 'messages');
+    const q = query(messagesRef, where('gig_id', '==', gigId), orderBy('created_at', 'asc'));
+
+    return onSnapshot(q, (snapshot) => {
+        const msgs = snapshot.docs.map(doc => docToObj<ChatMessageRow>(doc));
+        onUpdate(msgs);
+    });
+}
+
+/**
+ * Send a message for a gig.
+ */
+export async function sendGigMessage(message: {
+    gig_id: string;
+    sender_id: string;
+    sender_name: string;
+    sender_role: 'client' | 'executor';
+    text: string;
+}) {
+    const rawData = {
+        gig_id: message.gig_id,
+        sender_id: message.sender_id,
+        sender_name: message.sender_name,
+        sender_role: message.sender_role,
+        message: message.text,
+        is_read: false,
+        created_at: serverTimestamp()
+    };
+    await addDoc(collection(db, 'messages'), rawData);
+}
+
 
 // ─── Utility Functions ──────────────────────────────────────────────────────
 

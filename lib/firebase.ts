@@ -9,12 +9,13 @@ import { getStorage } from 'firebase/storage';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyBVEgYBH1CiL6GGjvC7wANNl52fOn9YreY",
-    authDomain: "kaarya-62054.firebaseapp.com",
-    projectId: "kaarya-62054",
-    storageBucket: "kaarya-62054.firebasestorage.app",
-    messagingSenderId: "988879482778",
-    appId: "1:988879482778:web:8e1af417b1a88390299423"
+    apiKey: "AIzaSyD-Nkg1YkXtk1vnge9miPBfAnkNerHdOYY",
+    authDomain: "kaarya-3870a.firebaseapp.com",
+    projectId: "kaarya-3870a",
+    storageBucket: "kaarya-3870a.firebasestorage.app",
+    messagingSenderId: "308294112513",
+    appId: "1:308294112513:web:8d07cde6ae2f894eff7700",
+    measurementId: "G-T3RXFM2G0H"
 };
 
 // Initialize Firebase (prevent re-init on hot reload)

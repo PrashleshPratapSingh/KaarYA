@@ -32,6 +32,14 @@ import {
 } from '@/lib/mock/mywork-data';
 import { Gig, ChatMessage, FileAttachment, TalentProfile } from '@/lib/types/mywork';
 
+// Firestore Realtime integration
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { gigRowToGig, subscribeToGigMessages, sendGigMessage, type GigRow } from '@/lib/queries';
+
+// We'll use a mocked user ID for demonstration purposes until Auth is hooked up
+const MOCK_USER_ID = 'seed-user-001';
+
 type Tab = 'stash' | 'pipeline' | 'portfolio';
 type ViewMode = 'selection' | 'client' | 'executor';
 
@@ -57,8 +65,61 @@ export default function MyWorkScreen() {
     ];
 
     // State for gigs
-    const [ongoingGigs, setOngoingGigs] = useState(mockOngoingGigs);
-    const [upcomingGigs, setUpcomingGigs] = useState(mockUpcomingGigs);
+    const [ongoingGigs, setOngoingGigs] = useState<Gig[]>(mockOngoingGigs);
+    const [upcomingGigs, setUpcomingGigs] = useState<Gig[]>(mockUpcomingGigs);
+
+    // Fetch real-time gigs from Firestore for Pipeline
+    useEffect(() => {
+        if (viewMode !== 'executor' && viewMode !== 'client') return;
+
+        const qRef = collection(db, 'gigs');
+
+        // Listen to gigs where we are involved
+        const q = query(
+            qRef,
+            where(viewMode === 'client' ? 'client_id' : 'executor_id', '==', MOCK_USER_ID)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const liveGigs = snapshot.docs.map(doc => {
+                const data = doc.data() as GigRow;
+                data.id = doc.id;
+
+                // Convert DB schema to UI Gig schema
+                return {
+                    id: doc.id,
+                    title: data.title,
+                    clientName: "Rohan K.", // Mocked for now
+                    clientId: data.client_id || MOCK_USER_ID,
+                    amount: (data.budget_min ?? 0) / 100,
+                    status: data.status as 'ongoing' | 'upcoming' | 'completed',
+                    dueDate: data.deadline ? new Date(data.deadline).toLocaleDateString() : 'TBD',
+                    deadline: data.deadline || '',
+                    progress: 0,
+                    unreadMessages: 0,
+                    tags: data.skills || [],
+                    chatMessages: [],
+                    filesRequired: ['Final Assets'],
+                    filesUploaded: []
+                } as Gig;
+            });
+
+            // Split into ongoing/upcoming manually for UI
+            const liveOngoing = liveGigs.filter(g => g.status === 'ongoing');
+            const liveUpcoming = liveGigs.filter(g => g.status === 'upcoming');
+
+            // Merge with mocks
+            setOngoingGigs([...liveOngoing, ...mockOngoingGigs]);
+            setUpcomingGigs([...liveUpcoming, ...mockUpcomingGigs]);
+        }, (error) => {
+            console.error("Firestore Error in pipeline:", error);
+            // Fallback back to pure mock data
+            setOngoingGigs(mockOngoingGigs);
+            setUpcomingGigs(mockUpcomingGigs);
+        });
+
+        return () => unsubscribe();
+    }, [viewMode]);
 
     // Auto-transition upcoming gigs to ongoing
     useEffect(() => {
@@ -92,6 +153,34 @@ export default function MyWorkScreen() {
         setChatModalVisible(true);
     };
 
+    // Chat Real-time Listener
+    useEffect(() => {
+        if (!selectedGig || !chatModalVisible) return;
+
+        const unsubscribe = subscribeToGigMessages(selectedGig.id, (msgs) => {
+            // Convert to UI format
+            const uiMessages: ChatMessage[] = msgs.map(m => ({
+                id: m.id,
+                gigId: m.gig_id,
+                senderId: m.sender_id,
+                senderName: m.sender_name,
+                senderRole: m.sender_role,
+                message: m.message,
+                timestamp: m.created_at,
+                isRead: m.is_read
+            }));
+
+            setSelectedGig(prev => {
+                if (!prev) return prev;
+                // Only update if messages actually changed
+                if (prev.chatMessages?.length === uiMessages.length) return prev;
+                return { ...prev, chatMessages: uiMessages };
+            });
+        });
+
+        return () => unsubscribe();
+    }, [selectedGig?.id, chatModalVisible]);
+
     const handleOpenUpload = (gig: Gig) => {
         setSelectedGig(gig);
         setUploadModalVisible(true);
@@ -102,64 +191,46 @@ export default function MyWorkScreen() {
         setDetailModalVisible(true);
     };
 
-    const handleSendMessage = (text: string) => {
+    const handleSendMessage = async (text: string) => {
         if (!selectedGig) return;
 
-        const newMessage: ChatMessage = {
-            id: Math.random().toString(),
-            gigId: selectedGig.id,
-            senderId: 'executor1',
-            senderName: 'You',
-            senderRole: 'executor',
-            message: text,
-            timestamp: new Date().toISOString(),
-            isRead: true,
-        };
-
-        // Update current selected gig for modal
-        const updatedGig = {
-            ...selectedGig,
-            chatMessages: [...(selectedGig.chatMessages || []), newMessage]
-        };
-        setSelectedGig(updatedGig);
-
-        // Update in lists
-        if (viewMode === 'executor') {
-            setOngoingGigs(prev => prev.map(g => g.id === selectedGig.id ? updatedGig : g));
-        }
-
-        // AI Response Logic
-        setTimeout(() => {
-            const responses = [
-                "That sounds like a solid plan! Let's push for EOD.",
-                "Can you make the yellow a bit more vibrant? #FFE500 style.",
-                "The progress looks great. Keep crushing it!",
-                "Love the hustle! I'll release the next phase funds once this is uploaded.",
-                "Quick check: did you see the brand guidelines I sent?"
-            ];
-            const aiText = responses[Math.floor(Math.random() * responses.length)];
-
-            const aiMessage: ChatMessage = {
+        // If it's a mock gig (e.g. "gig-1"), we just update local state since it doesn't exist in DB
+        if (selectedGig.id.startsWith('gig-')) {
+            const newMessage: ChatMessage = {
                 id: Math.random().toString(),
                 gigId: selectedGig.id,
-                senderId: 'ai',
-                senderName: selectedGig.clientName,
-                senderRole: 'client',
-                message: aiText,
+                senderId: 'executor1',
+                senderName: 'You',
+                senderRole: 'executor',
+                message: text,
                 timestamp: new Date().toISOString(),
-                isRead: false,
+                isRead: true,
             };
 
-            const finalGig = {
-                ...updatedGig,
-                chatMessages: [...(updatedGig.chatMessages || []), aiMessage]
+            const updatedGig = {
+                ...selectedGig,
+                chatMessages: [...(selectedGig.chatMessages || []), newMessage]
             };
-
-            setSelectedGig(finalGig);
+            setSelectedGig(updatedGig);
             if (viewMode === 'executor') {
-                setOngoingGigs(prev => prev.map(g => g.id === selectedGig.id ? finalGig : g));
+                setOngoingGigs(prev => prev.map(g => g.id === selectedGig.id ? updatedGig : g));
             }
-        }, 1500);
+            return;
+        }
+
+        // Real Firestore Gig Workflow
+        try {
+            await sendGigMessage({
+                gig_id: selectedGig.id,
+                sender_id: MOCK_USER_ID,
+                sender_name: viewMode === 'client' ? 'Client' : 'Executor User',
+                sender_role: viewMode === 'client' ? 'client' : 'executor',
+                text
+            });
+            // Result will automatically sync back via subscribeToGigMessages useEffect
+        } catch (error) {
+            console.error("Failed to send message:", error);
+        }
     };
 
     const handleUploadFiles = async (files: Partial<FileAttachment>[]) => {

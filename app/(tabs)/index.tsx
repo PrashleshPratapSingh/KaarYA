@@ -23,7 +23,7 @@ import {
 } from '../../components/home';
 
 // Firestore queries
-import { fetchGigs, gigRowToGig } from '../../lib/queries';
+import { subscribeToOpenGigs, gigRowToGig } from '../../lib/queries';
 
 // Fallback sample data (shown when Firestore is empty or offline)
 import { SAMPLE_GIGS } from '../../components/home/data';
@@ -44,36 +44,40 @@ export default function HomeScreen() {
   // Success modal state
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Fetch gigs from Firestore
-  const loadGigs = useCallback(async () => {
-    try {
-      const rows = await fetchGigs(activeCategory !== 'all' ? activeCategory : undefined);
-      if (rows.length > 0) {
-        setGigs(rows.map(gigRowToGig) as Gig[]);
-      } else {
-        // Firestore empty — keep showing sample data
+  // Fetch gigs from Firestore in real-time
+  useEffect(() => {
+    // We append the SAMPLE_GIGS to the end of the list so it doesn't look empty
+    const unsubscribe = subscribeToOpenGigs(
+      activeCategory !== 'all' ? activeCategory : undefined,
+      (rows) => {
+        if (rows.length > 0) {
+          const liveGigs = rows.map(gigRowToGig) as Gig[];
+          // Keep mock data at the bottom for testing/visuals
+          setGigs([...liveGigs, ...SAMPLE_GIGS]);
+        } else {
+          setGigs(SAMPLE_GIGS);
+        }
+      },
+      (error) => {
+        console.log('Firestore listener failed, using sample data:', error);
         setGigs(SAMPLE_GIGS);
       }
-    } catch (error) {
-      console.log('Firestore fetch failed, using sample data:', error);
-      setGigs(SAMPLE_GIGS);
-    }
-  }, [activeCategory]);
+    );
 
-  // Load on mount and when category changes
-  useEffect(() => {
-    loadGigs();
-  }, [loadGigs]);
+    // Cleanup subscription on unmount or category change
+    return () => unsubscribe();
+  }, [activeCategory]);
 
   // Filter gigs by category (for sample data fallback)
   const filteredGigs = gigs.filter(
     (gig) => activeCategory === 'all' || gig.category === activeCategory
   );
 
-  // Pull to refresh handler
+  // Pull to refresh handler - just a visual cue now since it's real-time
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadGigs();
+    // Simulate network delay for UI feedback
+    await new Promise(resolve => setTimeout(resolve, 800));
     setRefreshing(false);
   };
 
