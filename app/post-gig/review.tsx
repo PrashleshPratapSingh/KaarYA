@@ -106,14 +106,21 @@ export default function ReviewScreen() {
 
     const categoryInfo = CATEGORY_NAMES[category] || CATEGORY_NAMES.design;
 
-    const handleBlastLive = async () => {
+    const handleBlastLive = async (e?: any) => {
+        if (e && e.preventDefault) e.preventDefault();
         if (!agreedToTerms || isSubmitting) return;
 
         setIsSubmitting(true);
         try {
             // Parse skills
             let skills: string[] = [];
-            try { skills = skillsParam ? JSON.parse(skillsParam) : []; } catch { }
+            if (skillsParam) {
+                try {
+                    skills = JSON.parse(skillsParam);
+                } catch {
+                    skills = skillsParam.split(',').filter(Boolean);
+                }
+            }
 
             await createGig({
                 title,
@@ -125,7 +132,7 @@ export default function ReviewScreen() {
                 urgency: 'normal',
             }, user?.uid || '');
 
-            router.push("/post-gig/success");
+            router.replace("/post-gig/success");
         } catch (error: any) {
             console.error('Failed to create gig:', error);
             Alert.alert(

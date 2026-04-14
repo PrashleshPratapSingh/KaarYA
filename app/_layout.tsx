@@ -1,13 +1,14 @@
 import "../global.css";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack, useRouter } from "expo-router";
+import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { vars } from "nativewind";
-import { memo, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import { View, StyleSheet, StatusBar, Platform } from "react-native";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ClerkProvider } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const tokenCache = {
   async getToken(key: string) {
@@ -139,18 +140,42 @@ const theme = vars({
 function RootLayoutNav() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const segments = useSegments();
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [hasOnboarded, setHasOnboarded] = useState(false);
 
   useEffect(() => {
-    if (loading) return; // Still checking auth state — do nothing
+    let isMounted = true;
+    AsyncStorage.getItem('kaarya_onboarding_complete').then(val => {
+      if (isMounted) {
+        setHasOnboarded(val === 'true');
+        setCheckingOnboarding(false);
+      }
+    });
+    return () => { isMounted = false };
+  }, [user]);
 
-    if (user) {
-      // User is logged in → go to main app
-      router.replace('/(tabs)');
+  useEffect(() => {
+    if (loading || checkingOnboarding) return; // Wait for both auth check and onboarding check
+
+    const inAuthGroup = segments[0] === 'onboarding';
+
+    if (!user) {
+      // Not logged in -> kick them to onboarding
+      if (!inAuthGroup) {
+        router.replace('/onboarding');
+      }
     } else {
-      // User is NOT logged in → show onboarding
-      router.replace('/onboarding');
+      // Logged in user -> only redirect if they are stuck on onboarding screens
+      if (inAuthGroup) {
+        if (hasOnboarded) {
+          router.replace('/(tabs)');
+        }
+      }
+      // If logged in and NOT on an onboarding screen, do NOTHING. 
+      // Let them navigate freely without interference.
     }
-  }, [user, loading]);
+  }, [user, loading, checkingOnboarding, hasOnboarded, segments]);
 
   return (
     <View style={[theme, StyleSheet.absoluteFill]}>

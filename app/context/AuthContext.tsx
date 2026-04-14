@@ -39,15 +39,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!isUserLoaded) return;
 
         if (clerkUser) {
-            setUser({
-                uid: clerkUser.id,
-                email: clerkUser.primaryEmailAddress?.emailAddress,
-                phone: clerkUser.primaryPhoneNumber?.phoneNumber,
-                name: clerkUser.fullName || '',
-                avatarUrl: clerkUser.imageUrl,
+            setUser(prev => {
+                if (
+                    prev?.uid === clerkUser.id &&
+                    prev?.name === clerkUser.fullName &&
+                    prev?.avatarUrl === clerkUser.imageUrl
+                ) {
+                    return prev;
+                }
+                return {
+                    uid: clerkUser.id,
+                    email: clerkUser.primaryEmailAddress?.emailAddress,
+                    phone: clerkUser.primaryPhoneNumber?.phoneNumber,
+                    name: clerkUser.fullName || '',
+                    avatarUrl: clerkUser.imageUrl,
+                };
             });
         } else {
-            setUser(null);
+            setUser(prev => prev === null ? null : null);
         }
     }, [clerkUser, isUserLoaded]);
 

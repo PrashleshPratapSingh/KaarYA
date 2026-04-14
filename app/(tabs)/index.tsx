@@ -28,7 +28,7 @@ import { subscribeToOpenGigs, gigRowToGig } from '../../lib/queries';
 
 
 // Ghost mascot image
-const GhostMascot = require('../../assets/images/Ghost Massacre.png');
+const GhostMascot = require('../../assets/images/ghost-massacre.png');
 
 export default function HomeScreen() {
   const router = useRouter();

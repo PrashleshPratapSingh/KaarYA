@@ -5,22 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import LottieView from 'lottie-react-native';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutUp, ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useOAuth } from '@clerk/clerk-expo';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
-
-// Warm up the android browser to improve UX
-// https://docs.expo.dev/guides/authentication/#improving-user-experience
-export const useWarmUpBrowser = () => {
-    useEffect(() => {
-        void WebBrowser.warmUpAsync();
-        return () => {
-            void WebBrowser.coolDownAsync();
-        };
-    }, []);
-};
-
-WebBrowser.maybeCompleteAuthSession();
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -85,32 +70,10 @@ export default function OnboardingStory() {
     const router = useRouter();
     const [currentIndex, setCurrentIndex] = useState(0);
     const lottieRef = useRef<LottieView>(null);
-    const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-    useWarmUpBrowser();
-
-    // Clerk OAuth hook for Google
-    const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
-
-    const handleGoogleSignIn = React.useCallback(async () => {
-        try {
-            setIsAuthenticating(true);
-            const { createdSessionId, setActive } = await startOAuthFlow({
-                redirectUrl: Linking.createURL('/(tabs)', { scheme: 'com.kaarya.studentmarketplace' }),
-            });
-
-            if (createdSessionId && setActive) {
-                await setActive({ session: createdSessionId });
-                // Note: Layout nav will handle the router.replace based on AuthContext!
-            } else {
-                // Use signIn or signUp for next steps such as MFA
-            }
-        } catch (err) {
-            console.error('OAuth error', err);
-        } finally {
-            setIsAuthenticating(false);
-        }
-    }, []);
+    const handleFinish = async () => {
+        await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
+        router.replace('/(tabs)');
+    };
 
     const activeScene = SCENES[currentIndex];
 
@@ -253,19 +216,18 @@ export default function OnboardingStory() {
                             </Text>
                         </Animated.View>
 
-                        {/* Final Screen Google Login Button */}
+                        {/* Final Screen Button */}
                         {currentIndex === SCENES.length - 1 && (
                             <Animated.View entering={FadeIn.delay(500).duration(800)} className="mt-8 items-center">
                                 <TouchableOpacity
                                     className="flex-row items-center justify-center bg-white px-8 py-4 rounded-full shadow-lg border-2 border-slate-100"
-                                    disabled={isAuthenticating}
-                                    onPress={handleGoogleSignIn}
+                                    onPress={handleFinish}
                                 >
                                     <View className="mr-3">
-                                        <MaterialCommunityIcons name="google" size={24} color="#DB4437" />
+                                        <MaterialCommunityIcons name="rocket" size={24} color="#000" />
                                     </View>
                                     <Text className="font-bold text-black text-lg">
-                                        {isAuthenticating ? 'Signing in...' : 'Continue with Google'}
+                                        Enter KaarYA
                                     </Text>
                                 </TouchableOpacity>
                             </Animated.View>

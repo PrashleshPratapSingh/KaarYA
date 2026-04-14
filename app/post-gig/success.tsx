@@ -83,7 +83,7 @@ export default function SuccessScreen() {
 
                 {/* Star - Top Left */}
                 <Animated.View
-                    entering={FadeIn.delay(500).springify()}
+                    entering={FadeIn.delay(500)}
                     style={[float1Style]}
                     className="absolute top-20 left-6"
                 >
@@ -94,7 +94,7 @@ export default function SuccessScreen() {
 
                 {/* Lightning - Top Right */}
                 <Animated.View
-                    entering={FadeIn.delay(600).springify()}
+                    entering={FadeIn.delay(600)}
                     style={[float2Style]}
                     className="absolute top-16 right-6"
                 >
@@ -105,7 +105,7 @@ export default function SuccessScreen() {
 
                 {/* Thumbs Up - Left */}
                 <Animated.View
-                    entering={FadeIn.delay(700).springify()}
+                    entering={FadeIn.delay(700)}
                     style={[float2Style]}
                     className="absolute top-1/3 left-4"
                 >
@@ -116,7 +116,7 @@ export default function SuccessScreen() {
 
                 {/* Diamond - Bottom Right */}
                 <Animated.View
-                    entering={FadeIn.delay(800).springify()}
+                    entering={FadeIn.delay(800)}
                     style={[float1Style]}
                     className="absolute bottom-48 right-8"
                 >
@@ -127,7 +127,7 @@ export default function SuccessScreen() {
 
                 {/* Gear - Right */}
                 <Animated.View
-                    entering={FadeIn.delay(900).springify()}
+                    entering={FadeIn.delay(900)}
                     style={[float2Style]}
                     className="absolute bottom-64 left-10 opacity-30"
                 >
@@ -136,13 +136,13 @@ export default function SuccessScreen() {
 
                 {/* Center Circle Indicator */}
                 <Animated.View
-                    entering={FadeInDown.delay(100).springify()}
+                    entering={FadeInDown.delay(100)}
                     className="w-6 h-6 rounded-full bg-white border-2 border-black mb-6"
                 />
 
                 {/* Main Success Icon */}
                 <Animated.View
-                    entering={ZoomIn.delay(200).springify()}
+                    entering={ZoomIn.delay(200)}
                     className="w-44 h-44 rounded-3xl bg-[#1A1A1A] items-center justify-center mb-8"
                     style={{
                         shadowColor: "#000",
@@ -160,7 +160,7 @@ export default function SuccessScreen() {
                 </Animated.View>
 
                 {/* Success Text */}
-                <Animated.View entering={FadeInUp.delay(400).springify()}>
+                <Animated.View entering={FadeInUp.delay(400)}>
                     <Text className="text-5xl font-black text-black text-center">
                         HUSTLE
                     </Text>
@@ -171,7 +171,7 @@ export default function SuccessScreen() {
 
                 {/* Subtitle */}
                 <Animated.View
-                    entering={FadeInUp.delay(500).springify()}
+                    entering={FadeInUp.delay(500)}
                     className="flex-row items-center mt-4"
                 >
                     <Text className="text-base text-gray-700 text-center">
@@ -179,7 +179,7 @@ export default function SuccessScreen() {
                     </Text>
                 </Animated.View>
                 <Animated.View
-                    entering={FadeInUp.delay(550).springify()}
+                    entering={FadeInUp.delay(550)}
                     className="flex-row items-center mt-1"
                 >
                     <View className="w-4 h-4 mr-2">
@@ -194,7 +194,7 @@ export default function SuccessScreen() {
             {/* Bottom Buttons */}
             <View className="px-6 pb-8">
                 {/* View Gig Button */}
-                <Animated.View entering={FadeInUp.delay(600).springify()}>
+                <Animated.View entering={FadeInUp.delay(600)}>
                     <AnimatedPressable
                         onPress={handleViewGig}
                         onPressIn={handleButtonPressIn}
@@ -210,7 +210,7 @@ export default function SuccessScreen() {
                 </Animated.View>
 
                 {/* Done Button */}
-                <Animated.View entering={FadeInUp.delay(700).springify()}>
+                <Animated.View entering={FadeInUp.delay(700)}>
                     <AnimatedPressable
                         onPress={handleDone}
                         className="py-5 rounded-full flex-row items-center justify-center bg-[#D4FF00] border-2 border-black"

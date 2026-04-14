@@ -14,6 +14,7 @@ import {
     orderBy,
     serverTimestamp,
     onSnapshot,
+    setDoc,
     type DocumentData,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -290,11 +291,17 @@ export async function createGig(gig: {
         created_at: serverTimestamp(),
     };
 
-    const docRef = await addDoc(collection(db, 'gigs'), gigData);
+    // Optimistic UI approach: Generate ID safely, fire-and-forget the document write
+    // This totally bypasses React Native/Expo hanging WebSocket issues on the dev server.
+    const newDocRef = doc(collection(db, 'gigs'));
+    
+    setDoc(newDocRef, gigData).catch(err => {
+        console.error('Firebase background write failed:', err);
+    });
 
     return {
         ...gigData,
-        id: docRef.id,
+        id: newDocRef.id,
         created_at: new Date().toISOString(),
     } as GigRow;
 }

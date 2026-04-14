@@ -1,14 +1,63 @@
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
+import { useOAuth } from '@clerk/clerk-expo';
+import * as Linking from 'expo-linking';
+import React, { useState, useEffect } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import { useAuth } from '../context/AuthContext';
+
+// Warm up the android browser to improve UX
+export const useWarmUpBrowser = () => {
+    useEffect(() => {
+        void WebBrowser.warmUpAsync();
+        return () => {
+            void WebBrowser.coolDownAsync();
+        };
+    }, []);
+};
+
+WebBrowser.maybeCompleteAuthSession();
 
 const { width } = Dimensions.get('window');
 
 export default function OnboardingIndex() {
     const router = useRouter();
+    const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+    const { user, loading } = useAuth();
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    
+    // If the user lands here but is already authenticated, they likely haven't
+    // finished the onboarding flow (since _layout.tsx checks kaarya_onboarding_complete).
+    // Push them to the next step automatically.
+    useEffect(() => {
+        if (!loading && user) {
+            router.push('/onboarding/community');
+        }
+    }, [user, loading, router]);
+    
+    useWarmUpBrowser();
+
+    const handleGoogleSignIn = React.useCallback(async () => {
+        try {
+            setIsAuthenticating(true);
+            const { createdSessionId, setActive } = await startOAuthFlow({
+                redirectUrl: Linking.createURL('/onboarding/community', { scheme: 'com.kaarya.studentmarketplace' }),
+            });
+
+            if (createdSessionId && setActive) {
+                await setActive({ session: createdSessionId });
+                router.push('/onboarding/community');
+            }
+        } catch (err) {
+            console.error('OAuth error', err);
+        } finally {
+            setIsAuthenticating(false);
+        }
+    }, [startOAuthFlow, router]);
 
     return (
         <View className="flex-1 bg-[#FFD600] relative">
@@ -53,11 +102,13 @@ export default function OnboardingIndex() {
                 {/* Footer Section */}
                 <Animated.View entering={FadeInUp.delay(800).duration(1000)} className="w-full max-w-md px-6 pb-4 items-center space-y-6 z-20">
                     <TouchableOpacity
-                        onPress={() => router.push('/onboarding/community')}
-                        className="w-full bg-black py-5 rounded-full shadow-xl active:scale-95 transition-transform"
+                        onPress={handleGoogleSignIn}
+                        disabled={isAuthenticating}
+                        className="w-full bg-black py-5 rounded-full shadow-xl active:scale-95 transition-transform flex-row justify-center items-center"
                     >
+                        <MaterialCommunityIcons name="google" size={24} color="white" style={{ marginRight: 12 }} />
                         <Text className="text-white font-display text-xl text-center uppercase tracking-wide">
-                            Strike a Gig
+                            {isAuthenticating ? 'Signing in...' : 'Continue with Google'}
                         </Text>
                     </TouchableOpacity>
 

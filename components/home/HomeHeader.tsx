@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/app/context/AuthContext';
+import { useUnreadMessages } from '@/lib/useUnreadMessages';
 import { KARYA_BLACK, KARYA_WHITE } from './types';
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 const ACCENT_YELLOW = '#FACC15';
 export function HomeHeader({ onNotificationPress }: Props) {
     const { user } = useAuth();
+    const unreadCount = useUnreadMessages();
 
     // Derive the first name directly from the Clerk context
     const userName = user?.name ? user.name.split(' ')[0].toUpperCase() : '';
@@ -46,7 +48,13 @@ export function HomeHeader({ onNotificationPress }: Props) {
                 {/* Notification Bell - Aligned with HUSTLING box */}
                 <Pressable style={styles.notificationBtn} onPress={onNotificationPress}>
                     <Feather name="bell" size={26} color={KARYA_BLACK} />
-                    <View style={styles.notificationDot} />
+                    {unreadCount > 0 ? (
+                        <View style={styles.notificationBadge}>
+                            <Text style={styles.notificationBadgeText}>
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </Text>
+                        </View>
+                    ) : null}
                 </Pressable>
             </View>
         </View>
@@ -147,15 +155,23 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    notificationDot: {
+    notificationBadge: {
         position: 'absolute',
-        top: 10,
-        right: 10,
-        width: 10,
-        height: 10,
-        borderRadius: 5,
+        top: -4,
+        right: -4,
+        minWidth: 24,
+        height: 24,
+        borderRadius: 12,
         backgroundColor: '#F44336',
         borderWidth: 2,
         borderColor: KARYA_WHITE,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+    },
+    notificationBadgeText: {
+        color: KARYA_WHITE,
+        fontSize: 10,
+        fontWeight: 'bold',
     },
 });

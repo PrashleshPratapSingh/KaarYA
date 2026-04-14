@@ -78,6 +78,15 @@ export default function OnboardingSkills() {
         loadSavedData();
     }, []);
 
+    // Autofill from Clerk authentication if available and fields are empty
+    useEffect(() => {
+        if (isDataLoaded && user) {
+            if (!name && user.name) setName(user.name);
+            if (!email && user.email) setEmail(user.email);
+            if (!phone && user.phone) setPhone(user.phone);
+        }
+    }, [isDataLoaded, user, name, email, phone]);
+
     // Save to Storage on every change (Debounced)
     useEffect(() => {
         if (!isDataLoaded) return;
@@ -217,6 +226,7 @@ export default function OnboardingSkills() {
                 // Not a blocker — data already saved on verify
             }
         }
+        await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
         router.push('/onboarding/story');
     };
 

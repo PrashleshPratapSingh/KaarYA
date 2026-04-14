@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, interpolate, Extrapolate } from 'react-native-reanimated';
 import { useTabBarContext } from '../../app/context/TabBarContext';
+import { useUnreadMessages } from '../../lib/useUnreadMessages';
 
 const COLORS = {
     black: '#000000',
@@ -61,6 +62,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const sizes = getResponsiveSizes(width);
+    const unreadCount = useUnreadMessages();
 
     const { scrollY } = useTabBarContext();
     const { height } = useWindowDimensions();
@@ -161,11 +163,20 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
                             style={styles.tabItem}
                             activeOpacity={0.7}
                         >
-                            <Feather
-                                name={getIconName()}
-                                size={sizes.iconSize}
-                                color={isFocused ? COLORS.black : COLORS.grey}
-                            />
+                            <View style={{ position: 'relative' }}>
+                                <Feather
+                                    name={getIconName()}
+                                    size={sizes.iconSize}
+                                    color={isFocused ? COLORS.black : COLORS.grey}
+                                />
+                                {route.name === 'messages' && unreadCount > 0 && (
+                                    <View style={styles.badgeContainer}>
+                                        <Text style={styles.badgeText}>
+                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
                             <Text style={[
                                 styles.tabLabel,
                                 {
@@ -236,5 +247,24 @@ const styles = StyleSheet.create({
         borderColor: COLORS.yellow,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    badgeContainer: {
+        position: 'absolute',
+        top: -4,
+        right: -8,
+        minWidth: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: '#F44336',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: '#FFF',
+        paddingHorizontal: 3,
+    },
+    badgeText: {
+        color: '#FFF',
+        fontSize: 8,
+        fontWeight: 'bold',
     },
 });
