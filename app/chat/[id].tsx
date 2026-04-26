@@ -22,6 +22,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Message, User } from '../../types/messaging';
 import { BrandColors } from '../../constants/Colors';
 import { onMessagesChanged, sendMessage, markChatAsRead, type ChatMessage } from '../../lib/messaging';
+import { uploadChatMedia } from '../../lib/storage';
 import { useAuth } from '../context/AuthContext';
 
 export default function ChatRoomScreen() {
@@ -95,17 +96,24 @@ export default function ChatRoomScreen() {
     const handleSendAudio = async (uri: string, duration: number) => {
         if (!chatId || !user) return;
         try {
-            // In a real app, you'd upload this URI to Firebase Storage first
-            // and pass the download URL to sendMessage
-            await sendMessage(user.uid, chatId, 'Audio message', 'audio', uri);
+            const downloadUrl = await uploadChatMedia(chatId, user.uid, uri, 'audio');
+            await sendMessage(user.uid, chatId, 'Audio message', 'audio', downloadUrl);
         } catch (error) {
             console.error('Failed to send audio message:', error);
             Alert.alert('Error', 'Failed to send audio');
         }
     };
 
-    const handleAttachFile = (uri: string, type: string) => {
-        console.log('File attached:', uri, type);
+    const handleAttachFile = async (uri: string, type: string) => {
+        if (!chatId || !user) return;
+        try {
+            const mediaType = type.startsWith('image') ? 'image' : 'document';
+            const downloadUrl = await uploadChatMedia(chatId, user.uid, uri, mediaType);
+            await sendMessage(user.uid, chatId, mediaType === 'image' ? '📎 Image' : '📎 Document', mediaType, downloadUrl);
+        } catch (error) {
+            console.error('Failed to attach file:', error);
+            Alert.alert('Error', 'Failed to send attachment');
+        }
     };
 
     const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, Linking } from 'react-native';
+import { Image } from 'expo-image';
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { Message } from '../../types/messaging';
@@ -160,6 +161,62 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         </View>
     );
 
+    const renderImageMessage = () => (
+        <View style={{ marginBottom: message.reactions ? 10 : 0 }}>
+            <View
+                style={[
+                    styles.bubble,
+                    styles.imageBubble,
+                    isOwnMessage ? styles.ownBubble : styles.otherBubble,
+                ]}
+            >
+                {!isOwnMessage && senderName && (
+                    <Text style={styles.senderName}>{senderName}</Text>
+                )}
+                {message.mediaUrl && (
+                    <Image 
+                        source={{ uri: message.mediaUrl }} 
+                        style={styles.messageImage} 
+                    />
+                )}
+                {message.text && message.text !== '📎 Image' ? (
+                    <Text style={[styles.messageText, { marginTop: 8 }]}>{message.text}</Text>
+                ) : null}
+                <Text style={styles.timestamp}>{formatTime(message.createdAt)}</Text>
+            </View>
+            {renderReactions()}
+        </View>
+    );
+
+    const renderDocumentMessage = () => (
+        <View style={{ marginBottom: message.reactions ? 10 : 0 }}>
+            <View
+                style={[
+                    styles.bubble,
+                    styles.documentBubble,
+                    isOwnMessage ? styles.ownBubble : styles.otherBubble,
+                ]}
+            >
+                {!isOwnMessage && senderName && (
+                    <Text style={styles.senderName}>{senderName}</Text>
+                )}
+                <TouchableOpacity 
+                    style={styles.documentContainer}
+                    onPress={() => message.mediaUrl && Linking.openURL(message.mediaUrl)}
+                >
+                    <View style={styles.documentIconBox}>
+                        <Ionicons name="document-text" size={24} color={BrandColors.purple} />
+                    </View>
+                    <Text style={styles.documentText} numberOfLines={1}>
+                        Document attached
+                    </Text>
+                </TouchableOpacity>
+                <Text style={styles.timestamp}>{formatTime(message.createdAt)}</Text>
+            </View>
+            {renderReactions()}
+        </View>
+    );
+
     return (
         <View
             style={[
@@ -167,7 +224,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 isOwnMessage ? styles.ownContainer : styles.otherContainer,
             ]}
         >
-            {message.type === 'audio' ? renderAudioMessage() : renderTextMessage()}
+            {message.type === 'audio' ? renderAudioMessage() : 
+             message.type === 'image' ? renderImageMessage() :
+             message.type === 'document' ? renderDocumentMessage() :
+             renderTextMessage()}
         </View>
     );
 };
@@ -227,6 +287,43 @@ const styles = StyleSheet.create({
         marginTop: 6,
         textAlign: 'right',
         fontWeight: '500',
+    },
+    imageBubble: {
+        padding: 8,
+    },
+    messageImage: {
+        width: 220,
+        height: 220,
+        borderRadius: 14,
+        backgroundColor: '#E0E0E0',
+    },
+    documentBubble: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        minWidth: 200,
+    },
+    documentContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.04)',
+        padding: 10,
+        borderRadius: 12,
+        marginBottom: 4,
+    },
+    documentIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(91, 95, 255, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    documentText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: BrandColors.black,
+        flex: 1,
     },
     audioBubble: {
         paddingVertical: 12,

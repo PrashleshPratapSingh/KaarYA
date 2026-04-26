@@ -86,3 +86,38 @@ async function uriToBlob(uri: string): Promise<Blob> {
     const blob = await response.blob();
     return blob;
 }
+
+// ─── Upload Chat Media ──────────────────────────────────────────────────────
+
+/**
+ * Upload a media file (image, document, audio) for a chat message.
+ * Returns the public download URL.
+ *
+ * @param chatId - The ID of the chat thread
+ * @param userId - Firebase Auth UID of the sender
+ * @param localUri - Local file:// URI
+ * @param type - Type of media (audio, image, document)
+ */
+export async function uploadChatMedia(
+    chatId: string,
+    userId: string,
+    localUri: string,
+    type: 'audio' | 'image' | 'document'
+): Promise<string> {
+    const blob = await uriToBlob(localUri);
+    let extension = localUri.split('.').pop() || 'tmp';
+    
+    // Normalize extension for audio
+    if (type === 'audio' && !localUri.includes('.')) {
+        extension = 'm4a'; // default expo-av extension
+    }
+    
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${userId}.${extension}`;
+    const storageRef = ref(storage, `chats/${chatId}/${type}/${fileName}`);
+
+    const snapshot = await uploadBytesResumable(storageRef, blob);
+    const downloadUrl = await getDownloadURL(snapshot.ref);
+
+    return downloadUrl;
+}
