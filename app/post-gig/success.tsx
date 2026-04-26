@@ -75,8 +75,8 @@ export default function SuccessScreen() {
     }));
 
     return (
-        <SafeAreaView className="flex-1 bg-[#D4FF00]">
-            <StatusBar barStyle="dark-content" backgroundColor="#D4FF00" />
+        <SafeAreaView className="flex-1 bg-[#FFE500]">
+            <StatusBar barStyle="dark-content" backgroundColor="#FFE500" />
 
             <View className="flex-1 items-center justify-center px-6">
                 {/* Decorative Elements */}
@@ -155,7 +155,7 @@ export default function SuccessScreen() {
                     {/* Fire Emoji with Checkmark */}
                     <Text className="text-7xl">🔥</Text>
                     <View className="absolute bottom-6 w-8 h-8 rounded-full bg-black items-center justify-center">
-                        <Feather name="check" size={18} color="#D4FF00" />
+                        <Feather name="check" size={18} color="#FFE500" />
                     </View>
                 </Animated.View>
 
@@ -213,7 +213,7 @@ export default function SuccessScreen() {
                 <Animated.View entering={FadeInUp.delay(700)}>
                     <AnimatedPressable
                         onPress={handleDone}
-                        className="py-5 rounded-full flex-row items-center justify-center bg-[#D4FF00] border-2 border-black"
+                        className="py-5 rounded-full flex-row items-center justify-center bg-[#FFE500] border-2 border-black"
                     >
                         <Text className="text-black text-lg font-bold tracking-wide">
                             DONE

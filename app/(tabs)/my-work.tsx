@@ -29,7 +29,7 @@ import { db } from '@/lib/firebase';
 import { gigRowToGig, type GigRow } from '@/lib/queries';
 import { getOrCreateChat, onMessagesChanged, sendMessage } from '@/lib/messaging';
 import { useAuth } from '@/app/context/AuthContext';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 type Tab = 'stash' | 'pipeline' | 'portfolio';
@@ -38,9 +38,20 @@ type ViewMode = 'selection' | 'client' | 'executor';
 export default function MyWorkScreen() {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const { tab } = useLocalSearchParams<{ tab: Tab }>();
 
     const [viewMode, setViewMode] = useState<ViewMode>('selection');
-    const [activeTab, setActiveTab] = useState<Tab>('pipeline');
+    const [activeTab, setActiveTab] = useState<Tab>(tab || 'pipeline');
+
+    // Update active tab if param changes
+    useEffect(() => {
+        if (tab && (tab === 'stash' || tab === 'pipeline' || tab === 'portfolio')) {
+            setActiveTab(tab);
+            if (viewMode === 'selection') {
+                setViewMode('executor'); // Auto-select executor if linking to a specific tab
+            }
+        }
+    }, [tab]);
     const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [selectedProfile, setSelectedProfile] = useState<TalentProfile | null>(null);
@@ -63,6 +74,7 @@ export default function MyWorkScreen() {
     // State for gigs
     const [ongoingGigs, setOngoingGigs] = useState<Gig[]>([]);
     const [upcomingGigs, setUpcomingGigs] = useState<Gig[]>([]);
+    const [completedGigs, setCompletedGigs] = useState<Gig[]>([]);
 
     // Fetch real-time gigs from Firestore for Pipeline
     useEffect(() => {
@@ -103,13 +115,16 @@ export default function MyWorkScreen() {
             // Split into ongoing/upcoming manually for UI
             const liveOngoing = liveGigs.filter(g => g.status === 'ongoing');
             const liveUpcoming = liveGigs.filter(g => g.status === 'upcoming');
+            const liveCompleted = liveGigs.filter(g => g.status === 'completed');
 
             setOngoingGigs(liveOngoing);
             setUpcomingGigs(liveUpcoming);
+            setCompletedGigs(liveCompleted);
         }, (error) => {
             console.error("Firestore Error in pipeline:", error);
             setOngoingGigs([]);
             setUpcomingGigs([]);
+            setCompletedGigs([]);
         });
 
         return () => unsubscribe();
@@ -333,24 +348,57 @@ export default function MyWorkScreen() {
             {/* Content for CLIENT Dashboard */}
             {viewMode === 'client' && (
                 <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 140 }}>
-                    {/* Summary Card */}
-                    <View className="bg-karya-black rounded-[32px] p-6 mb-6">
-                        <Text className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">
-                            TOTAL WORK ASSIGNED
-                        </Text>
-                        <Text className="text-5xl font-extrabold text-karya-yellow tracking-tight">
-                            ₹187k
-                        </Text>
-                        <View className="mt-6 flex-row gap-8">
-                            <View>
-                                <Text className="text-[10px] font-bold text-white/50 uppercase mb-1">ACTIVE</Text>
-                                <Text className="text-xl font-bold text-white">2 Gigs</Text>
+                    {/* Dynamic Summary Card */}
+                    {(() => {
+                        const totalEscrow = ongoingGigs.reduce((acc, gig) => acc + gig.amount, 0);
+                        const totalReleased = completedGigs.reduce((acc, gig) => acc + gig.amount, 0);
+                        const totalAssigned = totalEscrow + totalReleased;
+                        
+                        return (
+                            <View className="bg-karya-black rounded-[32px] p-6 mb-6">
+                                <Text className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">
+                                    TOTAL WORK ASSIGNED
+                                </Text>
+                                <Text className="text-5xl font-extrabold text-karya-yellow tracking-tight">
+                                    ₹{totalAssigned.toLocaleString('en-IN')}
+                                </Text>
+                                <View className="mt-6 flex-row gap-8">
+                                    <View>
+                                        <Text className="text-[10px] font-bold text-white/50 uppercase mb-1">IN ESCROW (ACTIVE)</Text>
+                                        <Text className="text-xl font-bold text-white">{ongoingGigs.length} Gigs</Text>
+                                    </View>
+                                    <View>
+                                        <Text className="text-[10px] font-bold text-white/50 uppercase mb-1">COMPLETED</Text>
+                                        <Text className="text-xl font-bold text-white">{completedGigs.length} Gigs</Text>
+                                    </View>
+                                </View>
                             </View>
-                            <View>
-                                <Text className="text-[10px] font-bold text-white/50 uppercase mb-1">COMPLETED</Text>
-                                <Text className="text-xl font-bold text-white">14 Gigs</Text>
+                        );
+                    })()}
+
+                    {/* Quick Actions Panel */}
+                    <View className="flex-row gap-4 mb-6">
+                        <Pressable
+                            onPress={() => router.push('/post-gig')}
+                            className="flex-1 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm active:scale-[0.98] items-center justify-center"
+                        >
+                            <View className="w-10 h-10 bg-karya-yellow/20 rounded-full items-center justify-center mb-2">
+                                <Feather name="plus" size={20} color="#000" />
                             </View>
-                        </View>
+                            <Text className="font-bold text-karya-black">Post a Gig</Text>
+                        </Pressable>
+                        
+                        <Pressable
+                            onPress={() => {
+                                // Future functionality
+                            }}
+                            className="flex-1 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm active:scale-[0.98] items-center justify-center"
+                        >
+                            <View className="w-10 h-10 bg-black/5 rounded-full items-center justify-center mb-2">
+                                <Feather name="check-circle" size={20} color="#000" />
+                            </View>
+                            <Text className="font-bold text-karya-black">Review</Text>
+                        </Pressable>
                     </View>
 
                     <Text className="text-sm font-bold text-karya-black/60 mb-4 px-1 uppercase tracking-wide">

@@ -107,7 +107,6 @@ export async function fetchGigs(category?: string): Promise<GigRow[]> {
     // Build query constraints
     const constraints: any[] = [
         where('status', '==', 'open'),
-        orderBy('created_at', 'desc'),
     ];
     if (category && category !== 'all') {
         constraints.push(where('category', '==', category));
@@ -157,7 +156,6 @@ export function subscribeToOpenGigs(
     const gigsRef = collection(db, 'gigs');
     const constraints: any[] = [
         where('status', '==', 'open'),
-        orderBy('created_at', 'desc'),
     ];
 
     if (category && category !== 'all') {
@@ -262,6 +260,43 @@ export async function createGig(gig: {
     urgency?: string;
 }, userId: string): Promise<GigRow> {
 
+    // ── Input Validation ────────────────────────────────────────────
+    if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+        throw new Error('Authentication required. Please log in again.');
+    }
+
+    const trimmedTitle = (gig.title ?? '').trim();
+    if (trimmedTitle.length === 0) {
+        throw new Error('Gig title is required.');
+    }
+    if (trimmedTitle.length > 120) {
+        throw new Error('Gig title must be under 120 characters.');
+    }
+
+    const trimmedDescription = (gig.description ?? '').trim().slice(0, 5000);
+
+    if (typeof gig.budgetAmount !== 'number' || isNaN(gig.budgetAmount) || gig.budgetAmount <= 0) {
+        throw new Error('Budget must be a positive number.');
+    }
+    if (gig.budgetAmount > 10_000_000) {
+        throw new Error('Budget exceeds the maximum allowed (₹1,00,00,000).');
+    }
+
+    const sanitizedSkills = (gig.skills ?? [])
+        .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+        .map(s => s.trim().slice(0, 50))
+        .slice(0, 10);
+
+    // Validate deadline if provided
+    if (gig.deadline) {
+        const deadlineDate = new Date(gig.deadline);
+        if (isNaN(deadlineDate.getTime())) {
+            throw new Error('Invalid deadline date.');
+        }
+    }
+
+    // ── Build Document ──────────────────────────────────────────────
+
     // Map form category to DB category enum
     const categoryMap: Record<string, string> = {
         design: 'design',
@@ -276,14 +311,14 @@ export async function createGig(gig: {
 
     const gigData = {
         client_id: userId,
-        title: gig.title,
-        description: gig.description ?? '',
+        title: trimmedTitle,
+        description: trimmedDescription,
         category: categoryMap[gig.category] ?? 'other',
         status: 'open',
         budget_min: budgetPaise,
         budget_max: budgetPaise,
         budget_type: 'fixed',
-        skills: gig.skills ?? [],
+        skills: sanitizedSkills,
         deadline: gig.deadline ?? null,
         urgency: gig.urgency ?? 'normal',
         applications_count: 0,
@@ -293,11 +328,14 @@ export async function createGig(gig: {
 
     // Optimistic UI approach: Generate ID safely, fire-and-forget the document write
     // This totally bypasses React Native/Expo hanging WebSocket issues on the dev server.
-    const newDocRef = doc(collection(db, 'gigs'));
-    
-    setDoc(newDocRef, gigData).catch(err => {
-        console.error('Firebase background write failed:', err);
-    });
+    // Using setDoc with pre-generated ID to avoid WebSocket hangs, 
+    // but we await it here to ensure data is saved before navigation.
+    try {
+        await setDoc(newDocRef, gigData);
+    } catch (err) {
+        console.error('Firebase write failed:', err);
+        throw new Error('Failed to save gig to database. Please try again.');
+    }
 
     return {
         ...gigData,

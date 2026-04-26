@@ -23,10 +23,10 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // Colors - consistent with index.tsx and details.tsx
 const COLORS = {
-    primary: "#d4f906",
-    primaryDark: "#ccf005",
-    karyaBlack: "#171811",
-    karyaYellow: "#d4f906",
+    primary: "#FFE500",
+    primaryDark: "#E6CE00",
+    karyaBlack: "#000000",
+    karyaYellow: "#FFE500",
     karyaGray: "#858c5f",
     white: "#FFFFFF",
     gray: "#666666",
@@ -91,12 +91,7 @@ export default function BudgetTimelineScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Yellow Striped Background */}
-            <View style={styles.stripedBackground}>
-                {[...Array(60)].map((_, i) => (
-                    <View key={i} style={[styles.stripe, { top: i * 20 - 300 }]} />
-                ))}
-            </View>
+
 
             {/* Header - Consistent with index.tsx and details.tsx */}
             <View
@@ -143,8 +138,6 @@ export default function BudgetTimelineScreen() {
                     <Animated.View entering={FadeInDown.delay(100).springify()}>
                         <Text style={styles.heroText}>Set</Text>
                         <View style={styles.budgetWrapper}>
-                            {/* White offset shadow */}
-                            <View style={styles.budgetShadow} />
                             {/* Main budget box */}
                             <View style={styles.budgetBox}>
                                 <Text style={styles.budgetText}>Budget</Text>
@@ -321,18 +314,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.primary,
     },
-    stripedBackground: {
-        ...StyleSheet.absoluteFillObject,
-        overflow: "hidden",
-        transform: [{ rotate: "45deg" }],
-    },
-    stripe: {
-        position: "absolute",
-        left: -200,
-        width: SCREEN_WIDTH * 3,
-        height: 10,
-        backgroundColor: COLORS.primaryDark,
-    },
+
     safeAreaTop: {
         width: "100%",
     },
@@ -356,10 +338,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: COLORS.white,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
         elevation: 2,
     },
     backButtonPressed: {
@@ -413,16 +395,7 @@ const styles = StyleSheet.create({
         marginTop: 4,
         position: "relative",
     },
-    budgetShadow: {
-        position: "absolute",
-        top: 4,
-        left: 4,
-        right: -4,
-        bottom: -4,
-        backgroundColor: COLORS.white,
-        borderWidth: 2,
-        borderColor: COLORS.karyaBlack,
-    },
+
     budgetBox: {
         backgroundColor: COLORS.karyaBlack,
         paddingHorizontal: 16,
@@ -458,11 +431,11 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: COLORS.karyaBlack,
         padding: 4,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     segmentItem: {
         flex: 1,
@@ -473,11 +446,11 @@ const styles = StyleSheet.create({
     },
     segmentItemActive: {
         backgroundColor: COLORS.karyaBlack,
-        shadowColor: COLORS.karyaGray,
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 2,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
     segmentText: {
         fontSize: 14,
@@ -510,11 +483,11 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         height: 80,
         paddingHorizontal: 20,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     rupeeSymbol: {
         fontSize: 36,
@@ -560,10 +533,10 @@ const styles = StyleSheet.create({
         borderColor: COLORS.karyaBlack,
         borderRadius: 16,
         overflow: "hidden",
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
         elevation: 4,
     },
     spiralBinding: {

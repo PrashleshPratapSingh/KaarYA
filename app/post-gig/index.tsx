@@ -30,10 +30,10 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // Colors from the HTML
 const COLORS = {
-    primary: "#d4f906",
-    primaryDark: "#ccf005",
-    karyaBlack: "#171811",
-    karyaYellow: "#d4f906",
+    primary: "#FFE500",
+    primaryDark: "#E6CE00",
+    karyaBlack: "#000000",
+    karyaYellow: "#FFE500",
     karyaCobalt: "#2f45ff",
     white: "#FFFFFF",
     gray: "#666666",
@@ -292,12 +292,7 @@ export default function CategorySelectionScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Yellow Striped Background - Full screen */}
-            <View style={styles.stripedBackground}>
-                {[...Array(60)].map((_, i) => (
-                    <View key={i} style={[styles.stripe, { top: i * 20 - 300 }]} />
-                ))}
-            </View>
+
 
             {/* Header - Inside SafeArea, all elements on same line */}
             <View style={[styles.safeAreaTop, { height: insets.top > 0 ? insets.top : 0, backgroundColor: COLORS.white }]} />
@@ -330,8 +325,6 @@ export default function CategorySelectionScreen() {
             <View style={styles.heroContainer}>
                 <Text style={styles.heroText}>Pick Your</Text>
                 <View style={styles.hustleWrapper}>
-                    {/* White offset shadow - positioned BEHIND */}
-                    <View style={styles.hustleShadow} />
                     {/* Main hustle box - on top */}
                     <View style={styles.hustleBox}>
                         <Text style={styles.hustleText}>Hustle</Text>
@@ -502,18 +495,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.primary,
     },
-    stripedBackground: {
-        ...StyleSheet.absoluteFillObject,
-        overflow: "hidden",
-        transform: [{ rotate: "45deg" }],
-    },
-    stripe: {
-        position: "absolute",
-        left: -200,
-        width: SCREEN_WIDTH * 3,
-        height: 10,
-        backgroundColor: COLORS.primaryDark,
-    },
+
     safeAreaTop: {
         width: "100%",
     },
@@ -537,10 +519,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: COLORS.white,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
         elevation: 2,
     },
     backButtonPressed: {
@@ -590,16 +572,7 @@ const styles = StyleSheet.create({
         marginTop: 4,
         position: "relative",
     },
-    hustleShadow: {
-        position: "absolute",
-        top: 4,
-        left: 4,
-        right: -4,
-        bottom: -4,
-        backgroundColor: COLORS.white,
-        borderWidth: 2,
-        borderColor: COLORS.karyaBlack,
-    },
+
     hustleBox: {
         backgroundColor: COLORS.karyaBlack,
         paddingHorizontal: 8,
@@ -639,7 +612,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingVertical: 16,
         borderRadius: 9999,
-        borderWidth: 3,
+        borderWidth: 2.5,
         borderColor: COLORS.karyaBlack,
     },
     buttonUnselected: {
@@ -650,17 +623,17 @@ const styles = StyleSheet.create({
         transform: [{ scale: 1.05 }],
     },
     shadowPill: {
-        shadowColor: "rgba(23, 24, 17, 0.15)",
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 3,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     shadowActive: {
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
         elevation: 4,
     },
     buttonContent: {

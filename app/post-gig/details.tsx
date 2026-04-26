@@ -25,10 +25,10 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // Colors - consistent with index.tsx
 const COLORS = {
-    primary: "#d4f906",
-    primaryDark: "#ccf005",
-    karyaBlack: "#171811",
-    karyaYellow: "#d4f906",
+    primary: "#FFE500",
+    primaryDark: "#E6CE00",
+    karyaBlack: "#000000",
+    karyaYellow: "#FFE500",
     karyaCobalt: "#2f45ff",
     white: "#FFFFFF",
     gray: "#666666",
@@ -128,12 +128,7 @@ export default function GigDetailsScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Yellow Striped Background - Full screen */}
-            <View style={styles.stripedBackground}>
-                {[...Array(60)].map((_, i) => (
-                    <View key={i} style={[styles.stripe, { top: i * 20 - 300 }]} />
-                ))}
-            </View>
+
 
             {/* Header - Consistent with index.tsx */}
             <View
@@ -181,8 +176,6 @@ export default function GigDetailsScreen() {
                 <View style={styles.heroContainer}>
                     <Text style={styles.heroText}>What's</Text>
                     <View style={styles.gigWrapper}>
-                        {/* White offset shadow - positioned BEHIND */}
-                        <View style={styles.gigShadow} />
                         {/* Main gig box - on top */}
                         <View style={styles.gigBox}>
                             <Text style={styles.gigText}>the gig?</Text>
@@ -354,18 +347,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.primary,
     },
-    stripedBackground: {
-        ...StyleSheet.absoluteFillObject,
-        overflow: "hidden",
-        transform: [{ rotate: "45deg" }],
-    },
-    stripe: {
-        position: "absolute",
-        left: -200,
-        width: SCREEN_WIDTH * 3,
-        height: 10,
-        backgroundColor: COLORS.primaryDark,
-    },
+
     safeAreaTop: {
         width: "100%",
     },
@@ -389,10 +371,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: COLORS.white,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
         elevation: 2,
     },
     backButtonPressed: {
@@ -445,16 +427,7 @@ const styles = StyleSheet.create({
         marginTop: 4,
         position: "relative",
     },
-    gigShadow: {
-        position: "absolute",
-        top: 4,
-        left: 4,
-        right: -4,
-        bottom: -4,
-        backgroundColor: COLORS.white,
-        borderWidth: 2,
-        borderColor: COLORS.karyaBlack,
-    },
+
     gigBox: {
         backgroundColor: COLORS.karyaBlack,
         paddingHorizontal: 12,
@@ -491,11 +464,11 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: COLORS.karyaBlack,
         borderRadius: 8,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     textInput: {
         height: 56,
@@ -509,11 +482,11 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: COLORS.karyaBlack,
         borderRadius: 8,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     textarea: {
         minHeight: 160,
@@ -537,11 +510,11 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         borderWidth: 2,
         gap: 8,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-        elevation: 2,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
     skillTagActive: {
         backgroundColor: COLORS.karyaBlack,
@@ -637,10 +610,10 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: COLORS.karyaBlack,
         padding: 24,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 6, height: 6 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
         elevation: 8,
     },
     modalTitle: {

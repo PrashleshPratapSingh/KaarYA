@@ -25,10 +25,10 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // Colors - consistent with all screens
 const COLORS = {
-    primary: "#d4f906",
-    primaryDark: "#ccf005",
-    karyaBlack: "#171811",
-    karyaYellow: "#d4f906",
+    primary: "#FFE500",
+    primaryDark: "#E6CE00",
+    karyaBlack: "#000000",
+    karyaYellow: "#FFE500",
     white: "#FFFFFF",
     backgroundLight: "#fffdf5",
     accentRed: "#ff4d4d",
@@ -110,12 +110,7 @@ export default function AttachmentsScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Yellow Striped Background - Same as other screens */}
-            <View style={styles.stripedBackground}>
-                {[...Array(60)].map((_, i) => (
-                    <View key={i} style={[styles.stripe, { top: i * 20 - 300 }]} />
-                ))}
-            </View>
+
 
             {/* Header - Consistent with other screens */}
             <View
@@ -162,8 +157,6 @@ export default function AttachmentsScreen() {
                 >
                     <Text style={styles.heroText}>Show 'em what</Text>
                     <View style={styles.needWrapper}>
-                        {/* White offset shadow */}
-                        <View style={styles.needShadow} />
                         {/* Main box */}
                         <View style={styles.needBox}>
                             <Text style={styles.needText}>you need.</Text>
@@ -182,7 +175,6 @@ export default function AttachmentsScreen() {
                     <View style={styles.uploadZone}>
                         {/* Upload Icon with neobrutalist style */}
                         <View style={styles.uploadIconWrapper}>
-                            <View style={styles.uploadIconShadow} />
                             <View style={styles.uploadIconBox}>
                                 <MaterialCommunityIcons
                                     name="file-upload-outline"
@@ -314,18 +306,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.primary,
     },
-    stripedBackground: {
-        ...StyleSheet.absoluteFillObject,
-        overflow: "hidden",
-        transform: [{ rotate: "45deg" }],
-    },
-    stripe: {
-        position: "absolute",
-        left: -200,
-        width: SCREEN_WIDTH * 3,
-        height: 10,
-        backgroundColor: COLORS.primaryDark,
-    },
+
     safeAreaTop: {
         width: "100%",
     },
@@ -349,10 +330,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: COLORS.white,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
         elevation: 2,
     },
     backButtonPressed: {
@@ -404,16 +385,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         position: "relative",
     },
-    needShadow: {
-        position: "absolute",
-        top: 4,
-        left: 4,
-        right: -4,
-        bottom: -4,
-        backgroundColor: COLORS.karyaBlack,
-        borderWidth: 2,
-        borderColor: COLORS.karyaBlack,
-    },
+
     needBox: {
         backgroundColor: COLORS.primary,
         paddingHorizontal: 8,
@@ -457,15 +429,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
     },
-    uploadIconShadow: {
-        position: "absolute",
-        top: 4,
-        left: 4,
-        width: 76,
-        height: 76,
-        backgroundColor: COLORS.karyaBlack,
-        borderRadius: 12,
-    },
+
     uploadIconBox: {
         position: "absolute",
         top: 0,
@@ -494,10 +458,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 8,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
         elevation: 2,
     },
     fileTypeText: {
@@ -551,10 +515,10 @@ const styles = StyleSheet.create({
         paddingBottom: 32,
         borderWidth: 2,
         borderColor: COLORS.karyaBlack,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
         elevation: 4,
     },
     filePreview: {
@@ -617,10 +581,10 @@ const styles = StyleSheet.create({
         borderColor: COLORS.karyaBlack,
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
         elevation: 2,
         zIndex: 10,
     },

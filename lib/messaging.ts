@@ -84,7 +84,8 @@ export async function getOrCreateChat(
         }
     }
 
-    // Create new chat thread
+    // Create new chat thread with fire-and-forget to prevent Expo WebSocket hang
+    const newChatRef = doc(chatsRef);
     const chatData = {
         participantIds: [currentUserId, otherUserId],
         participantNames: {
@@ -107,8 +108,11 @@ export async function getOrCreateChat(
         createdAt: serverTimestamp(),
     };
 
-    const docRef = await addDoc(chatsRef, chatData);
-    return docRef.id;
+    setDoc(newChatRef, chatData).catch(err => {
+        console.error('Failed to create chat thread:', err);
+    });
+
+    return newChatRef.id;
 }
 
 /**
@@ -195,34 +199,45 @@ export async function sendMessage(
         createdAt: serverTimestamp(),
     };
 
-    // Add message to subcollection
+    // Generate a doc ref with a known ID so we can return it immediately
     const messagesRef = collection(db, 'chats', chatId, 'messages');
-    const docRef = await addDoc(messagesRef, messageData);
+    const newMsgRef = doc(messagesRef);
+    const msgId = newMsgRef.id;
 
-    // Update chat thread metadata
+    // Fire-and-forget: prevents Expo dev server WebSocket hangs
+    setDoc(newMsgRef, messageData).catch(err => {
+        console.error('Failed to write message:', err);
+    });
+
+    // Update chat thread metadata (also fire-and-forget)
     const chatRef = doc(db, 'chats', chatId);
-    const chatSnap = await getDoc(chatRef);
-    if (chatSnap.exists()) {
-        const chatData = chatSnap.data();
-        const otherIds = (chatData.participantIds as string[]).filter(
-            (id) => id !== currentUserId
-        );
+    getDoc(chatRef).then(chatSnap => {
+        if (chatSnap.exists()) {
+            const chatData = chatSnap.data();
+            const otherIds = (chatData.participantIds as string[]).filter(
+                (id) => id !== currentUserId
+            );
 
-        // Increment unread count for other participants
-        const unreadCounts = { ...(chatData.unreadCounts || {}) };
-        for (const otherId of otherIds) {
-            unreadCounts[otherId] = (unreadCounts[otherId] || 0) + 1;
+            // Increment unread count for other participants
+            const unreadCounts = { ...(chatData.unreadCounts || {}) };
+            for (const otherId of otherIds) {
+                unreadCounts[otherId] = (unreadCounts[otherId] || 0) + 1;
+            }
+
+            updateDoc(chatRef, {
+                lastMessage: type === 'text' ? text : `📎 ${type}`,
+                lastMessageAt: serverTimestamp(),
+                lastSenderId: currentUserId,
+                unreadCounts,
+            }).catch(err => {
+                console.error('Failed to update chat metadata:', err);
+            });
         }
+    }).catch(err => {
+        console.error('Failed to read chat for metadata update:', err);
+    });
 
-        await updateDoc(chatRef, {
-            lastMessage: type === 'text' ? text : `📎 ${type}`,
-            lastMessageAt: serverTimestamp(),
-            lastSenderId: currentUserId,
-            unreadCounts,
-        });
-    }
-
-    return docRef.id;
+    return msgId;
 }
 
 /**
@@ -254,9 +269,10 @@ export function onMessagesChanged(
  * Mark all messages in a chat as read for the current user.
  */
 export async function markChatAsRead(currentUserId: string, chatId: string): Promise<void> {
-
     const chatRef = doc(db, 'chats', chatId);
-    await updateDoc(chatRef, {
+    updateDoc(chatRef, {
         [`unreadCounts.${currentUserId}`]: 0,
+    }).catch(err => {
+        console.error('Failed to mark chat as read:', err);
     });
 }

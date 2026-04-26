@@ -13,15 +13,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const tokenCache = {
   async getToken(key: string) {
     try {
-      const item = await SecureStore.getItemAsync(key);
-      if (item) {
-        console.log(`${key} was used 🔐 \n`);
-      } else {
-        console.log('No values stored under key: ' + key);
-      }
-      return item;
+      return await SecureStore.getItemAsync(key);
     } catch (error) {
-      console.error('SecureStore get item error: ', error);
       await SecureStore.deleteItemAsync(key);
       return null;
     }
@@ -35,10 +28,11 @@ const tokenCache = {
   },
 };
 
-const publishableKey = "pk_test_bGVnaWJsZS1yYXR0bGVyLTU5LmNsZXJrLmFjY291bnRzLmRldiQ";
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 if (!publishableKey) {
-  throw new Error('Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to your .env file')
+  console.error('❌ Error: EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is missing from your environment.');
+  console.info('💡 Tip: If you just added it to .env, you MUST restart your Expo server (npx expo start -c).');
 }
 
 export {
@@ -188,6 +182,12 @@ function RootLayoutNav() {
           name="post-gig"
           options={{
             presentation: "fullScreenModal",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="chat"
+          options={{
             headerShown: false,
           }}
         />

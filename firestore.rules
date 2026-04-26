@@ -56,5 +56,43 @@ service cloud.firestore {
        allow delete: if false;
     }
 
+    // ─── Chat Threads ───────────────────────────────────────────────
+    match /chats/{chatId} {
+      // Helper: is the requesting user a participant in this chat?
+      function isParticipant() {
+        return request.auth.uid in resource.data.participantIds;
+      }
+      function isParticipantNew() {
+        return request.auth.uid in request.resource.data.participantIds;
+      }
+
+      // Only participants can read a chat thread
+      allow read: if isAuthenticated() && isParticipant();
+
+      // Any authenticated user can create a chat, but they must be a participant
+      allow create: if isAuthenticated() && isParticipantNew();
+
+      // Only participants can update (e.g. lastMessage, unreadCounts)
+      allow update: if isAuthenticated() && isParticipant();
+
+      // No client-side deletes
+      allow delete: if false;
+
+      // ─── Chat Messages (subcollection) ──────────────────────────
+      match /messages/{messageId} {
+        // Only chat participants can read messages
+        allow read: if isAuthenticated()
+                    && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds;
+
+        // Only chat participants can send messages, and must be the sender
+        allow create: if isAuthenticated()
+                      && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds
+                      && request.resource.data.senderId == request.auth.uid;
+
+        // Messages are immutable once sent
+        allow update, delete: if false;
+      }
+    }
+
   }
 }

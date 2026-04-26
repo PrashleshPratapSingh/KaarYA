@@ -26,10 +26,10 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // Colors - consistent with all screens
 const COLORS = {
-    primary: "#d4f906",
-    primaryDark: "#ccf005",
-    karyaBlack: "#171811",
-    karyaYellow: "#d4f906",
+    primary: "#FFE500",
+    primaryDark: "#E6CE00",
+    karyaBlack: "#000000",
+    karyaYellow: "#FFE500",
     white: "#FFFFFF",
     backgroundLight: "#fffdf5",
     gray: "#8a8760",
@@ -122,6 +122,12 @@ export default function ReviewScreen() {
                 }
             }
 
+            if (!user?.uid) {
+                Alert.alert('Not logged in', 'Please sign in to post a gig.');
+                setIsSubmitting(false);
+                return;
+            }
+
             await createGig({
                 title,
                 description,
@@ -130,7 +136,7 @@ export default function ReviewScreen() {
                 skills,
                 deadline: deadline || undefined,
                 urgency: 'normal',
-            }, user?.uid || '');
+            }, user.uid);
 
             router.replace("/post-gig/success");
         } catch (error: any) {
@@ -159,12 +165,7 @@ export default function ReviewScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Yellow Striped Background - Same as other screens */}
-            <View style={styles.stripedBackground}>
-                {[...Array(60)].map((_, i) => (
-                    <View key={i} style={[styles.stripe, { top: i * 20 - 300 }]} />
-                ))}
-            </View>
+
 
             {/* Header - Consistent with other screens */}
             <View
@@ -408,18 +409,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.primary,
     },
-    stripedBackground: {
-        ...StyleSheet.absoluteFillObject,
-        overflow: "hidden",
-        transform: [{ rotate: "45deg" }],
-    },
-    stripe: {
-        position: "absolute",
-        left: -200,
-        width: SCREEN_WIDTH * 3,
-        height: 10,
-        backgroundColor: COLORS.primaryDark,
-    },
+
     safeAreaTop: {
         width: "100%",
     },
@@ -443,10 +433,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: COLORS.white,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
         elevation: 2,
     },
     backButtonPressed: {
@@ -487,10 +477,10 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderWidth: 2,
         borderColor: COLORS.karyaBlack,
-        shadowColor: COLORS.karyaBlack,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
         elevation: 4,
         marginBottom: 20,
     },
@@ -663,6 +653,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderWidth: 2,
         borderColor: COLORS.karyaBlack,
+        borderRadius: 12,
     },
     checkbox: {
         width: 24,

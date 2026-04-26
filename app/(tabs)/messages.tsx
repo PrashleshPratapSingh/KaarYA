@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, SafeAreaView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, SafeAreaView, TextInput, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BrandColors } from '../../constants/Colors';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { onChatsChanged, type ChatThread } from '../../lib/messaging';
 import { useAuth } from '../context/AuthContext';
+import * as Haptics from 'expo-haptics';
 
 interface ChatPreview {
     id: string;
@@ -13,7 +13,6 @@ interface ChatPreview {
     time: string;
     unreadCount: number;
     type: 'text' | 'photo' | 'audio';
-    avatarColor: string;
 }
 
 export default function MessagesListScreen() {
@@ -21,6 +20,7 @@ export default function MessagesListScreen() {
     const { user } = useAuth();
     const [chats, setChats] = useState<ChatPreview[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         if (!user) {
@@ -30,13 +30,10 @@ export default function MessagesListScreen() {
 
         const unsubscribe = onChatsChanged(user.uid, (threads: ChatThread[]) => {
             const mappedChats: ChatPreview[] = threads.map(thread => {
-                // Determine the other participant
-                const isUser1 = thread.participantIds[0] === user.uid;
-                const otherName = isUser1 ? thread.participantNames[1] : thread.participantNames[0];
-                const otherAvatar = isUser1 ? thread.participantAvatars?.[1] : thread.participantAvatars?.[0];
-                const unreadKey = `unread_${user.uid}` as keyof ChatThread;
-
-                // Format time (e.g. "14:20" or "Yesterday" or "Mon")
+                // participantNames is keyed by userId, not by index
+                const otherUserId = thread.participantIds.find(pid => pid !== user.uid) || '';
+                const otherName = thread.participantNames?.[otherUserId] || 'User';
+                
                 let timeStr = '';
                 if (thread.lastMessageAt) {
                     const date = new Date(thread.lastMessageAt);
@@ -49,18 +46,13 @@ export default function MessagesListScreen() {
                     }
                 }
 
-                // Temporary deterministic color based on ID length
-                const colors = [BrandColors.yellow, '#26A69A', '#5C6BC0', '#AB47BC', '#78909C', '#8D6E63'];
-                const avatarColor = colors[thread.id.length % colors.length];
-
                 return {
                     id: thread.id,
-                    name: otherName || 'Unknown User',
+                    name: otherName,
                     lastMessage: thread.lastMessage || 'No messages yet',
                     time: timeStr,
                     unreadCount: (thread.unreadCounts?.[user.uid] as number) || 0,
-                    type: thread.lastMessage.startsWith('📎') ? 'photo' : 'text', // basic fallback logic
-                    avatarColor: avatarColor,
+                    type: thread.lastMessage.startsWith('📎') ? 'photo' : 'text',
                 };
             });
 
@@ -72,240 +64,106 @@ export default function MessagesListScreen() {
     }, [user]);
 
     const handleChatPress = (chatId: string, name: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         router.push({
             pathname: '/chat/[id]',
             params: { id: chatId, name: name }
         });
     };
 
-    const renderItem = ({ item, index }: { item: ChatPreview; index: number }) => (
-        <>
-            <TouchableOpacity
-                style={styles.chatItem}
-                onPress={() => handleChatPress(item.id, item.name)}
-                activeOpacity={0.6}
-            >
-                {/* Avatar */}
-                <View style={[styles.avatar, { backgroundColor: item.avatarColor }]}>
-                    {item.type === 'photo' ? (
-                        <Ionicons name="people" size={24} color="#FFF" />
-                    ) : (
-                        <Text style={styles.avatarText}>{item.name.substring(0, 1)}</Text>
-                    )}
-                </View>
-
-                {/* Content */}
-                <View style={styles.contentContainer}>
-                    <View style={styles.headerRow}>
-                        <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-                        <Text style={[
-                            styles.time,
-                            item.unreadCount > 0 && { color: '#25D366', fontWeight: '700' }
-                        ]}>
-                            {item.time}
-                        </Text>
-                    </View>
-
-                    <View style={styles.messageRow}>
-                        <View style={styles.messagePreview}>
-                            {item.type === 'photo' && (
-                                <Ionicons name="image" size={14} color="#8696A0" style={{ marginRight: 4 }} />
-                            )}
-                            {item.type === 'audio' && (
-                                <Ionicons name="mic" size={14} color="#8696A0" style={{ marginRight: 4 }} />
-                            )}
-                            <Text style={styles.lastMessage} numberOfLines={1}>
-                                {item.lastMessage}
-                            </Text>
-                        </View>
-
-                        {item.unreadCount > 0 && (
-                            <View style={styles.unreadBadge}>
-                                <Text style={styles.unreadText}>{item.unreadCount}</Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
-            </TouchableOpacity>
-            {/* Separator line */}
-            {index < chats.length - 1 && (
-                <View style={styles.separator} />
-            )}
-        </>
+    const filteredChats = chats.filter(chat => 
+        chat.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFE600" />
-            {/* Yellow Header Area */}
-            <View style={styles.headerContainer}>
-                <Text style={styles.headerTitle}>Messages</Text>
-                <View style={styles.searchBar}>
-                    <Ionicons name="search" size={20} color="rgba(0,0,0,0.5)" />
-                    <TextInput
-                        placeholder="Search..."
-                        style={styles.searchInput}
-                        placeholderTextColor="rgba(0,0,0,0.4)"
-                    />
-                </View>
-            </View>
+        <SafeAreaView className="flex-1 bg-white">
+            <StatusBar barStyle="dark-content" />
+            
+            <ScrollView 
+                className="flex-1" 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 100 }}
+            >
+                {/* Minimal Yellow Header */}
+                <View className="bg-[#FFE600] pt-12 pb-10 px-6 rounded-b-[40px]">
+                    <Text className="text-black font-black text-3xl tracking-tight uppercase">Messages</Text>
+                    <Text className="text-black/40 font-bold text-xs uppercase tracking-widest mt-1">
+                        {chats.filter(c => c.unreadCount > 0).length} Unread Conversations
+                    </Text>
 
-            {/* White Chat List Area */}
-            <View style={styles.chatListContainer}>
-                {loading ? (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                        <ActivityIndicator size="large" color="#000" />
+                    {/* Clean Search Bar */}
+                    <View className="bg-white rounded-2xl px-4 py-3 flex-row items-center mt-6 shadow-sm">
+                        <Feather name="search" size={18} color="black" opacity={0.2} />
+                        <TextInput
+                            placeholder="Search chats..."
+                            placeholderTextColor="rgba(0,0,0,0.2)"
+                            className="flex-1 ml-3 font-bold text-sm"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                        />
                     </View>
-                ) : !user ? (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
-                        <Ionicons name="lock-closed" size={64} color="rgba(0,0,0,0.2)" />
-                        <Text style={{ textAlign: 'center', marginTop: 16, fontSize: 16, color: 'rgba(0,0,0,0.5)', marginBottom: 24 }}>
-                            Sign in to view your messages and chat with clients.
-                        </Text>
-                        <TouchableOpacity
-                            onPress={() => router.push('/onboarding')}
-                            style={{ backgroundColor: '#000', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 24 }}
-                        >
-                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Sign In</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : chats.length === 0 ? (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
-                        <Ionicons name="chatbubbles-outline" size={64} color="rgba(0,0,0,0.2)" />
-                        <Text style={{ textAlign: 'center', marginTop: 16, fontSize: 16, color: 'rgba(0,0,0,0.5)' }}>
-                            No messages yet. When you apply for a gig or a client contacts you, chats will appear here.
-                        </Text>
-                    </View>
-                ) : (
-                    <FlatList
-                        data={chats}
-                        renderItem={renderItem}
-                        keyExtractor={item => item.id}
-                        contentContainerStyle={styles.listContent}
-                        showsVerticalScrollIndicator={false}
-                    />
-                )}
-            </View>
+                </View>
+
+                {/* Chat List */}
+                <View className="px-5 mt-8">
+                    {loading ? (
+                        <ActivityIndicator size="large" color="#FFE600" className="mt-10" />
+                    ) : !user ? (
+                        <View className="items-center py-20 bg-gray-50 rounded-[30px] px-10">
+                            <Ionicons name="lock-closed" size={48} color="rgba(0,0,0,0.1)" />
+                            <Text className="text-center mt-4 text-gray-400 font-bold">Sign in to view messages</Text>
+                            <TouchableOpacity 
+                                onPress={() => router.push('/onboarding')}
+                                className="bg-black px-8 py-4 rounded-2xl mt-6"
+                            >
+                                <Text className="text-white font-bold uppercase">Log In</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : filteredChats.length === 0 ? (
+                        <View className="items-center py-20">
+                            <Text className="text-gray-300 font-bold italic">No messages found</Text>
+                        </View>
+                    ) : (
+                        filteredChats.map(chat => (
+                            <TouchableOpacity
+                                key={chat.id}
+                                onPress={() => handleChatPress(chat.id, chat.name)}
+                                activeOpacity={0.7}
+                                className="bg-white border border-gray-100 rounded-[30px] p-5 mb-4 flex-row items-center justify-between"
+                            >
+                                <View className="flex-row items-center flex-1">
+                                    {/* Avatar Box - Inspired by Activity Icons */}
+                                    <View className="w-12 h-12 bg-[#FFE600] rounded-2xl items-center justify-center">
+                                        <Text className="text-black font-black text-lg">{chat.name.substring(0, 1)}</Text>
+                                        {chat.unreadCount > 0 && (
+                                            <View className="absolute -top-1 -right-1 w-4 h-4 bg-black rounded-full border-2 border-white" />
+                                        )}
+                                    </View>
+
+                                    <View className="ml-4 flex-1 mr-4">
+                                        <View className="flex-row justify-between items-center mb-1">
+                                            <Text className="text-black font-bold text-base tracking-tight flex-1" numberOfLines={1}>
+                                                {chat.name}
+                                            </Text>
+                                            <Text className="text-black/30 text-[10px] font-bold ml-2">
+                                                {chat.time}
+                                            </Text>
+                                        </View>
+                                        <View className="flex-row items-center">
+                                            {chat.type === 'photo' && <Feather name="image" size={12} color="#999" className="mr-1" />}
+                                            <Text className="text-black/40 text-xs font-medium flex-1" numberOfLines={1}>
+                                                {chat.lastMessage}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="black" opacity={0.1} />
+                            </TouchableOpacity>
+                        ))
+                    )}
+                </View>
+            </ScrollView>
         </SafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FFE600',
-    },
-    headerContainer: {
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 20,
-        backgroundColor: '#FFE600',
-    },
-    headerTitle: {
-        fontSize: 28,
-        fontWeight: '800',
-        color: '#000',
-        marginBottom: 16,
-    },
-    searchBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        borderRadius: 16,
-        borderWidth: 2,
-        borderColor: '#000',
-    },
-    searchInput: {
-        flex: 1,
-        marginLeft: 10,
-        fontSize: 16,
-        color: '#000',
-    },
-    chatListContainer: {
-        flex: 1,
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        marginTop: 8,
-    },
-    listContent: {
-        paddingTop: 12,
-        paddingBottom: 100,
-    },
-    chatItem: {
-        flexDirection: 'row',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        alignItems: 'center',
-    },
-    separator: {
-        height: 1,
-        backgroundColor: 'rgba(0,0,0,0.08)',
-        marginLeft: 86,
-        marginRight: 20,
-    },
-    // ... keep existing avatar styles ...
-    avatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
-    },
-    avatarText: {
-        color: '#FFF',
-        fontSize: 20,
-        fontWeight: '600',
-    },
-    contentContainer: {
-        flex: 1,
-        justifyContent: 'center',
-    },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
-    name: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: BrandColors.black,
-        flex: 1,
-    },
-    time: {
-        fontSize: 12,
-        color: BrandColors.mediumGray,
-    },
-    messageRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    messagePreview: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-        marginRight: 16,
-    },
-    lastMessage: {
-        fontSize: 14,
-        color: BrandColors.mediumGray,
-    },
-    unreadBadge: {
-        backgroundColor: BrandColors.green,
-        minWidth: 20,
-        height: 20,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 6,
-    },
-    unreadText: {
-        color: '#FFF',
-        fontSize: 10,
-        fontWeight: '700',
-    },
-});
