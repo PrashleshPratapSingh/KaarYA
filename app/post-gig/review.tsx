@@ -143,7 +143,7 @@ export default function ReviewScreen() {
             console.error('Failed to create gig:', error);
             Alert.alert(
                 'Could not post gig',
-                error?.message || 'Please check your connection and try again.',
+                error?.message || error?.toString() || 'Please check your connection and try again.',
                 [{ text: 'OK' }]
             );
         } finally {

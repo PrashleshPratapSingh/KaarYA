@@ -15,7 +15,7 @@ import {
   HomeHeader,
   CategoryChip,
   GigGrid,
-  GigDetailModal,
+  MarketplaceGigDetailModal,
   KARYA_YELLOW,
   CATEGORIES,
   CategoryType,
@@ -162,7 +162,7 @@ export default function HomeScreen() {
       />
 
       {/* Gig Detail Modal */}
-      <GigDetailModal
+      <MarketplaceGigDetailModal
         visible={modalVisible}
         gig={selectedGig}
         onClose={() => setModalVisible(false)}

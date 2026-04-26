@@ -30,15 +30,6 @@ export default function OnboardingIndex() {
     const { user, loading } = useAuth();
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     
-    // If the user lands here but is already authenticated, they likely haven't
-    // finished the onboarding flow (since _layout.tsx checks kaarya_onboarding_complete).
-    // Push them to the next step automatically.
-    useEffect(() => {
-        if (!loading && user) {
-            router.push('/onboarding/community');
-        }
-    }, [user, loading, router]);
-    
     useWarmUpBrowser();
 
     const handleGoogleSignIn = React.useCallback(async () => {
@@ -63,61 +54,69 @@ export default function OnboardingIndex() {
         <View className="flex-1 bg-[#FFD600] relative">
             <StatusBar style="dark" />
 
-            <View className="flex-1 w-full items-center pt-20 px-6 relative justify-between pb-12">
-                {/* Title Section */}
-                <Animated.View entering={FadeInDown.delay(200).duration(1000)} className="items-center z-10 mb-2 w-full">
-                    <Text className="font-display text-[4rem] leading-[1] uppercase tracking-tighter text-black text-center mb-6">
-                        KaarYA:
-                    </Text>
-                    <Text className="font-display text-4xl leading-[0.9] uppercase tracking-tight text-black text-center">
-                        Your Story{'\n'}
-                        Starts{'\n'}
-                        Here.
-                    </Text>
+            <View className="flex-1 w-full items-center pt-16 px-6 relative justify-between pb-12">
+                {/* Title Section - Brutalist Style */}
+                <Animated.View entering={FadeInDown.delay(200).duration(1000)} className="items-center z-10 w-full">
+                    <View className="bg-white border-4 border-black px-6 py-2 shadow-hard mb-6 transform -rotate-1">
+                        <Text className="font-display text-5xl leading-[1] uppercase text-black text-center">
+                            KaarYA:
+                        </Text>
+                    </View>
+                    
+                    <View className="bg-black border-4 border-black px-6 py-4 shadow-hard-white transform rotate-1">
+                        <Text className="font-display text-3xl leading-[1] uppercase text-white text-center">
+                            Your Story{'\n'}Starts Here.
+                        </Text>
+                    </View>
                 </Animated.View>
 
                 {/* Mascot / Graphic Section */}
-                <Animated.View entering={FadeInUp.delay(500).duration(1000)} className="relative h-96 w-full flex justify-center items-center mt-4">
+                <Animated.View entering={FadeInUp.delay(500).duration(1000)} className="relative h-80 w-full flex justify-center items-center">
 
                     {/* Lottie Animation */}
                     <LottieView
                         source={require('../../assets/lottie/cute_cat_works.json')}
                         autoPlay
                         loop
-                        style={{ width: 350, height: 350 }}
+                        style={{ width: 320, height: 320 }}
                     />
 
-                    {/* Tooltip - Positioned top right relative to container */}
-                    <View className="absolute top-10 right-0 bg-white px-4 py-3 rounded-2xl shadow-lg z-30 transform rotate-1 w-40">
-                        <Text className="text-sm leading-tight text-black text-base" style={{ fontFamily: 'Merriweather_700Bold_Italic' }}>Let's build that bank, shall we?</Text>
-                        <View className="absolute bottom-0 left-[-6px] translate-y-1/3 w-4 h-4 bg-white transform rotate-45"></View>
+                    {/* Tooltip - Brutalist Sharp Style */}
+                    <View className="absolute top-0 right-0 bg-white border-2 border-black px-4 py-3 shadow-hard-sm z-30 transform rotate-2 w-44">
+                        <Text className="text-sm leading-tight text-black font-bold" style={{ fontFamily: 'Merriweather_700Bold_Italic' }}>
+                            Let's build that bank, shall we?
+                        </Text>
                     </View>
 
-                    {/* Star Badge - Positioned middle left */}
-                    <View className="absolute top-1/3 left-4 bg-white w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center transform -rotate-12 z-30 border-2 border-slate-100">
-                        <MaterialIcons name="star" size={32} color="#FACC15" />
+                    {/* Star Badge - Brutalist Style */}
+                    <View className="absolute top-1/4 left-0 bg-white w-14 h-14 border-2 border-black shadow-hard-sm flex items-center justify-center transform -rotate-12 z-30">
+                        <MaterialIcons name="star" size={32} color="#000" />
                     </View>
                 </Animated.View>
 
                 {/* Footer Section */}
-                <Animated.View entering={FadeInUp.delay(800).duration(1000)} className="w-full max-w-md px-6 pb-4 items-center space-y-6 z-20">
+                <Animated.View entering={FadeInUp.delay(800).duration(1000)} className="w-full max-w-md px-4 items-center z-20">
                     <TouchableOpacity
                         onPress={handleGoogleSignIn}
                         disabled={isAuthenticating}
-                        className="w-full bg-black py-5 rounded-full shadow-xl active:scale-95 transition-transform flex-row justify-center items-center"
+                        className="w-full bg-black py-5 border-4 border-black shadow-hard active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex-row justify-center items-center px-8"
                     >
                         <MaterialCommunityIcons name="google" size={24} color="white" style={{ marginRight: 12 }} />
-                        <Text className="text-white font-display text-xl text-center uppercase tracking-wide">
+                        <Text 
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            className="text-white font-display text-xl text-center uppercase tracking-tight"
+                        >
                             {isAuthenticating ? 'Signing in...' : 'Continue with Google'}
                         </Text>
                     </TouchableOpacity>
 
-                    {/* Pagination Dots */}
-                    <View className="flex-row gap-2.5 justify-center items-center mt-6">
-                        <View className="w-8 h-2.5 bg-black rounded-full" />
-                        <View className="w-2.5 h-2.5 bg-black/20 rounded-full" />
-                        <View className="w-2.5 h-2.5 bg-black/20 rounded-full" />
-                        <View className="w-2.5 h-2.5 bg-black/20 rounded-full" />
+                    {/* Pagination Dots - Brutalist Rectangles */}
+                    <View className="flex-row gap-3 justify-center items-center mt-10">
+                        <View className="w-12 h-3 bg-black border-2 border-black" />
+                        <View className="w-3 h-3 bg-white border-2 border-black" />
+                        <View className="w-3 h-3 bg-white border-2 border-black" />
+                        <View className="w-3 h-3 bg-white border-2 border-black" />
                     </View>
 
                 </Animated.View>

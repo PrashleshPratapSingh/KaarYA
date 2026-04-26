@@ -9,7 +9,7 @@ interface GigDetailModalProps {
     gig: Gig | null;
 }
 
-export function GigDetailModal({ visible, onClose, gig }: GigDetailModalProps) {
+export function PipelineGigDetailModal({ visible, onClose, gig }: GigDetailModalProps) {
     if (!gig) return null;
 
     const deadlineDate = new Date(gig.deadline);

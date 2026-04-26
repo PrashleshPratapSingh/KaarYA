@@ -42,13 +42,26 @@ export function StashCard({ balance, pendingPayment, onWithdraw }: StashCardProp
             </View>
 
             {/* Actions */}
-            <Pressable
-                onPress={onWithdraw}
-                className="bg-white rounded-[24px] py-5 flex-row items-center justify-center gap-3 shadow-lg active:scale-[0.98] transition-all"
-            >
-                <Text className="text-sm font-extrabold text-karya-black tracking-widest uppercase">WITHDRAW</Text>
-                <Feather name="arrow-up-right" size={18} color="black" />
-            </Pressable>
+            <View className="flex-row gap-3">
+                <Pressable
+                    onPress={() => {
+                        // This will be linked to the initiatePayment call
+                        if (onWithdraw) onWithdraw(); 
+                    }}
+                    className="flex-1 bg-white rounded-[24px] py-5 flex-row items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all"
+                >
+                    <Text className="text-xs font-extrabold text-karya-black tracking-widest uppercase">DEPOSIT</Text>
+                    <Feather name="plus-circle" size={16} color="black" />
+                </Pressable>
+
+                <Pressable
+                    onPress={onWithdraw}
+                    className="flex-1 bg-black rounded-[24px] py-5 flex-row items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all border border-white/10"
+                >
+                    <Text className="text-xs font-extrabold text-white tracking-widest uppercase">WITHDRAW</Text>
+                    <Feather name="arrow-up-right" size={16} color="white" />
+                </Pressable>
+            </View>
         </View>
     );
 }

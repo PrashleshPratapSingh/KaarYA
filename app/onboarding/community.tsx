@@ -119,9 +119,11 @@ export default function OnboardingCommunity() {
                 {/* Title */}
                 {!isSearching && (
                     <Animated.View entering={FadeInDown.delay(200)} className="mt-2 mb-2 relative z-20">
-                        <Text className="font-display text-[5rem] leading-[0.9] tracking-tighter uppercase text-black">
-                            Find{'\n'}Your{'\n'}Tribe.
-                        </Text>
+                        <View className="bg-white border-4 border-black px-6 py-4 shadow-hard transform -rotate-1 self-start">
+                            <Text className="font-display text-5xl leading-[0.9] tracking-tighter uppercase text-black">
+                                Find{'\n'}Your{'\n'}Tribe.
+                            </Text>
+                        </View>
                     </Animated.View>
                 )}
 
@@ -136,13 +138,12 @@ export default function OnboardingCommunity() {
                             style={{ width: '100%', height: 250, marginTop: 100 }}
                         />
 
-                        {/* Floating Tooltip */}
+                        {/* Floating Tooltip - Brutalist Sharp Style */}
                         <Animated.View
                             style={[{ position: 'absolute', top: 40, right: -10, zIndex: 30 }, animatedFloatStyle]}
                         >
-                            <View className="bg-white px-5 py-4 rounded-3xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-w-[180px] relative">
+                            <View className="bg-white px-5 py-4 border-2 border-black shadow-hard-sm max-w-[180px] relative transform rotate-1">
                                 <Text className="font-bold italic text-sm leading-tight text-black">We only let the real ones in.</Text>
-                                <View className="w-5 h-5 bg-white border-r-[3px] border-b-[3px] border-black absolute bottom-0 left-6 transform translate-y-2.5 rotate-45" />
                             </View>
                         </Animated.View>
                     </View>
@@ -163,12 +164,12 @@ export default function OnboardingCommunity() {
                                 onBlur={handleBlur}
                                 placeholder="Search your campus..."
                                 placeholderTextColor="#6B7280"
-                                className="block w-full pl-14 pr-4 py-4 bg-white border-[3px] border-black rounded-2xl text-black font-bold text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-[4px] focus:translate-y-[4px]"
+                                className="block w-full pl-14 pr-4 py-4 bg-white border-4 border-black text-black font-bold text-lg shadow-hard focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none"
                             />
                             {/* Star Decoration on Input */}
                             {!isSearching && (
-                                <View className="absolute -top-4 -right-2 bg-white w-10 h-10 rounded-lg rotate-12 border-[3px] border-black items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] z-20">
-                                    <MaterialIcons name="star" size={20} color="#FFD700" />
+                                <View className="absolute -top-4 -right-2 bg-white w-10 h-10 border-2 border-black items-center justify-center shadow-hard-sm z-20 transform rotate-12">
+                                    <MaterialIcons name="star" size={20} color="#000" />
                                 </View>
                             )}
                         </View>
@@ -185,9 +186,9 @@ export default function OnboardingCommunity() {
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     onPress={() => handleSelectCampus(item)}
-                                    className="py-4 border-b border-black/10"
+                                    className="py-4 border-b-2 border-black"
                                 >
-                                    <Text className="text-xl font-bold text-black">{item}</Text>
+                                    <Text className="text-xl font-black text-black uppercase tracking-tighter">{item}</Text>
                                 </TouchableOpacity>
                             )}
                         />
@@ -202,19 +203,19 @@ export default function OnboardingCommunity() {
                                 pathname: '/onboarding/skills',
                                 params: { university: searchQuery }
                             })}
-                            className="w-full bg-black py-5 rounded-full shadow-xl active:scale-95 transition-transform mb-8 border-2 border-transparent"
+                            className="w-full bg-black py-5 border-4 border-black shadow-hard active:translate-x-1 active:translate-y-1 active:shadow-none transition-all mb-8"
                         >
                             <Text className="text-white font-display text-xl text-center uppercase tracking-wider">
                                 Strike a Gig
                             </Text>
                         </TouchableOpacity>
 
-                        {/* Pagination Dots */}
-                        <View className="flex-row gap-2.5 justify-center items-center">
-                            <View className="w-2.5 h-2.5 bg-black/20 rounded-full" />
-                            <View className="w-8 h-2.5 bg-black rounded-full" />
-                            <View className="w-2.5 h-2.5 bg-black/20 rounded-full" />
-                            <View className="w-2.5 h-2.5 bg-black/20 rounded-full" />
+                        {/* Pagination Dots - Brutalist Rectangles */}
+                        <View className="flex-row gap-3 justify-center items-center">
+                            <View className="w-3 h-3 bg-white border-2 border-black" />
+                            <View className="w-12 h-3 bg-black border-2 border-black" />
+                            <View className="w-3 h-3 bg-white border-2 border-black" />
+                            <View className="w-3 h-3 bg-white border-2 border-black" />
                         </View>
 
                     </Animated.View>

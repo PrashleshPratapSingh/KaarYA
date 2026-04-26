@@ -1,0 +1,12 @@
+appId: com.kaarya.studentmarketplace
+---
+- launchApp
+- assertVisible: "FRESH GIGS"
+- tapOn: "APPLY NOW"
+- assertVisible: "ABOUT THE POSTER"
+- tapOn: "MESSAGE CLIENT"
+- assertVisible: "Type a message..."
+- back
+- back
+- tapOn: "Profile"
+- assertVisible: "HUSTLE LEVEL"

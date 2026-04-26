@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Share, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Gig } from '@/lib/types/mywork';
-import Svg, { Circle } from 'react-native-svg';
+import { CountdownCircularProgress } from '../CountdownCircularProgress';
 
 interface OngoingGigCardProps {
     gig: Gig;
@@ -12,52 +12,8 @@ interface OngoingGigCardProps {
 }
 
 export function OngoingGigCard({ gig, onOpenChat, onOpenUpload, onPressProfile }: OngoingGigCardProps) {
-    const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0 });
-
-    const handleShare = async () => {
-        try {
-            await Share.share({
-                message: `Working on a cool project on KaarYA: "${gig.title}" for ${gig.clientName}! ⚡ #HustleMode`,
-            });
-        } catch (error: any) {
-            Alert.alert(error.message);
-        }
-    };
-
-    useEffect(() => {
-        const calculateTime = () => {
-            const now = new Date().getTime();
-            const deadline = new Date(gig.deadline).getTime();
-            const diff = deadline - now;
-            if (diff <= 0) {
-                setTimeRemaining({ hours: 0, minutes: 0, seconds: 0 });
-                return;
-            }
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            setTimeRemaining({ hours, minutes, seconds });
-        };
-        calculateTime();
-        const interval = setInterval(calculateTime, 1000);
-        return () => clearInterval(interval);
-    }, [gig.deadline]);
-
-    const timeLabel = `${String(timeRemaining.hours).padStart(2, '0')}:${String(timeRemaining.minutes).padStart(2, '0')}:${String(timeRemaining.seconds).padStart(2, '0')}`;
-
-    // Calculate progress for ring (0-100)
-    const totalDuration = 24 * 60 * 60 * 1000; // Assume 24hr total
-    const elapsed = totalDuration - (timeRemaining.hours * 60 * 60 * 1000 + timeRemaining.minutes * 60 * 1000 + timeRemaining.seconds * 1000);
-    const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
-
-    const size = 180;
-    const strokeWidth = 12;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (progress / 100) * circumference;
-
-    const totalHours = timeRemaining.hours + (timeRemaining.minutes / 60) + (timeRemaining.seconds / 3600);
-    const showTimer = totalHours < 48;
+    const totalHours = (new Date(gig.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60);
+    const showTimer = totalHours > 0 && totalHours < 48;
 
     return (
         <View className="bg-white rounded-[32px] p-6 mb-4 shadow-sm">
@@ -72,41 +28,11 @@ export function OngoingGigCard({ gig, onOpenChat, onOpenUpload, onPressProfile }
             {/* Timer Ring or Deadline Date */}
             <View className="items-center mb-6">
                 {showTimer ? (
-                    <View style={{ width: size, height: size }}>
-                        <Svg width={size} height={size} style={{ position: 'absolute' }}>
-                            {/* Background ring */}
-                            <Circle
-                                cx={size / 2}
-                                cy={size / 2}
-                                r={radius}
-                                stroke="#F3F4F6"
-                                strokeWidth={strokeWidth}
-                                fill="transparent"
-                            />
-                            {/* Progress ring */}
-                            <Circle
-                                cx={size / 2}
-                                cy={size / 2}
-                                r={radius}
-                                stroke="#FFE500"
-                                strokeWidth={strokeWidth}
-                                fill="transparent"
-                                strokeLinecap="round"
-                                strokeDasharray={circumference}
-                                strokeDashoffset={strokeDashoffset}
-                                rotation="-90"
-                                origin={`${size / 2}, ${size / 2}`}
-                            />
-                        </Svg>
-                        <View className="absolute inset-0 items-center justify-center">
-                            <Text className="text-3xl font-extrabold text-karya-black tracking-tighter">
-                                {timeLabel}
-                            </Text>
-                            <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">
-                                TIME LEFT
-                            </Text>
-                        </View>
-                    </View>
+                    <CountdownCircularProgress
+                        deadline={gig.deadline}
+                        size={180}
+                        strokeWidth={12}
+                    />
                 ) : (
                     <View className="bg-gray-50 rounded-[32px] w-full py-10 items-center border border-gray-100">
                         <View className="w-16 h-16 bg-white rounded-2xl shadow-sm items-center justify-center mb-3">

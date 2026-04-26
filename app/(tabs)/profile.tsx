@@ -13,8 +13,30 @@ import { fetchUser, UserRow } from '@/lib/queries';
 export default function ProfileScreen() {
     const { user, logout } = useAuth();
     const router = useRouter();
-    const [userData, setUserData] = useState<UserRow | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [userData, setUserData] = useState<UserRow | null>(() => {
+        // Initialize with Clerk data to avoid empty state
+        if (user) {
+            return {
+                id: user.uid,
+                name: user.name || '',
+                email: user.email || '',
+                avatar_url: user.avatarUrl || null,
+                university: '',
+                bio: '',
+                skills: [],
+                gigs_completed: 0,
+                rating_avg: 5.0,
+                total_earnings: 0,
+                is_verified: false,
+                role: 'user',
+                rating_count: 0,
+                wallet_balance: 0,
+                created_at: new Date().toISOString()
+            } as UserRow;
+        }
+        return null;
+    });
+    const [isLoading, setIsLoading] = useState(!user);
 
     const [showSettings, setShowSettings] = useState(false);
     const [showPlayerCard, setShowPlayerCard] = useState(false);
@@ -23,32 +45,13 @@ export default function ProfileScreen() {
     useFocusEffect(
         useCallback(() => {
             const loadUserData = async () => {
-                if (!user?.uid) {
-                    setIsLoading(false);
-                    return;
-                }
+                if (!user?.uid) return;
+                
                 try {
                     const data = await fetchUser(user.uid);
                     setUserData(data);
                 } catch (error) {
                     console.log('Using local fallback for profile data');
-                    setUserData({
-                        id: user.uid,
-                        name: user.name || 'Your Name',
-                        email: user.email || '',
-                        avatar_url: user.avatarUrl || null,
-                        university: 'University Not Linked',
-                        bio: 'Exploring opportunities on KaarYa!',
-                        skills: ['Creative', 'Tech Savvy', 'Design'],
-                        gigs_completed: 0,
-                        rating_avg: 4.8,
-                        total_earnings: 0,
-                        is_verified: false,
-                        role: 'user',
-                        rating_count: 0,
-                        wallet_balance: 0,
-                        created_at: new Date().toISOString()
-                    });
                 } finally {
                     setIsLoading(false);
                 }

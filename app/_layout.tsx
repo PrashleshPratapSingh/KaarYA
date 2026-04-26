@@ -140,12 +140,44 @@ function RootLayoutNav() {
 
   useEffect(() => {
     let isMounted = true;
-    AsyncStorage.getItem('kaarya_onboarding_complete').then(val => {
-      if (isMounted) {
-        setHasOnboarded(val === 'true');
-        setCheckingOnboarding(false);
+    setCheckingOnboarding(true);
+    
+    const checkOnboardingStatus = async () => {
+      try {
+        const val = await AsyncStorage.getItem('kaarya_onboarding_complete');
+        if (!isMounted) return;
+
+        if (val === 'true') {
+          setHasOnboarded(true);
+          setCheckingOnboarding(false);
+          return;
+        }
+
+        // If local storage says false, double check Firestore for returning users
+        if (user?.uid) {
+          console.log('[OnboardingCheck] Checking Firestore for UID:', user.uid);
+          try {
+            const { fetchUser } = await import('../lib/queries');
+            const profile = await fetchUser(user.uid);
+            console.log('[OnboardingCheck] Profile found:', profile?.university ? 'With University' : 'No University');
+            
+            if (profile?.university && profile.university.trim().length > 0 && isMounted) {
+              console.log('[OnboardingCheck] University found, marking onboarded');
+              await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
+              setHasOnboarded(true);
+            }
+          } catch (e) {
+            console.log('[OnboardingCheck] Profile fetch failed or not found');
+          }
+        }
+        
+        if (isMounted) setCheckingOnboarding(false);
+      } catch (e) {
+        if (isMounted) setCheckingOnboarding(false);
       }
-    });
+    };
+
+    checkOnboardingStatus();
     return () => { isMounted = false };
   }, [user]);
 
@@ -155,19 +187,26 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === 'onboarding';
 
     if (!user) {
-      // Not logged in -> kick them to onboarding
+      // Not logged in -> kick them to onboarding (login screen)
       if (!inAuthGroup) {
         router.replace('/onboarding');
       }
     } else {
-      // Logged in user -> only redirect if they are stuck on onboarding screens
-      if (inAuthGroup) {
-        if (hasOnboarded) {
+      // Logged in user
+      if (!hasOnboarded) {
+        // MUST finish onboarding first
+        if (!inAuthGroup) {
+          router.replace('/onboarding');
+        } else if (segments.length === 1) {
+          // If already logged in but at the login screen, move to next step
+          router.replace('/onboarding/community');
+        }
+      } else {
+        // Onboarding complete -> if still in onboarding, go to tabs
+        if (inAuthGroup) {
           router.replace('/(tabs)');
         }
       }
-      // If logged in and NOT on an onboarding screen, do NOTHING. 
-      // Let them navigate freely without interference.
     }
   }, [user, loading, checkingOnboarding, hasOnboarded, segments]);
 

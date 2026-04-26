@@ -11,7 +11,7 @@ import { ShareButton } from '@/components/my-work/portfolio/ShareButton';
 import { GigChatModal } from '@/components/my-work/pipeline/GigChatModal';
 import { FileUploadModal } from '@/components/my-work/pipeline/FileUploadModal';
 import { WithdrawModal } from '@/components/my-work/stash/WithdrawModal';
-import { GigDetailModal } from '@/components/my-work/pipeline/GigDetailModal';
+import { PipelineGigDetailModal } from '@/components/my-work/pipeline/PipelineGigDetailModal';
 import { RoleSelection } from '@/components/my-work/RoleSelection';
 import { ProfileModal } from '@/components/my-work/ProfileModal';
 
@@ -606,7 +606,7 @@ export default function MyWorkScreen() {
                         onUpload={() => handleUploadFiles([])}
                     />
 
-                    <GigDetailModal
+                    <PipelineGigDetailModal
                         visible={detailModalVisible}
                         onClose={() => setDetailModalVisible(false)}
                         gig={selectedGig}

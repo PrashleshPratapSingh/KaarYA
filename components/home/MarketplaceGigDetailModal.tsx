@@ -25,7 +25,7 @@ interface Props {
     onClose: () => void;
 }
 
-export function GigDetailModal({ visible, gig, onClose }: Props) {
+export function MarketplaceGigDetailModal({ visible, gig, onClose }: Props) {
     const router = useRouter();
     const { user } = useAuth();
     const [isCreatingChat, setIsCreatingChat] = useState(false);

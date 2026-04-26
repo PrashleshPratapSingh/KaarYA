@@ -326,16 +326,11 @@ export async function createGig(gig: {
         created_at: serverTimestamp(),
     };
 
-    // Optimistic UI approach: Generate ID safely, fire-and-forget the document write
-    // This totally bypasses React Native/Expo hanging WebSocket issues on the dev server.
-    // Using setDoc with pre-generated ID to avoid WebSocket hangs, 
-    // but we await it here to ensure data is saved before navigation.
-    try {
-        await setDoc(newDocRef, gigData);
-    } catch (err) {
-        console.error('Firebase write failed:', err);
-        throw new Error('Failed to save gig to database. Please try again.');
-    }
+    const newDocRef = doc(collection(db, 'gigs'));
+    // Fire-and-forget to avoid WebSocket hangs in Expo dev environments
+    setDoc(newDocRef, gigData).catch(err => {
+        console.error('Background Firebase write failed:', err);
+    });
 
     return {
         ...gigData,

@@ -9,7 +9,7 @@ interface CircularProgressProps {
     className?: string;
 }
 
-export function CircularProgress({
+export function CountdownCircularProgress({
     deadline,
     size = 120,
     strokeWidth = 8,
