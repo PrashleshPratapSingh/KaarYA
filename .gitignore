@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+# Android - machine-specific, never commit
+android/local.properties
+
 # Expo
 .expo/
 dist/
