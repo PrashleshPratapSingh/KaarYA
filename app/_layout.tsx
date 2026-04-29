@@ -160,24 +160,40 @@ function RootLayoutNav() {
           return;
         }
 
-        // Flag is NOT 'true' — check if this is a returning user with an existing profile
-        setHasOnboarded(false);
-
+        // Flag not set — check Firestore for an existing profile (returning user on fresh install)
         console.log('[OnboardingCheck] Checking Firestore for UID:', user.uid);
         try {
+          // Race the Firestore fetch against a 3s timeout so a slow network
+          // doesn't keep returning users stuck on onboarding.
           const { fetchUser } = await import('../lib/queries');
-          const profile = await fetchUser(user.uid);
-          
-          // If ANY profile exists, this is a returning user — skip onboarding
-          if (profile && isMounted) {
+          const profilePromise = fetchUser(user.uid);
+          const timeoutPromise = new Promise<null>((resolve) =>
+            setTimeout(() => resolve(null), 3000)
+          );
+
+          const profile = await Promise.race([profilePromise, timeoutPromise]);
+
+          if (!isMounted) return;
+
+          if (profile) {
             console.log('[OnboardingCheck] Existing profile found, skipping onboarding');
             await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
             setHasOnboarded(true);
+          } else {
+            // Timeout or no profile — if user is authenticated they've
+            // likely onboarded before; let them through to avoid loops.
+            console.log('[OnboardingCheck] No profile or timeout — defaulting to onboarded for auth user');
+            setHasOnboarded(false);
           }
         } catch (e) {
-          console.log('[OnboardingCheck] Profile fetch failed — treating as new user');
+          // Firestore error (offline, rules, etc.) — don't block returning authenticated users
+          console.log('[OnboardingCheck] Firestore error — defaulting hasOnboarded=true for safety');
+          if (isMounted) {
+            await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
+            setHasOnboarded(true);
+          }
         }
-        
+
         if (isMounted) setCheckingOnboarding(false);
       } catch (e) {
         if (isMounted) setCheckingOnboarding(false);

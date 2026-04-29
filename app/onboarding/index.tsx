@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import LottieView from 'lottie-react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useOAuth } from '@clerk/clerk-expo';
+import { useOAuth, useAuth as useClerkAuth } from '@clerk/clerk-expo';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '../context/AuthContext';
@@ -59,16 +59,28 @@ export default function OnboardingIndex() {
     const router = useRouter();
     const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
     const { user } = useAuth();
+    const { isSignedIn } = useClerkAuth();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     const flatListRef = useRef<FlatList>(null);
 
     useWarmUpBrowser();
 
-    // If user is already logged in (returning user), _layout.tsx handles redirect.
-    // This page only shows for non-logged-in users.
+    // If already signed in, don't show onboarding — layout will redirect,
+    // but also add an immediate push so there's zero flicker/loop.
+    useEffect(() => {
+        if (isSignedIn || user) {
+            router.replace('/onboarding/skills');
+        }
+    }, [isSignedIn, user]);
 
     const handleGoogleSignIn = React.useCallback(async () => {
+        // Guard: if already signed in, just navigate forward — never re-trigger OAuth
+        if (isSignedIn || user) {
+            router.replace('/onboarding/skills');
+            return;
+        }
+
         try {
             setIsAuthenticating(true);
             const { createdSessionId, setActive } = await startOAuthFlow({
@@ -77,14 +89,19 @@ export default function OnboardingIndex() {
 
             if (createdSessionId && setActive) {
                 await setActive({ session: createdSessionId });
-                router.push('/onboarding/skills');
+                router.replace('/onboarding/skills');
             }
-        } catch (err) {
-            console.error('OAuth error', err);
+        } catch (err: any) {
+            // Silently handle "already signed in" — Clerk throws this if session exists
+            if (err?.errors?.[0]?.code === 'session_exists' || isSignedIn) {
+                router.replace('/onboarding/skills');
+            } else {
+                console.error('OAuth error', err);
+            }
         } finally {
             setIsAuthenticating(false);
         }
-    }, [startOAuthFlow, router]);
+    }, [startOAuthFlow, router, isSignedIn, user]);
 
     const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
         if (viewableItems.length > 0 && viewableItems[0].index !== null) {

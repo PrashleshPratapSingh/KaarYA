@@ -65,8 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     };
 
+    // Keep loading=true until:
+    // 1. Clerk SDK has finished loading (isAuthLoaded && isUserLoaded)
+    // 2. AND if there IS a clerkUser, our user state is also synced (not null).
+    //    Without this check there's a 1-frame gap where loading=false but user=null,
+    //    which incorrectly triggers the "not logged in → go to onboarding" redirect.
+    const isSyncing = isUserLoaded && !!clerkUser && user === null;
+
     return (
-        <AuthContext.Provider value={{ user, loading: !isAuthLoaded || !isUserLoaded, logout }}>
+        <AuthContext.Provider value={{ user, loading: !isAuthLoaded || !isUserLoaded || isSyncing, logout }}>
             {children}
         </AuthContext.Provider>
     );

@@ -19,7 +19,7 @@ import { Gig, ChatMessage } from '@/lib/types/mywork';
 // Firestore
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { type GigRow } from '@/lib/queries';
+import { type GigRow, deleteGig, closeGig } from '@/lib/queries';
 import { getOrCreateChat, onMessagesChanged, sendMessage } from '@/lib/messaging';
 import { useAuth } from '@/app/context/AuthContext';
 import { useRouter } from 'expo-router';
@@ -162,6 +162,53 @@ export default function MyWorkScreen() {
 
     const handleWithdraw = (amount: number, upiId: string) => {
         Alert.alert('Withdraw Initiated', `₹${amount} withdrawal to ${upiId} will be processed once payment integration is live.`);
+    };
+
+    // ── Delete / Close Gig ────────────────────────────────────────────────────
+    const handleDeleteGig = (gig: Gig) => {
+        Alert.alert(
+            '🗑️ Remove Gig',
+            `What do you want to do with "${gig.title}"?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Close Gig',
+                    onPress: async () => {
+                        try {
+                            await closeGig(gig.id, user!.uid);
+                            Alert.alert('Done', 'Gig has been closed.');
+                        } catch (err: any) {
+                            Alert.alert('Error', err?.message || 'Could not close gig.');
+                        }
+                    },
+                },
+                {
+                    text: 'Delete Permanently',
+                    style: 'destructive',
+                    onPress: () => {
+                        Alert.alert(
+                            '⚠️ Are you sure?',
+                            'This cannot be undone. The gig will be permanently deleted.',
+                            [
+                                { text: 'Cancel', style: 'cancel' },
+                                {
+                                    text: 'Yes, Delete',
+                                    style: 'destructive',
+                                    onPress: async () => {
+                                        try {
+                                            await deleteGig(gig.id, user!.uid);
+                                            Alert.alert('Deleted', 'Gig has been permanently deleted.');
+                                        } catch (err: any) {
+                                            Alert.alert('Error', err?.message || 'Could not delete gig.');
+                                        }
+                                    },
+                                },
+                            ]
+                        );
+                    },
+                },
+            ]
+        );
     };
 
     // ── Fund Escrow (Client Dashboard) ────────────────────────────────
@@ -310,13 +357,23 @@ export default function MyWorkScreen() {
                             <Pressable
                                 key={gig.id}
                                 onPress={() => handleOpenChat(gig)}
+                                onLongPress={() => handleDeleteGig(gig)}
                                 className="bg-white rounded-[28px] p-5 mb-4 border border-gray-50 active:scale-[0.98]"
                             >
                                 <View className="flex-row justify-between items-start mb-3">
                                     <View className="bg-green-100 px-3 py-1 rounded-full">
                                         <Text className="text-[10px] font-bold text-green-700 uppercase">{gig.status}</Text>
                                     </View>
-                                    <Text className="text-lg font-extrabold text-karya-black">₹{gig.amount.toLocaleString('en-IN')}</Text>
+                                    <View className="flex-row items-center gap-3">
+                                        <Text className="text-lg font-extrabold text-karya-black">₹{gig.amount.toLocaleString('en-IN')}</Text>
+                                        <Pressable
+                                            onPress={() => handleDeleteGig(gig)}
+                                            hitSlop={8}
+                                            className="w-8 h-8 bg-red-50 rounded-full items-center justify-center"
+                                        >
+                                            <Feather name="trash-2" size={14} color="#EF4444" />
+                                        </Pressable>
+                                    </View>
                                 </View>
                                 <Text className="text-xl font-extrabold text-karya-black mb-3">{gig.title}</Text>
                                 <View className="bg-gray-100 h-2 rounded-full overflow-hidden">
@@ -340,7 +397,18 @@ export default function MyWorkScreen() {
                                 PENDING / OPEN
                             </Text>
                             {upcomingGigs.map((gig) => (
-                                <UpcomingGigCard key={gig.id} gig={gig} onPress={() => handleOpenDetail(gig)} />
+                                <View key={gig.id} className="flex-row items-center mb-3 gap-2">
+                                    <View className="flex-1">
+                                        <UpcomingGigCard gig={gig} onPress={() => handleOpenDetail(gig)} />
+                                    </View>
+                                    <Pressable
+                                        onPress={() => handleDeleteGig(gig)}
+                                        className="w-10 h-10 bg-red-50 rounded-2xl items-center justify-center"
+                                        hitSlop={6}
+                                    >
+                                        <Feather name="trash-2" size={16} color="#EF4444" />
+                                    </Pressable>
+                                </View>
                             ))}
                         </>
                     )}

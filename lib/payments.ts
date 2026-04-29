@@ -42,7 +42,7 @@ const createOrder = async (
     clientId: string,
     executorId: string
 ): Promise<{ id: string; amount: number; currency: string }> => {
-    const response = await fetch(`${FUNCTIONS_BASE_URL}/createRazorpayOrder`, {
+    const response = await fetch(`${FUNCTIONS_BASE_URL}/api/createOrder`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount, gigId, clientId, executorId }),
@@ -63,7 +63,7 @@ const verifyPayment = async (
     razorpay_signature: string,
     gigId: string
 ): Promise<{ success: boolean }> => {
-    const response = await fetch(`${FUNCTIONS_BASE_URL}/verifyRazorpayPayment`, {
+    const response = await fetch(`${FUNCTIONS_BASE_URL}/api/verifyPayment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -15,6 +15,8 @@ import {
     serverTimestamp,
     onSnapshot,
     setDoc,
+    deleteDoc,
+    updateDoc,
     type DocumentData,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -341,6 +343,41 @@ export async function createGig(gig: {
         id: newDocRef.id,
         created_at: new Date().toISOString(),
     } as GigRow;
+}
+
+/**
+ * Delete a gig permanently from Firestore.
+ * Only the owner (client_id == userId) should call this.
+ */
+export async function deleteGig(gigId: string, userId: string): Promise<void> {
+    if (!gigId || !userId) throw new Error('gigId and userId are required.');
+
+    // Verify ownership before deleting
+    const gigSnap = await getDoc(doc(db, 'gigs', gigId));
+    if (!gigSnap.exists()) throw new Error('Gig not found.');
+    if (gigSnap.data()?.client_id !== userId) {
+        throw new Error('You are not authorized to delete this gig.');
+    }
+
+    await deleteDoc(doc(db, 'gigs', gigId));
+}
+
+/**
+ * Close/cancel a gig (set status to 'closed') instead of hard deleting.
+ */
+export async function closeGig(gigId: string, userId: string): Promise<void> {
+    if (!gigId || !userId) throw new Error('gigId and userId are required.');
+
+    const gigSnap = await getDoc(doc(db, 'gigs', gigId));
+    if (!gigSnap.exists()) throw new Error('Gig not found.');
+    if (gigSnap.data()?.client_id !== userId) {
+        throw new Error('You are not authorized to close this gig.');
+    }
+
+    await updateDoc(doc(db, 'gigs', gigId), {
+        status: 'closed',
+        closedAt: serverTimestamp(),
+    });
 }
 
 
