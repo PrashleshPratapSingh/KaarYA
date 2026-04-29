@@ -129,9 +129,7 @@ export default function ReviewScreen() {
                 return;
             }
 
-            // --- RAZORPAY TEMPORARILY BYPASSED FOR TESTING ---
             const budgetAmount = parseInt(amount || '5000');
-            /*
             const paymentResult = await initiatePayment({
                 amount: budgetAmount,
                 description: `Payment for Gig: ${title}`,
@@ -147,7 +145,6 @@ export default function ReviewScreen() {
                 setIsSubmitting(false);
                 return;
             }
-            */
 
             // 2. Create the Gig upon successful payment verification
             await createGig({
