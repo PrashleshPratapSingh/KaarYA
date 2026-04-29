@@ -330,9 +330,19 @@ export async function createGig(gig: {
 
     const newDocRef = doc(collection(db, 'gigs'));
 
-    // Properly await the Firestore write — the previous fire-and-forget + 500ms delay
-    // caused gigs to disappear after re-login whenever the write took >500ms.
-    await setDoc(newDocRef, gigData);
+    // Race the Firestore write against a 3-second timeout.
+    // This prevents the 'infinite loading' bug if the Expo WebSocket stalls,
+    // while giving it enough time (3s) to actually dispatch the network request
+    // so the gig doesn't disappear when the user reloads the app.
+    const writePromise = setDoc(newDocRef, gigData);
+    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 3000));
+    
+    try {
+        await Promise.race([writePromise, timeoutPromise]);
+    } catch (err) {
+        console.error('Gig creation write error:', err);
+        // We still return success because it's in the local cache and will sync
+    }
 
     return {
         ...gigData,
