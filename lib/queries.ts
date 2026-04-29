@@ -329,14 +329,10 @@ export async function createGig(gig: {
     };
 
     const newDocRef = doc(collection(db, 'gigs'));
-    
-    // Fire-and-forget to bypass Expo Dev Client WebSocket hangs.
-    // We add a 500ms delay so the JS thread has time to dispatch the network request.
-    setDoc(newDocRef, gigData).catch(err => {
-        console.error('Background Firebase write failed:', err);
-    });
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Properly await the Firestore write — the previous fire-and-forget + 500ms delay
+    // caused gigs to disappear after re-login whenever the write took >500ms.
+    await setDoc(newDocRef, gigData);
 
     return {
         ...gigData,
@@ -464,6 +460,7 @@ export function gigRowToGig(row: GigRow): {
         title: row.title,
         budget: paiseToRupees(row.budget_min),
         postedBy: row.client?.name ?? 'Unknown',
+        clientId: row.client_id,   // ← real Firestore UID for chat creation
         college: row.client?.university ?? '',
         collegeCode: mapCollegeCode(row.client?.university ?? null),
         category: mapCategory(row.category),

@@ -140,68 +140,47 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (!user) {
-      // No user = no onboarding check needed, just reset
+      // Not logged in — reset and unblock routing immediately
       setHasOnboarded(false);
       setCheckingOnboarding(false);
       return;
     }
 
+    // User IS authenticated — they have a Clerk session.
+    // For authenticated users, ALWAYS default to hasOnboarded=true.
+    // Reasoning:
+    //   • Returning users: they signed in before, so onboarding is done.
+    //   • New users: handleGoogleSignIn navigates to /onboarding/skills
+    //     BEFORE this effect resolves, so they stay there regardless.
+    //   • This avoids ALL Firestore race conditions / timeouts causing a
+    //     redirect loop back to onboarding.
     let isMounted = true;
     setCheckingOnboarding(true);
-    
+
     const checkOnboardingStatus = async () => {
       try {
         const val = await AsyncStorage.getItem('kaarya_onboarding_complete');
         if (!isMounted) return;
 
-        if (val === 'true') {
+        if (val !== 'true') {
+          // Write the flag so future cold-starts are instant
+          await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
+        }
+        if (isMounted) {
           setHasOnboarded(true);
           setCheckingOnboarding(false);
-          return;
         }
-
-        // Flag not set — check Firestore for an existing profile (returning user on fresh install)
-        console.log('[OnboardingCheck] Checking Firestore for UID:', user.uid);
-        try {
-          // Race the Firestore fetch against a 3s timeout so a slow network
-          // doesn't keep returning users stuck on onboarding.
-          const { fetchUser } = await import('../lib/queries');
-          const profilePromise = fetchUser(user.uid);
-          const timeoutPromise = new Promise<null>((resolve) =>
-            setTimeout(() => resolve(null), 3000)
-          );
-
-          const profile = await Promise.race([profilePromise, timeoutPromise]);
-
-          if (!isMounted) return;
-
-          if (profile) {
-            console.log('[OnboardingCheck] Existing profile found, skipping onboarding');
-            await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
-            setHasOnboarded(true);
-          } else {
-            // Timeout or no profile — if user is authenticated they've
-            // likely onboarded before; let them through to avoid loops.
-            console.log('[OnboardingCheck] No profile or timeout — defaulting to onboarded for auth user');
-            setHasOnboarded(false);
-          }
-        } catch (e) {
-          // Firestore error (offline, rules, etc.) — don't block returning authenticated users
-          console.log('[OnboardingCheck] Firestore error — defaulting hasOnboarded=true for safety');
-          if (isMounted) {
-            await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
-            setHasOnboarded(true);
-          }
+      } catch {
+        // AsyncStorage failed — still safe to proceed as onboarded
+        if (isMounted) {
+          setHasOnboarded(true);
+          setCheckingOnboarding(false);
         }
-
-        if (isMounted) setCheckingOnboarding(false);
-      } catch (e) {
-        if (isMounted) setCheckingOnboarding(false);
       }
     };
 
     checkOnboardingStatus();
-    return () => { isMounted = false };
+    return () => { isMounted = false; };
   }, [user]);
 
   useEffect(() => {

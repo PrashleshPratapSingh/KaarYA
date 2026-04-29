@@ -66,18 +66,18 @@ export default function OnboardingIndex() {
 
     useWarmUpBrowser();
 
-    // If already signed in, don't show onboarding — layout will redirect,
-    // but also add an immediate push so there's zero flicker/loop.
+    // Returning user opened the app — skip onboarding, go straight home.
+    // (New users land here too, but isSignedIn is false until they tap "Continue with Google")
     useEffect(() => {
         if (isSignedIn || user) {
-            router.replace('/onboarding/skills');
+            router.replace('/(tabs)');
         }
     }, [isSignedIn, user]);
 
     const handleGoogleSignIn = React.useCallback(async () => {
-        // Guard: if already signed in, just navigate forward — never re-trigger OAuth
+        // Guard: if already signed in, just go home — never re-trigger OAuth
         if (isSignedIn || user) {
-            router.replace('/onboarding/skills');
+            router.replace('/(tabs)');
             return;
         }
 
@@ -94,7 +94,7 @@ export default function OnboardingIndex() {
         } catch (err: any) {
             // Silently handle "already signed in" — Clerk throws this if session exists
             if (err?.errors?.[0]?.code === 'session_exists' || isSignedIn) {
-                router.replace('/onboarding/skills');
+                router.replace('/(tabs)');
             } else {
                 console.error('OAuth error', err);
             }

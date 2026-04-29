@@ -37,7 +37,10 @@ export interface Gig {
     id: string;
     title: string;
     budget: number;
+    /** Display name of the gig poster */
     postedBy: string;
+    /** Real Firestore UID of the gig poster — used for chat creation */
+    clientId?: string;
     college: string;
     collegeCode: keyof typeof BADGE_COLORS;
     category: CategoryType;

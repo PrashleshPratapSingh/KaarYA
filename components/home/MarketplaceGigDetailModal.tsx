@@ -103,20 +103,20 @@ export function MarketplaceGigDetailModal({ visible, gig, onClose }: Props) {
             return;
         }
 
+        // Use real Firestore UID if available, fall back to name-slug for old data
+        const posterUserId = gig.clientId || gig.postedBy.toLowerCase().replace(/\s+/g, '-');
+
         try {
             setIsCreatingChat(true);
-            // In a real app, gig.postedBy would ideally be a user ID, but we'll use the name for now
-            // as a placeholder ID since we don't have the full poster user object attached to the gig yet.
-            const posterDummyId = gig.postedBy.toLowerCase().replace(/\s+/g, '-');
 
             const chatId = await getOrCreateChat(
-                user.uid,      // currentUserId
-                posterDummyId, // otherUserId
-                gig.postedBy,  // otherUserName
-                null,          // otherUserAvatar
-                user.name || 'Me', // currentUserName
-                gig.id,        // gigId
-                gig.title      // gigTitle
+                user.uid,
+                posterUserId,
+                gig.postedBy,
+                null,
+                user.name || 'Me',
+                gig.id,
+                gig.title
             );
 
             onClose();
