@@ -6,9 +6,10 @@ interface StashCardProps {
     balance: number;
     pendingPayment: number;
     onWithdraw?: () => void;
+    onDeposit?: () => void;
 }
 
-export function StashCard({ balance, pendingPayment, onWithdraw }: StashCardProps) {
+export function StashCard({ balance, pendingPayment, onWithdraw, onDeposit }: StashCardProps) {
     return (
         <View className="bg-karya-black rounded-[40px] p-7 mb-6 shadow-xl overflow-hidden">
             {/* Header */}
@@ -44,10 +45,7 @@ export function StashCard({ balance, pendingPayment, onWithdraw }: StashCardProp
             {/* Actions */}
             <View className="flex-row gap-3">
                 <Pressable
-                    onPress={() => {
-                        // This will be linked to the initiatePayment call
-                        if (onWithdraw) onWithdraw(); 
-                    }}
+                    onPress={onDeposit}
                     className="flex-1 bg-white rounded-[24px] py-5 flex-row items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all"
                 >
                     <Text className="text-xs font-extrabold text-karya-black tracking-widest uppercase">DEPOSIT</Text>

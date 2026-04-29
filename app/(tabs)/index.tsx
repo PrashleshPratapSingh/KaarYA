@@ -9,6 +9,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useTabBarContext } from '../../app/context/TabBarContext';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 
 // Import components from home folder
 import {
@@ -27,8 +28,7 @@ import { subscribeToOpenGigs, gigRowToGig } from '../../lib/queries';
 
 
 
-// Ghost mascot image
-const GhostMascot = require('../../assets/images/ghost-massacre.png');
+// Removed GhostMascot import
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -177,12 +177,10 @@ export default function HomeScreen() {
       >
         <Pressable style={styles.successOverlay} onPress={handleCloseSuccess}>
           <View style={styles.successContainer}>
-            {/* Ghost Mascot */}
-            <Image
-              source={GhostMascot}
-              style={styles.ghostImage}
-              resizeMode="contain"
-            />
+            {/* Success Icon */}
+            <View style={styles.successIconContainer}>
+              <Ionicons name="checkmark-circle" size={80} color="#25D366" />
+            </View>
 
             {/* Success Text */}
             <Text style={styles.successTitle}>Application Sent!</Text>
@@ -232,9 +230,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 32,
   },
-  ghostImage: {
-    width: 240,
-    height: 200,
+  successIconContainer: {
     marginBottom: 20,
   },
   successTitle: {

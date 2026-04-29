@@ -1,47 +1,83 @@
-import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, Dimensions, TouchableOpacity, FlatList, ViewToken } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
+import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useOAuth } from '@clerk/clerk-expo';
 import * as Linking from 'expo-linking';
-import React, { useState, useEffect } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '../context/AuthContext';
+import { useEffect } from 'react';
 
-// Warm up the android browser to improve UX
 export const useWarmUpBrowser = () => {
     useEffect(() => {
         void WebBrowser.warmUpAsync();
-        return () => {
-            void WebBrowser.coolDownAsync();
-        };
+        return () => { void WebBrowser.coolDownAsync(); };
     }, []);
 };
 
 WebBrowser.maybeCompleteAuthSession();
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+
+const SLIDES = [
+    {
+        id: '1',
+        lottie: require('../../assets/lottie/City Skyline Building.json'),
+        tag: 'THE PROBLEM',
+        title: 'Talent Lost\nIn The Noise',
+        subtitle: 'Students have skills. Clients need work done.\nBut they can\'t find each other.',
+        bg: '#FFFFFF',
+        textColor: '#000000',
+        accent: '#FFD600',
+    },
+    {
+        id: '2',
+        lottie: require('../../assets/lottie/Developer 01 - Whoooa!.json'),
+        tag: 'THE SOLUTION',
+        title: 'KaarYA\nConnects You',
+        subtitle: 'Post a gig. Find skilled students.\nGet work done. Get paid. Simple.',
+        bg: '#FFD600',
+        textColor: '#000000',
+        accent: '#000000',
+    },
+    {
+        id: '3',
+        lottie: require('../../assets/lottie/Man and Woman say Hi !.json'),
+        tag: 'YOUR MOVE',
+        title: 'Join The\nHustle',
+        subtitle: 'Verified students. Real ratings.\nSecure payments. Zero noise.',
+        bg: '#000000',
+        textColor: '#FFFFFF',
+        accent: '#FFD600',
+    },
+];
 
 export default function OnboardingIndex() {
     const router = useRouter();
     const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
-    const { user, loading } = useAuth();
+    const { user } = useAuth();
+    const [currentIndex, setCurrentIndex] = useState(0);
     const [isAuthenticating, setIsAuthenticating] = useState(false);
-    
+    const flatListRef = useRef<FlatList>(null);
+
     useWarmUpBrowser();
+
+    // If user is already logged in (returning user), _layout.tsx handles redirect.
+    // This page only shows for non-logged-in users.
 
     const handleGoogleSignIn = React.useCallback(async () => {
         try {
             setIsAuthenticating(true);
             const { createdSessionId, setActive } = await startOAuthFlow({
-                redirectUrl: Linking.createURL('/onboarding/community', { scheme: 'com.kaarya.studentmarketplace' }),
+                redirectUrl: Linking.createURL('/onboarding/skills', { scheme: 'com.kaarya.studentmarketplace' }),
             });
 
             if (createdSessionId && setActive) {
                 await setActive({ session: createdSessionId });
-                router.push('/onboarding/community');
+                router.push('/onboarding/skills');
             }
         } catch (err) {
             console.error('OAuth error', err);
@@ -50,76 +86,141 @@ export default function OnboardingIndex() {
         }
     }, [startOAuthFlow, router]);
 
+    const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+        if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+            setCurrentIndex(viewableItems[0].index);
+        }
+    }).current;
+
+    const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+
+    const isLastSlide = currentIndex === SLIDES.length - 1;
+
+    const handleNext = () => {
+        if (currentIndex < SLIDES.length - 1) {
+            flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
+        }
+    };
+
+    const renderSlide = ({ item, index }: { item: typeof SLIDES[0]; index: number }) => (
+        <View style={{ width, height: '100%', backgroundColor: item.bg }} className="justify-between">
+            <StatusBar style={item.textColor === '#FFFFFF' ? 'light' : 'dark'} />
+
+            {/* Top: Tag + Title */}
+            <View className="px-8 pt-20 z-10">
+                <View
+                    style={{ backgroundColor: item.accent, alignSelf: 'flex-start' }}
+                    className="px-4 py-1.5 rounded-full mb-4"
+                >
+                    <Text style={{ color: item.accent === '#000000' ? '#FFD600' : '#000' }} className="text-[10px] font-black uppercase tracking-[3px]">
+                        {item.tag}
+                    </Text>
+                </View>
+
+                <Text
+                    style={{ color: item.textColor }}
+                    className="text-5xl font-black uppercase tracking-tight leading-[1]"
+                >
+                    {item.title}
+                </Text>
+
+                <Text
+                    style={{ color: item.textColor, opacity: 0.6 }}
+                    className="text-sm font-medium mt-4 leading-5"
+                >
+                    {item.subtitle}
+                </Text>
+            </View>
+
+            {/* Center: Lottie */}
+            <View className="flex-1 items-center justify-center" style={{ marginTop: -20 }}>
+                <LottieView
+                    source={item.lottie}
+                    autoPlay
+                    loop
+                    resizeMode="contain"
+                    style={{ width: width * 0.85, height: width * 0.85 }}
+                />
+            </View>
+        </View>
+    );
+
+    const activeSlide = SLIDES[currentIndex];
+
     return (
-        <View className="flex-1 bg-[#FFD600] relative">
-            <StatusBar style="dark" />
+        <View style={{ flex: 1, backgroundColor: activeSlide.bg }}>
+            {/* Swipeable Slides */}
+            <FlatList
+                ref={flatListRef}
+                data={SLIDES}
+                renderItem={renderSlide}
+                keyExtractor={(item) => item.id}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
+                bounces={false}
+                style={{ flex: 1 }}
+            />
 
-            <View className="flex-1 w-full items-center pt-16 px-6 relative justify-between pb-12">
-                {/* Title Section - Brutalist Style */}
-                <Animated.View entering={FadeInDown.delay(200).duration(1000)} className="items-center z-10 w-full">
-                    <View className="bg-white border-4 border-black px-6 py-2 shadow-hard mb-6 transform -rotate-1">
-                        <Text className="font-display text-5xl leading-[1] uppercase text-black text-center">
-                            KaarYA:
-                        </Text>
-                    </View>
-                    
-                    <View className="bg-black border-4 border-black px-6 py-4 shadow-hard-white transform rotate-1">
-                        <Text className="font-display text-3xl leading-[1] uppercase text-white text-center">
-                            Your Story{'\n'}Starts Here.
-                        </Text>
-                    </View>
-                </Animated.View>
+            {/* Bottom Controls — fixed overlay */}
+            <View
+                style={{ backgroundColor: activeSlide.bg }}
+                className="absolute bottom-0 left-0 right-0 pb-12 pt-6 px-8"
+            >
+                {/* Dots */}
+                <View className="flex-row justify-center items-center gap-2 mb-6">
+                    {SLIDES.map((_, idx) => (
+                        <View
+                            key={idx}
+                            style={{
+                                width: idx === currentIndex ? 32 : 8,
+                                height: 8,
+                                borderRadius: 4,
+                                backgroundColor: idx === currentIndex
+                                    ? activeSlide.accent
+                                    : (activeSlide.textColor === '#FFFFFF' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'),
+                            }}
+                        />
+                    ))}
+                </View>
 
-                {/* Mascot / Graphic Section */}
-                <Animated.View entering={FadeInUp.delay(500).duration(1000)} className="relative h-80 w-full flex justify-center items-center">
-
-                    {/* Lottie Animation */}
-                    <LottieView
-                        source={require('../../assets/lottie/cute_cat_works.json')}
-                        autoPlay
-                        loop
-                        style={{ width: 320, height: 320 }}
-                    />
-
-                    {/* Tooltip - Brutalist Sharp Style */}
-                    <View className="absolute top-0 right-0 bg-white border-2 border-black px-4 py-3 shadow-hard-sm z-30 transform rotate-2 w-44">
-                        <Text className="text-sm leading-tight text-black font-bold" style={{ fontFamily: 'Merriweather_700Bold_Italic' }}>
-                            Let's build that bank, shall we?
-                        </Text>
-                    </View>
-
-                    {/* Star Badge - Brutalist Style */}
-                    <View className="absolute top-1/4 left-0 bg-white w-14 h-14 border-2 border-black shadow-hard-sm flex items-center justify-center transform -rotate-12 z-30">
-                        <MaterialIcons name="star" size={32} color="#000" />
-                    </View>
-                </Animated.View>
-
-                {/* Footer Section */}
-                <Animated.View entering={FadeInUp.delay(800).duration(1000)} className="w-full max-w-md px-4 items-center z-20">
+                {/* Button: Next or Sign In */}
+                {isLastSlide ? (
                     <TouchableOpacity
                         onPress={handleGoogleSignIn}
                         disabled={isAuthenticating}
-                        className="w-full bg-black py-5 border-4 border-black shadow-hard active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex-row justify-center items-center px-8"
+                        className="w-full py-5 rounded-2xl flex-row justify-center items-center"
+                        style={{ backgroundColor: activeSlide.accent }}
                     >
-                        <MaterialCommunityIcons name="google" size={24} color="white" style={{ marginRight: 12 }} />
-                        <Text 
-                            numberOfLines={1}
-                            adjustsFontSizeToFit
-                            className="text-white font-display text-xl text-center uppercase tracking-tight"
+                        <MaterialCommunityIcons
+                            name="google"
+                            size={22}
+                            color={activeSlide.accent === '#000000' ? '#FFD600' : '#000'}
+                            style={{ marginRight: 10 }}
+                        />
+                        <Text
+                            style={{ color: activeSlide.accent === '#000000' ? '#FFD600' : '#000' }}
+                            className="font-black text-lg uppercase tracking-tight"
                         >
                             {isAuthenticating ? 'Signing in...' : 'Continue with Google'}
                         </Text>
                     </TouchableOpacity>
-
-                    {/* Pagination Dots - Brutalist Rectangles */}
-                    <View className="flex-row gap-3 justify-center items-center mt-10">
-                        <View className="w-12 h-3 bg-black border-2 border-black" />
-                        <View className="w-3 h-3 bg-white border-2 border-black" />
-                        <View className="w-3 h-3 bg-white border-2 border-black" />
-                        <View className="w-3 h-3 bg-white border-2 border-black" />
-                    </View>
-
-                </Animated.View>
+                ) : (
+                    <TouchableOpacity
+                        onPress={handleNext}
+                        className="w-full py-5 rounded-2xl items-center"
+                        style={{ backgroundColor: activeSlide.accent }}
+                    >
+                        <Text
+                            style={{ color: activeSlide.accent === '#000000' ? '#FFD600' : '#000' }}
+                            className="font-black text-lg uppercase tracking-tight"
+                        >
+                            Next
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </View>
     );

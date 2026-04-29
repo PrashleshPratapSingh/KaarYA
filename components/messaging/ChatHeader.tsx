@@ -8,14 +8,15 @@ interface ChatHeaderProps {
     user: User;
     onBack: () => void;
     onViewProfile?: () => void;
-    onViewGig?: () => void;
+    /** When provided, shows a HIRE & PAY button in the header */
+    onHirePay?: () => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
     user,
     onBack,
     onViewProfile,
-    onViewGig,
+    onHirePay,
 }) => {
     return (
         <View style={styles.container}>
@@ -52,13 +53,13 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             </View>
 
             <View style={styles.rightSection}>
-                {onViewGig && (
+                {onHirePay && (
                     <TouchableOpacity
-                        style={styles.gigButton}
-                        onPress={onViewGig}
-                        activeOpacity={0.7}
+                        onPress={onHirePay}
+                        style={styles.hireButton}
+                        activeOpacity={0.75}
                     >
-                        <Text style={styles.gigButtonText}>VIEW GIG</Text>
+                        <Text style={styles.hireButtonText}>💳 HIRE & PAY</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -165,5 +166,24 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: BrandColors.white,
         letterSpacing: 0.8,
+    },
+    hireButton: {
+        backgroundColor: '#FFE500',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: '#000000',
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 0,
+        elevation: 3,
+    },
+    hireButtonText: {
+        fontSize: 11,
+        fontWeight: '800',
+        color: '#000000',
+        letterSpacing: 0.5,
     },
 });

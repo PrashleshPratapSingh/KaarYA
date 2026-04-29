@@ -212,7 +212,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
                             {/* Link */}
                             <TouchableOpacity
                                 style={styles.attachOption}
-                                onPress={() => setShowAttachMenu(false)}
+                                onPress={() => {
+                                    setShowAttachMenu(false);
+                                    setMessage((prev) => (prev ? prev + ' https://' : 'https://'));
+                                }}
                                 activeOpacity={0.7}
                             >
                                 <View style={[styles.attachIcon, { backgroundColor: '#FFD700' }]}>

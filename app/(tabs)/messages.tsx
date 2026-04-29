@@ -13,6 +13,7 @@ interface ChatPreview {
     time: string;
     unreadCount: number;
     type: 'text' | 'photo' | 'audio';
+    gigId?: string;
 }
 
 export default function MessagesListScreen() {
@@ -53,6 +54,7 @@ export default function MessagesListScreen() {
                     time: timeStr,
                     unreadCount: (thread.unreadCounts?.[user.uid] as number) || 0,
                     type: thread.lastMessage.startsWith('📎') ? 'photo' : 'text',
+                    gigId: thread.gigId,
                 };
             });
 
@@ -63,11 +65,11 @@ export default function MessagesListScreen() {
         return () => unsubscribe();
     }, [user]);
 
-    const handleChatPress = (chatId: string, name: string) => {
+    const handleChatPress = (chatId: string, name: string, gigId?: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         router.push({
             pathname: '/chat/[id]',
-            params: { id: chatId, name: name }
+            params: { id: chatId, name: name, gigId: gigId }
         });
     };
 
@@ -121,14 +123,16 @@ export default function MessagesListScreen() {
                             </TouchableOpacity>
                         </View>
                     ) : filteredChats.length === 0 ? (
-                        <View className="items-center py-20">
-                            <Text className="text-gray-300 font-bold italic">No messages found</Text>
+                        <View className="items-center py-20 bg-gray-50 rounded-[30px] px-10">
+                            <Ionicons name="chatbubbles-outline" size={48} color="rgba(0,0,0,0.1)" />
+                            <Text className="text-black font-black text-xl mt-4">It's Quiet Here</Text>
+                            <Text className="text-center mt-2 text-gray-400 font-bold leading-5">When you connect with clients or apply to gigs, your conversations will appear here.</Text>
                         </View>
                     ) : (
                         filteredChats.map(chat => (
                             <TouchableOpacity
                                 key={chat.id}
-                                onPress={() => handleChatPress(chat.id, chat.name)}
+                                onPress={() => handleChatPress(chat.id, chat.name, chat.gigId)}
                                 activeOpacity={0.7}
                                 className="bg-white border border-gray-100 rounded-[30px] p-5 mb-4 flex-row items-center justify-between"
                             >

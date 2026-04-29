@@ -139,6 +139,13 @@ function RootLayoutNav() {
   const [hasOnboarded, setHasOnboarded] = useState(false);
 
   useEffect(() => {
+    if (!user) {
+      // No user = no onboarding check needed, just reset
+      setHasOnboarded(false);
+      setCheckingOnboarding(false);
+      return;
+    }
+
     let isMounted = true;
     setCheckingOnboarding(true);
     
@@ -153,22 +160,22 @@ function RootLayoutNav() {
           return;
         }
 
-        // If local storage says false, double check Firestore for returning users
-        if (user?.uid) {
-          console.log('[OnboardingCheck] Checking Firestore for UID:', user.uid);
-          try {
-            const { fetchUser } = await import('../lib/queries');
-            const profile = await fetchUser(user.uid);
-            console.log('[OnboardingCheck] Profile found:', profile?.university ? 'With University' : 'No University');
-            
-            if (profile?.university && profile.university.trim().length > 0 && isMounted) {
-              console.log('[OnboardingCheck] University found, marking onboarded');
-              await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
-              setHasOnboarded(true);
-            }
-          } catch (e) {
-            console.log('[OnboardingCheck] Profile fetch failed or not found');
+        // Flag is NOT 'true' — check if this is a returning user with an existing profile
+        setHasOnboarded(false);
+
+        console.log('[OnboardingCheck] Checking Firestore for UID:', user.uid);
+        try {
+          const { fetchUser } = await import('../lib/queries');
+          const profile = await fetchUser(user.uid);
+          
+          // If ANY profile exists, this is a returning user — skip onboarding
+          if (profile && isMounted) {
+            console.log('[OnboardingCheck] Existing profile found, skipping onboarding');
+            await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
+            setHasOnboarded(true);
           }
+        } catch (e) {
+          console.log('[OnboardingCheck] Profile fetch failed — treating as new user');
         }
         
         if (isMounted) setCheckingOnboarding(false);
@@ -199,12 +206,14 @@ function RootLayoutNav() {
           router.replace('/onboarding');
         } else if (segments.length === 1) {
           // If already logged in but at the login screen, move to next step
-          router.replace('/onboarding/community');
+          router.replace('/onboarding/skills');
         }
       } else {
-        // Onboarding complete -> if still in onboarding, go to tabs
-        if (inAuthGroup) {
-          router.replace('/(tabs)');
+        // Onboarding complete
+        // Only redirect if they're on the LOGIN page (/onboarding index).
+        // Let them stay on sub-pages (community/skills/story) for editing.
+        if (inAuthGroup && segments.length === 1) {
+           router.replace('/(tabs)');
         }
       }
     }
@@ -225,7 +234,7 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen
-          name="chat"
+          name="chat/[id]"
           options={{
             headerShown: false,
           }}

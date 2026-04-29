@@ -1,6 +1,8 @@
 import React from 'react';
-import { Modal, View, Text, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { Modal, View, Text, Pressable, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { initiatePayout } from '@/lib/payments';
+import { useAuth } from '@/app/context/AuthContext';
 
 interface WithdrawModalProps {
     visible: boolean;
@@ -13,17 +15,42 @@ export const WithdrawModal = React.memo(function WithdrawModal({ visible, onClos
     const [upiId, setUpiId] = React.useState('');
     const [amount, setAmount] = React.useState('');
     const [step, setStep] = React.useState<'input' | 'success'>('input');
+    const [loading, setLoading] = React.useState(false);
+    const { user } = useAuth();
 
-    const handleWithdraw = () => {
+    const handleWithdraw = async () => {
         const withdrawAmount = parseFloat(amount) || balance;
-        onWithdraw(withdrawAmount, upiId);
-        setStep('success');
+        
+        if (!upiId.trim()) {
+            Alert.alert('UPI ID Required', 'Please enter your UPI ID');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await initiatePayout(
+                withdrawAmount,
+                upiId,
+                user?.id || 'unknown',
+                user?.name || 'KaarYa User'
+            );
+
+            if (result.success) {
+                onWithdraw(withdrawAmount, upiId);
+                setStep('success');
+            }
+        } catch (error) {
+            // Error already handled in initiatePayout
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleClose = () => {
         setStep('input');
         setUpiId('');
         setAmount('');
+        setLoading(false);
         onClose();
     };
 
@@ -80,11 +107,14 @@ export const WithdrawModal = React.memo(function WithdrawModal({ visible, onClos
                             </View>
 
                             <Pressable
-                                onPress={handleWithdraw}
-                                className="bg-karya-black py-4 rounded-2xl items-center mb-3 shadow-md"
-                            >
-                                <Text className="text-white font-extrabold text-base">WITHDRAW NOW</Text>
-                            </Pressable>
+                                 onPress={handleWithdraw}
+                                 className="bg-karya-black py-4 rounded-2xl items-center mb-3 shadow-md"
+                                 disabled={loading}
+                             >
+                                 <Text className="text-white font-extrabold text-base">
+                                     {loading ? 'PROCESSING...' : 'WITHDRAW NOW'}
+                                 </Text>
+                             </Pressable>
 
                             <Pressable onPress={handleClose} className="py-2 items-center">
                                 <Text className="text-gray-400 font-bold text-xs">CANCEL</Text>

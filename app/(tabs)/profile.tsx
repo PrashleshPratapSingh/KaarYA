@@ -9,6 +9,7 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from '@/app/context/AuthContext';
 import { useRouter } from "expo-router";
 import { fetchUser, UserRow } from '@/lib/queries';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
     const { user, logout } = useAuth();
@@ -186,7 +187,7 @@ export default function ProfileScreen() {
                                     <Text className="text-black/30 font-bold text-[10px] uppercase tracking-tighter">Gigs</Text>
                                 </View>
                                 <View className="items-center">
-                                    <Text className="text-black font-black text-xl">{userData.rating_avg.toFixed(1)}</Text>
+                                    <Text className="text-black font-black text-xl">{(userData.rating_avg ?? 0).toFixed(1)}</Text>
                                     <Text className="text-black/30 font-bold text-[10px] uppercase tracking-tighter">Rating</Text>
                                 </View>
                                 <View className="items-end">
@@ -197,6 +198,7 @@ export default function ProfileScreen() {
                         </View>
                     </View>
                 </View>
+
 
                 {/* Identity Pass - Silver & Yellow Edition */}
                 <View className="mt-8 px-5">
@@ -250,7 +252,7 @@ export default function ProfileScreen() {
                                 {/* Right Section - Score */}
                                 <View className="w-28 items-center justify-center py-6">
                                     <View className="items-center justify-center">
-                                        <Text className="text-black font-black text-3xl">{userData.rating_avg.toFixed(1)}</Text>
+                                        <Text className="text-black font-black text-3xl">{(userData.rating_avg ?? 0).toFixed(1)}</Text>
                                     </View>
                                     <Text className="text-black/30 text-[9px] font-bold mt-1 tracking-widest uppercase">Score</Text>
                                 </View>
@@ -326,6 +328,17 @@ export default function ProfileScreen() {
                     <Pressable className="absolute inset-0" onPress={() => setShowSettings(false)} />
                     <View className="bg-white rounded-t-[50px] p-8">
                         <View className="w-12 h-1 bg-gray-100 rounded-full self-center mb-8" />
+
+                        <TouchableOpacity 
+                            onPress={async () => {
+                                setShowSettings(false);
+                                router.push('/onboarding/skills');
+                            }}
+                            className="bg-white border-2 border-black rounded-3xl py-5 items-center justify-center mb-3 flex-row gap-2"
+                        >
+                            <Feather name="user" size={18} color="black" />
+                            <Text className="text-black font-black text-base">EDIT PROFILE</Text>
+                        </TouchableOpacity>
                         
                         <TouchableOpacity 
                             onPress={() => {
@@ -376,7 +389,7 @@ export default function ProfileScreen() {
                                     <Text className="text-black font-black text-xs tracking-widest uppercase">Elite Pass</Text>
                                 </View>
                                 <View className="items-end">
-                                    <Text className="text-white font-black text-6xl tracking-tighter">{userData.rating_avg.toFixed(1)}</Text>
+                                    <Text className="text-white font-black text-6xl tracking-tighter">{(userData.rating_avg ?? 0).toFixed(1)}</Text>
                                     <Text className="text-[#FFE600]/40 font-bold text-xs uppercase tracking-widest">Score</Text>
                                 </View>
                             </View>

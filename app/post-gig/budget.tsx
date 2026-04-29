@@ -66,6 +66,7 @@ export default function BudgetTimelineScreen() {
     const dates = useMemo(() => generateDates(), []);
 
     const handleNext = () => {
+        if (!amount.trim()) return;
         router.push({
             pathname: "/post-gig/attachments",
             params: {
@@ -290,18 +291,26 @@ export default function BudgetTimelineScreen() {
             </ScrollView>
 
             {/* Fixed Bottom CTA - Same as index.tsx */}
-            <View style={styles.bottomContainer}>
+                <View style={styles.bottomContainer}>
                 <AnimatedPressable
                     onPress={handleNext}
                     onPressIn={handleButtonPressIn}
                     onPressOut={handleButtonPressOut}
-                    style={[buttonAnimatedStyle, styles.continueButton]}
+                    disabled={!amount.trim()}
+                    style={[
+                        buttonAnimatedStyle, 
+                        styles.continueButton,
+                        (!amount.trim()) && styles.continueButtonDisabled
+                    ]}
                 >
-                    <Text style={styles.continueText}>Next Step</Text>
+                    <Text style={[
+                        styles.continueText,
+                        (!amount.trim()) && styles.continueTextDisabled
+                    ]}>Next Step</Text>
                     <MaterialCommunityIcons
                         name="arrow-right"
                         size={24}
-                        color={COLORS.white}
+                        color={amount.trim() ? COLORS.white : "#888888"}
                     />
                 </AnimatedPressable>
             </View>
@@ -651,11 +660,18 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 6,
     },
+    continueButtonDisabled: {
+        backgroundColor: "#cccccc",
+        borderColor: "#cccccc",
+    },
     continueText: {
         fontSize: 20,
         fontWeight: "700",
         color: COLORS.white,
         textTransform: "uppercase",
         letterSpacing: 2,
+    },
+    continueTextDisabled: {
+        color: "#888888",
     },
 });

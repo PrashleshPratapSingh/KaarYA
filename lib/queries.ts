@@ -327,10 +327,14 @@ export async function createGig(gig: {
     };
 
     const newDocRef = doc(collection(db, 'gigs'));
-    // Fire-and-forget to avoid WebSocket hangs in Expo dev environments
+    
+    // Fire-and-forget to bypass Expo Dev Client WebSocket hangs.
+    // We add a 500ms delay so the JS thread has time to dispatch the network request.
     setDoc(newDocRef, gigData).catch(err => {
         console.error('Background Firebase write failed:', err);
     });
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     return {
         ...gigData,

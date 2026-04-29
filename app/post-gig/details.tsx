@@ -102,6 +102,7 @@ export default function GigDetailsScreen() {
     };
 
     const handleNext = () => {
+        if (!title.trim() || !description.trim()) return;
         router.push({
             pathname: "/post-gig/budget",
             params: {
@@ -285,13 +286,21 @@ export default function GigDetailsScreen() {
                         onPress={handleNext}
                         onPressIn={handleButtonPressIn}
                         onPressOut={handleButtonPressOut}
-                        style={[buttonAnimatedStyle, styles.continueButton]}
+                        disabled={!title.trim() || !description.trim()}
+                        style={[
+                            buttonAnimatedStyle, 
+                            styles.continueButton,
+                            (!title.trim() || !description.trim()) && styles.continueButtonDisabled
+                        ]}
                     >
-                        <Text style={styles.continueText}>Continue</Text>
+                        <Text style={[
+                            styles.continueText,
+                            (!title.trim() || !description.trim()) && styles.continueTextDisabled
+                        ]}>Next Step</Text>
                         <MaterialCommunityIcons
                             name="arrow-right"
                             size={24}
-                            color={COLORS.white}
+                            color={title.trim() && description.trim() ? COLORS.white : "#888888"}
                         />
                     </AnimatedPressable>
                 </View>
@@ -575,12 +584,19 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 6,
     },
+    continueButtonDisabled: {
+        backgroundColor: "#cccccc",
+        borderColor: "#cccccc",
+    },
     continueText: {
         fontSize: 20,
         fontWeight: "700",
         color: COLORS.white,
         textTransform: "uppercase",
         letterSpacing: 2,
+    },
+    continueTextDisabled: {
+        color: "#888888",
     },
     saveDraftButton: {
         alignSelf: "center",

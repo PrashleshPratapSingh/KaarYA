@@ -1,474 +1,300 @@
-import { View, Text, TouchableOpacity, Dimensions, TextInput, Image, KeyboardAvoidingView, Platform, ScrollView, Modal, Alert } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { View, Text, TouchableOpacity, TextInput, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { MaterialIcons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { MaterialIcons, Feather } from '@expo/vector-icons';
+import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import { updateUserProfile } from '../../lib/auth';
-// Removed legacy Firebase auth
-// import { FirebaseRecaptchaVerifierModal } from '../../components/RecaptchaVerifier';
-
-const { width, height } = Dimensions.get('window');
 
 const STORAGE_KEY = '@kaarya_onboarding_data';
 
+const SUGGESTED_SKILLS = [
+    'UI/UX', 'VIDEO EDITING', 'WEB DEV', 'GRAPHIC DESIGN',
+    'WRITING', 'DATA ENTRY', 'PHOTOGRAPHY', 'SOCIAL MEDIA',
+    'APP DEV', 'SEO', 'ANIMATION', 'MARKETING',
+];
+
 export default function OnboardingSkills() {
     const router = useRouter();
-    const params = useLocalSearchParams();
     const { user } = useAuth();
 
-    // Form States
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
     const [university, setUniversity] = useState('');
-    const [gradYear, setGradYear] = useState('2028');
     const [bio, setBio] = useState('');
     const [image, setImage] = useState<string | null>(null);
-    const [skills, setSkills] = useState(['VIDEO EDITING', 'UI/UX']);
+    const [skills, setSkills] = useState<string[]>([]);
     const [newSkill, setNewSkill] = useState('');
-
-    // UI/Verification States
-    const [isVerified, setIsVerified] = useState(false);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
-    const [isSendingOtp, setIsSendingOtp] = useState(false);
-    const [isVerifying, setIsVerifying] = useState(false);
-    const [showOtpModal, setShowOtpModal] = useState(false);
-    const [otpCode, setOtpCode] = useState('');
 
-    // reCAPTCHA ref (Removed)
-    const recaptchaRef = useRef<any>(null);
-
-    // Initial Load from Storage
     useEffect(() => {
-        const loadSavedData = async () => {
+        const load = async () => {
             try {
-                const savedData = await AsyncStorage.getItem(STORAGE_KEY);
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    setName(data.name || '');
-                    setEmail(data.email || '');
-                    setPhone(data.phone || '');
-                    // Only set university from storage if transition param isn't present
-                    if (!params.university) {
-                        setUniversity(data.university || '');
-                    }
-                    setGradYear(data.gradYear || '2028');
-                    setBio(data.bio || '');
-                    setImage(data.image || null);
-                    if (data.skills) setSkills(data.skills);
-                    setIsVerified(data.isVerified || false);
+                const saved = await AsyncStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const d = JSON.parse(saved);
+                    setName(d.name || ''); setEmail(d.email || '');
+                    setUniversity(d.university || ''); setBio(d.bio || '');
+                    setImage(d.image || null);
+                    if (d.skills) setSkills(d.skills);
                 }
-
-                // If university is passed via params (from Community screen), it takes precedence
-                if (params.university) {
-                    setUniversity(params.university as string);
-                }
-                setIsDataLoaded(true);
-            } catch (error) {
-                console.error('Failed to load data from storage:', error);
-                setIsDataLoaded(true);
-            }
+            } catch { }
+            setIsDataLoaded(true);
         };
-
-        loadSavedData();
+        load();
     }, []);
 
-    // Autofill from Clerk authentication if available and fields are empty
     useEffect(() => {
-        if (isDataLoaded && user) {
-            if (!name && user.name) setName(user.name);
-            if (!email && user.email) setEmail(user.email);
-            if (!phone && user.phone) setPhone(user.phone);
-        }
-    }, [isDataLoaded, user, name, email, phone]);
+        if (!isDataLoaded || !user) return;
+        if (user.name) setName(user.name);
+        if (user.email) setEmail(user.email);
+        if (user.avatarUrl && !image) setImage(user.avatarUrl);
 
-    // Save to Storage on every change (Debounced)
+        (async () => {
+            try {
+                const { fetchUser } = await import('../../lib/queries');
+                const p = await fetchUser(user.uid);
+                if (p) {
+                    if (p.university) setUniversity(p.university);
+                    if (p.bio) setBio(p.bio);
+                    if (p.avatar_url) setImage(p.avatar_url);
+                    if (p.skills?.length) setSkills(p.skills.map((s: string) => s.toUpperCase()));
+                }
+            } catch { }
+        })();
+    }, [isDataLoaded, user]);
+
     useEffect(() => {
         if (!isDataLoaded) return;
-
-        const saveData = async () => {
+        const t = setTimeout(async () => {
             try {
-                const currentData = {
-                    name,
-                    email,
-                    phone,
-                    university,
-                    gradYear,
-                    bio,
-                    image,
-                    skills,
-                    isVerified
-                };
-                await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
-            } catch (error) {
-                console.error('Failed to save data to storage:', error);
-            }
-        };
-
-        const timer = setTimeout(saveData, 1000);
-        return () => clearTimeout(timer);
-    }, [name, email, phone, university, gradYear, bio, image, skills, isVerified, isDataLoaded]);
-
-    // ─── Phone OTP Handlers ─────────────────────────────────────────────
-
-    const handleSendOtp = async () => {
-        const cleanPhone = phone.replace(/\s/g, '');
-        if (cleanPhone.length < 10) {
-            Alert.alert('Invalid Phone', 'Please enter a valid phone number with country code (e.g. +919876543210)');
-            return;
-        }
-
-        // Ensure country code
-        const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : `+91${cleanPhone}`;
-
-        setIsSendingOtp(true);
-        try {
-            // Mock OTP for now since Clerk will handle auth later if we need it
-            setTimeout(() => {
-                setShowOtpModal(true);
-                setIsSendingOtp(false);
-            }, 500);
-        } catch (error: any) {
-            console.error('OTP send error:', error);
-            Alert.alert('Error', error.message || 'Failed to send OTP. Please try again.');
-            setIsSendingOtp(false);
-        }
-    };
-
-    const handleVerifyOtp = async () => {
-        if (otpCode.length !== 6) return;
-
-        setIsVerifying(true);
-        try {
-            // Mock verification
-            if (!user) throw new Error("Not authenticated");
-
-            // Update the user profile with onboarding data
-            await updateUserProfile(user.uid, {
-                name,
-                email,
-                university,
-                bio,
-                skills,
-            });
-
-            setIsVerified(true);
-            setShowOtpModal(false);
-            setOtpCode('');
-        } catch (error: any) {
-            console.error('OTP verify error:', error);
-            Alert.alert('Verification Failed', 'Invalid OTP. Please try again.');
-        } finally {
-            setIsVerifying(false);
-        }
-    };
-
-    // ─── Other Handlers ─────────────────────────────────────────────────
+                await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ name, email, university, bio, image, skills }));
+            } catch { }
+        }, 1000);
+        return () => clearTimeout(t);
+    }, [name, email, university, bio, image, skills, isDataLoaded]);
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.8,
+            allowsEditing: true, aspect: [1, 1], quality: 0.8,
         });
-
         if (!result.canceled) {
-            const localUri = result.assets[0].uri;
-            setImage(localUri);
-
-            // Upload to Firebase Storage if user is authenticated
+            setImage(result.assets[0].uri);
             try {
-                if (!user) throw new Error('Not authenticated');
-                const userId = user.uid;
+                if (!user) throw new Error('x');
                 const { uploadAvatar } = await import('../../lib/storage');
-                const downloadUrl = await uploadAvatar(userId, localUri);
-                await updateUserProfile(userId, { avatar_url: downloadUrl });
-            } catch (error) {
-                // User not authenticated yet or upload failed — that's OK,
-                // the local URI is still shown. Upload happens on verify.
-                console.log('Avatar upload skipped (not authenticated yet)');
-            }
+                const url = await uploadAvatar(user.uid, result.assets[0].uri);
+                await updateUserProfile(user.uid, { avatar_url: url });
+            } catch { }
         }
     };
 
-    const removeSkill = (skillToRemove: string) => {
-        setSkills(skills.filter(skill => skill !== skillToRemove));
+    const toggleSkill = (s: string) => {
+        setSkills(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
     };
 
-    const addSkill = () => {
+    const addCustomSkill = () => {
         if (newSkill.trim().length > 0) {
-            setSkills([...skills, newSkill.trim().toUpperCase()]);
+            const upper = newSkill.trim().toUpperCase();
+            if (!skills.includes(upper)) setSkills([...skills, upper]);
             setNewSkill('');
         }
     };
 
     const handleContinue = async () => {
-        // If verified, save profile data before navigating
-        if (isVerified) {
-            try {
-                if (!user) throw new Error('Not authenticated');
-                const userId = user.uid;
-                await updateUserProfile(userId, {
-                    name,
-                    email,
-                    university,
-                    bio,
-                    skills,
-                    gradYear,
-                });
-            } catch {
-                // Not a blocker — data already saved on verify
-            }
+        if (user) {
+            updateUserProfile(user.uid, { name, email, university, bio, skills })
+                .catch(e => console.log('Save error:', e));
         }
         await AsyncStorage.setItem('kaarya_onboarding_complete', 'true');
-        router.push('/onboarding/story');
+        router.replace('/(tabs)');
     };
 
     return (
         <GestureHandlerRootView className="flex-1">
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                className="flex-1 bg-[#FFD600] relative"
+                className="flex-1 bg-[#FFD600]"
             >
                 <StatusBar style="dark" />
 
-                {/* reCAPTCHA Verifier (Removed) */}
-
                 <ScrollView
-                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 140 }}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
                     <View className="flex-1 px-6 pt-16 pb-12 w-full max-w-md mx-auto">
 
-                        {/* Title - Brutalist Box Style */}
-                        <Animated.View entering={FadeInDown.delay(200)} className="mb-10 self-start">
-                            <View className="bg-white border-4 border-black px-6 py-4 shadow-hard transform -rotate-1">
-                                <Text className="font-display text-5xl leading-[0.85] uppercase tracking-tighter text-black">
-                                    Identity{"\n"}Setup
+                        {/* ── Title Block ── */}
+                        <Animated.View entering={FadeInDown.delay(100)} className="mb-8">
+                            <View className="bg-white border-4 border-black px-6 py-4 shadow-hard transform -rotate-1 self-start">
+                                <Text className="font-display text-[42px] leading-[0.9] uppercase text-black tracking-tighter">
+                                    Build{'\n'}Your ID.
                                 </Text>
+                            </View>
+                            <Text className="text-black/50 font-bold text-xs uppercase tracking-[3px] mt-4 ml-1">
+                                Fill what you want • edit later anytime
+                            </Text>
+                        </Animated.View>
+
+                        {/* ── Avatar ── */}
+                        <Animated.View entering={FadeIn.delay(200)} className="items-center mb-10">
+                            <TouchableOpacity onPress={pickImage} activeOpacity={0.85}>
+                                <View className="w-32 h-32 bg-white border-4 border-black rounded-3xl overflow-hidden items-center justify-center shadow-hard">
+                                    {image ? (
+                                        <Image source={{ uri: image }} className="w-full h-full" resizeMode="cover" />
+                                    ) : (
+                                        <View className="items-center">
+                                            <View className="w-14 h-14 bg-[#FFD600] border-3 border-black rounded-2xl items-center justify-center mb-2">
+                                                <MaterialIcons name="add-a-photo" size={28} color="black" />
+                                            </View>
+                                            <Text className="font-display text-[9px] uppercase tracking-widest text-black/50">Tap to add</Text>
+                                        </View>
+                                    )}
+                                </View>
+                                {image && (
+                                    <View className="absolute -bottom-2 -right-2 w-10 h-10 bg-black border-3 border-[#FFD600] rounded-xl items-center justify-center shadow-hard-sm">
+                                        <Feather name="edit-2" size={16} color="#FFD600" />
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        </Animated.View>
+
+                        {/* ── Name ── */}
+                        <Animated.View entering={FadeInUp.delay(250)} className="mb-6">
+                            <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black/60 tracking-[2px]">The Name</Text>
+                            <TextInput
+                                value={name}
+                                onChangeText={setName}
+                                placeholder="e.g. ARJUN MEHTA"
+                                placeholderTextColor="rgba(0,0,0,0.15)"
+                                className="w-full bg-white h-16 border-4 border-black px-5 text-black font-display rounded-xl shadow-hard text-xl"
+                            />
+                        </Animated.View>
+
+                        {/* ── Email ── */}
+                        <Animated.View entering={FadeInUp.delay(300)} className="mb-6">
+                            <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black/60 tracking-[2px]">Email</Text>
+                            <TextInput
+                                value={email}
+                                onChangeText={setEmail}
+                                placeholder="your@email.com"
+                                placeholderTextColor="rgba(0,0,0,0.15)"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                className="w-full bg-white h-16 border-4 border-black px-5 text-black font-display rounded-xl shadow-hard text-xl"
+                            />
+                        </Animated.View>
+
+                        {/* ── University ── */}
+                        <Animated.View entering={FadeInUp.delay(350)} className="mb-6">
+                            <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black/60 tracking-[2px]">University / College</Text>
+                            <TextInput
+                                value={university}
+                                onChangeText={setUniversity}
+                                placeholder="Where do you study?"
+                                placeholderTextColor="rgba(0,0,0,0.15)"
+                                className="w-full bg-white h-16 border-4 border-black px-5 text-black font-display rounded-xl shadow-hard text-xl"
+                            />
+                        </Animated.View>
+
+                        {/* ── Skills ── */}
+                        <Animated.View entering={FadeInUp.delay(400)} className="mb-6">
+                            <View className="flex-row items-center justify-between mb-3">
+                                <Text className="font-display text-[10px] uppercase text-black/60 tracking-[2px] ml-1">Your Superpowers</Text>
+                                {skills.length > 0 && (
+                                    <View className="bg-black px-3 py-1 rounded-lg">
+                                        <Text className="text-[10px] font-display text-[#FFD600] uppercase">{skills.length} picked</Text>
+                                    </View>
+                                )}
+                            </View>
+
+                            <View className="flex-row flex-wrap gap-2 mb-4">
+                                {SUGGESTED_SKILLS.map((skill) => {
+                                    const on = skills.includes(skill);
+                                    return (
+                                        <TouchableOpacity
+                                            key={skill}
+                                            onPress={() => toggleSkill(skill)}
+                                            activeOpacity={0.8}
+                                            className={`px-4 py-3 border-3 border-black rounded-xl ${on ? 'bg-black' : 'bg-white'}`}
+                                            style={on ? {
+                                                shadowColor: '#FFD600', shadowOffset: { width: 3, height: 3 },
+                                                shadowOpacity: 1, shadowRadius: 0, elevation: 4,
+                                            } : {
+                                                shadowColor: '#000', shadowOffset: { width: 3, height: 3 },
+                                                shadowOpacity: 1, shadowRadius: 0, elevation: 4,
+                                            }}
+                                        >
+                                            <Text className={`text-[11px] font-display uppercase tracking-wider ${on ? 'text-[#FFD600]' : 'text-black'}`}>
+                                                {on ? `✦ ${skill}` : skill}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+
+                            <View className="flex-row gap-2">
+                                <TextInput
+                                    value={newSkill}
+                                    onChangeText={setNewSkill}
+                                    onSubmitEditing={addCustomSkill}
+                                    placeholder="+ YOUR OWN SKILL"
+                                    placeholderTextColor="rgba(0,0,0,0.15)"
+                                    returnKeyType="done"
+                                    className="flex-1 bg-white h-14 border-4 border-black border-dashed px-4 text-black font-display rounded-xl text-sm"
+                                />
+                                {newSkill.trim().length > 0 && (
+                                    <TouchableOpacity
+                                        onPress={addCustomSkill}
+                                        className="bg-black border-4 border-black h-14 w-14 rounded-xl items-center justify-center shadow-hard"
+                                    >
+                                        <MaterialIcons name="add" size={24} color="#FFD600" />
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </Animated.View>
 
-                        {/* Profile Photo Area */}
-                        <TouchableOpacity
-                            onPress={pickImage}
-                            className="bg-white border-4 border-black border-dashed rounded-3xl w-48 h-48 mx-auto mb-14 items-center justify-center relative overflow-hidden active:opacity-90 transition-opacity shadow-hard"
-                        >
-                            {image ? (
-                                <Image source={{ uri: image }} className="w-full h-full" resizeMode="cover" />
-                            ) : (
-                                <View className="items-center justify-center">
-                                    <View className="w-16 h-16 bg-white border-4 border-black rounded-2xl items-center justify-center mb-3 shadow-hard-sm">
-                                        <MaterialIcons name="add-a-photo" size={28} color="black" />
-                                    </View>
-                                    <Text className="font-display text-center uppercase text-[11px] tracking-wider px-2 text-black leading-tight">Drag face here</Text>
-                                    <Text className="text-[9px] font-display opacity-60 text-black mt-1 uppercase">or tap</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-
-                        <View>
-                            {/* Name Input */}
-                            <View className="mb-8">
-                                <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black opacity-80 tracking-[2px]">The Name You Answer To</Text>
-                                <TextInput
-                                    value={name}
-                                    onChangeText={setName}
-                                    placeholder="e.g. ARJUN MEHTA"
-                                    placeholderTextColor="rgba(0,0,0,0.2)"
-                                    className="w-full bg-white h-16 border-4 border-black px-5 text-black font-display rounded-xl shadow-hard text-xl"
-                                />
-                            </View>
-
-                            {/* Email Input */}
-                            <View className="mb-8">
-                                <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black opacity-80 tracking-[2px]">Academic Email (.ac.in)</Text>
-                                <TextInput
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    placeholder="arjun@university.ac.in"
-                                    placeholderTextColor="rgba(0,0,0,0.2)"
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    className="w-full bg-white h-16 border-4 border-black px-5 text-black font-display rounded-xl shadow-hard text-xl"
-                                />
-                            </View>
-
-                            {/* Phone Input with OTP Verification */}
-                            <View className="mb-8">
-                                <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black opacity-80 tracking-[2px]">Digits (Phone)</Text>
-                                <View className="relative">
-                                    <TextInput
-                                        value={phone}
-                                        onChangeText={setPhone}
-                                        placeholder="+91 98765 43210"
-                                        placeholderTextColor="rgba(0,0,0,0.2)"
-                                        keyboardType="phone-pad"
-                                        editable={!isVerified}
-                                        className="w-full bg-white h-16 border-4 border-black pl-5 pr-36 text-black font-display rounded-xl shadow-hard text-xl"
-                                    />
-                                    <TouchableOpacity
-                                        activeOpacity={0.8}
-                                        onPress={handleSendOtp}
-                                        disabled={isVerified || isSendingOtp}
-                                        className={`absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 rounded-lg flex-row items-center gap-1.5 shadow-hard-sm border-2 border-black ${isVerified ? 'bg-[#4ADE80]' : 'bg-[#FFD600]'}`}
-                                    >
-                                        {isVerified && <MaterialIcons name="verified" size={16} color="black" />}
-                                        <Text className="text-[10px] font-display uppercase tracking-wider text-black">
-                                            {isVerified ? 'Verified' : isSendingOtp ? '...' : 'Verify'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
-                            {/* Grid: University & Grad Year */}
-                            <View className="flex-row gap-5 mb-8">
-                                <View className="flex-[2]">
-                                    <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black opacity-80 tracking-[2px]">University</Text>
-                                    <TextInput
-                                        value={university}
-                                        onChangeText={setUniversity}
-                                        placeholder="IITB"
-                                        placeholderTextColor="rgba(0,0,0,0.2)"
-                                        className="w-full bg-white h-16 border-4 border-black px-5 text-black font-display rounded-xl shadow-hard text-xl"
-                                    />
-                                </View>
-                                <View className="flex-1">
-                                    <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black opacity-80 tracking-[2px]">Year</Text>
-                                    <TextInput
-                                        value={gradYear}
-                                        onChangeText={setGradYear}
-                                        placeholder="2028"
-                                        placeholderTextColor="rgba(0,0,0,0.2)"
-                                        keyboardType="numeric"
-                                        className="w-full bg-white h-16 border-4 border-black px-3 text-black font-display rounded-xl shadow-hard text-xl text-center"
-                                    />
-                                </View>
-                            </View>
-
-                            {/* Skills Tag Input */}
-                            <View className="mb-8">
-                                <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black opacity-80 tracking-[2px]">Your Superpowers (Skills)</Text>
-                                <View className="w-full bg-white border-4 border-black px-5 py-5 rounded-xl shadow-hard flex-row flex-wrap gap-3 items-center min-h-[72px]">
-                                    {skills.map((skill, index) => (
-                                        <TouchableOpacity
-                                            key={index}
-                                            onPress={() => removeSkill(skill)}
-                                            className="bg-black px-4 py-2.5 rounded-lg flex-row items-center gap-2"
-                                        >
-                                            <Text className="text-white text-[11px] font-display uppercase">{skill}</Text>
-                                            <MaterialIcons name="close" size={12} color="white" />
-                                        </TouchableOpacity>
-                                    ))}
-                                    <TextInput
-                                        value={newSkill}
-                                        onChangeText={setNewSkill}
-                                        onSubmitEditing={addSkill}
-                                        placeholder="+ ADD"
-                                        placeholderTextColor="rgba(0,0,0,0.2)"
-                                        className="bg-transparent text-base font-display text-black min-w-[100px] h-10 flex-1"
-                                    />
-                                </View>
-                            </View>
-
-                            {/* Portfolio Link */}
-                            <View className="mb-8">
-                                <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black opacity-80 tracking-[2px]">Proof of Work (Portfolio)</Text>
-                                <TouchableOpacity className="bg-white py-8 border-4 border-black rounded-xl items-center justify-center border-dashed active:scale-[0.98] transition-transform shadow-hard">
-                                    <MaterialIcons name="link" size={32} color="black" className="mb-2" />
-                                    <Text className="font-display text-lg uppercase text-black tracking-widest leading-none">Add Links / Files</Text>
-                                    <Text className="text-[10px] font-display opacity-50 text-black mt-2 uppercase">Behance, GitHub, or PDF</Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            {/* Bio Input */}
-                            <View className="mb-12">
-                                <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black opacity-80 tracking-[2px]">The Lore (Bio)</Text>
-                                <TextInput
-                                    value={bio}
-                                    onChangeText={setBio}
-                                    placeholder="TELL YOUR STORY..."
-                                    placeholderTextColor="rgba(0,0,0,0.2)"
-                                    multiline
-                                    numberOfLines={4}
-                                    className="w-full bg-white border-4 border-black px-5 py-6 text-black font-display rounded-xl shadow-hard min-h-[160px] text-xl"
-                                    style={{ textAlignVertical: 'top' }}
-                                />
-                            </View>
-
-                            {/* Submit Button */}
-                            <View className="pt-4 pb-0">
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        if (!name || !email || !university || skills.length === 0) {
-                                            Alert.alert('Hold Up!', 'Please fill in your name, email, university and at least one skill to proceed.');
-                                            return;
-                                        }
-                                        handleContinue();
-                                    }}
-                                    className="w-full bg-black py-6 items-center justify-center flex-row gap-4 border-4 border-black shadow-hard-white active:translate-y-1 active:shadow-none transition-all rounded-2xl"
-                                >
-                                    <Text className="font-display text-3xl uppercase tracking-tighter italic text-white leading-none">Stamp it & Go</Text>
-                                    <MaterialIcons name="arrow-forward" size={32} color="white" />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                        {/* ── Bio ── */}
+                        <Animated.View entering={FadeInUp.delay(450)} className="mb-8">
+                            <Text className="font-display text-[10px] uppercase mb-2 ml-1 text-black/60 tracking-[2px]">The Lore (Bio)</Text>
+                            <TextInput
+                                value={bio}
+                                onChangeText={setBio}
+                                placeholder="TELL YOUR STORY..."
+                                placeholderTextColor="rgba(0,0,0,0.15)"
+                                multiline
+                                numberOfLines={4}
+                                className="w-full bg-white border-4 border-black px-5 py-5 text-black font-display rounded-xl shadow-hard min-h-[140px] text-xl"
+                                style={{ textAlignVertical: 'top' }}
+                            />
+                        </Animated.View>
                     </View>
                 </ScrollView>
 
-                {/* OTP Verification Modal */}
-                <Modal
-                    visible={showOtpModal}
-                    animationType="slide"
-                    transparent={true}
-                    onRequestClose={() => setShowOtpModal(false)}
+                {/* ── Floating Bottom CTA ── */}
+                <Animated.View
+                    entering={FadeInUp.delay(600)}
+                    className="absolute bottom-0 left-0 right-0 px-6 pb-10 pt-5 bg-[#FFD600]"
                 >
-                    <View className="flex-1 justify-end">
-                        <View className="bg-white rounded-t-[32px] border-t-4 border-x-4 border-black p-8 pb-12 shadow-hard">
-                            <Text className="font-display text-4xl uppercase tracking-tighter text-black mb-2">
-                                Verify
-                            </Text>
-                            <Text className="text-sm font-bold text-black/60 mb-8 uppercase tracking-widest">
-                                Code sent to {phone}
-                            </Text>
-
-                            <TextInput
-                                value={otpCode}
-                                onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
-                                placeholder="000000"
-                                placeholderTextColor="rgba(0,0,0,0.1)"
-                                keyboardType="number-pad"
-                                maxLength={6}
-                                autoFocus
-                                className="w-full bg-[#FFD600] h-24 border-4 border-black px-6 text-black font-display rounded-2xl shadow-hard text-5xl text-center tracking-[12px]"
-                            />
-
-                            <TouchableOpacity
-                                onPress={handleVerifyOtp}
-                                disabled={otpCode.length !== 6 || isVerifying}
-                                className={`w-full py-6 mt-8 items-center justify-center rounded-2xl border-4 border-black shadow-hard ${otpCode.length === 6 ? 'bg-[#4ADE80]' : 'bg-gray-200'}`}
-                            >
-                                <Text className="font-display text-2xl uppercase tracking-tighter text-black">
-                                    {isVerifying ? 'Checking...' : 'Confirm'}
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                onPress={() => { setShowOtpModal(false); setOtpCode(''); }}
-                                className="mt-6 items-center"
-                            >
-                                <Text className="font-display text-sm uppercase tracking-widest text-black/30">Go Back</Text>
-                            </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={handleContinue}
+                        activeOpacity={0.85}
+                        className="w-full bg-black py-6 border-4 border-black rounded-2xl shadow-hard-white flex-row items-center justify-center gap-4 active:translate-y-1 active:shadow-none"
+                    >
+                        <Text className="font-display text-3xl uppercase tracking-tighter italic text-white leading-none">
+                            Let's Go
+                        </Text>
+                        <View className="w-10 h-10 bg-[#FFD600] rounded-xl items-center justify-center border-2 border-[#FFD600]">
+                            <MaterialIcons name="arrow-forward" size={24} color="black" />
                         </View>
-                    </View>
-                </Modal>
+                    </TouchableOpacity>
+                </Animated.View>
             </KeyboardAvoidingView>
         </GestureHandlerRootView>
     );

@@ -79,12 +79,22 @@ export async function uploadDeliverable(
 
 /**
  * Convert a local file URI to a Blob for upload.
- * Works in React Native by fetching the local file URI.
+ * Uses XMLHttpRequest as fetch(file://) often fails in React Native.
  */
-async function uriToBlob(uri: string): Promise<Blob> {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    return blob;
+function uriToBlob(uri: string): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = function () {
+            resolve(xhr.response);
+        };
+        xhr.onerror = function (e) {
+            console.error('uriToBlob failed', e);
+            reject(new Error('uriToBlob failed'));
+        };
+        xhr.responseType = 'blob';
+        xhr.open('GET', uri, true);
+        xhr.send(null);
+    });
 }
 
 // ─── Upload Chat Media ──────────────────────────────────────────────────────

@@ -2,13 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BrandColors, UIColors } from '../../constants/Colors';
+import { type GigRow, paiseToRupees } from '../../lib/queries';
 
 interface GigDetailsModalProps {
     visible: boolean;
     onClose: () => void;
+    gig?: GigRow | null;
 }
 
-export const GigDetailsModal: React.FC<GigDetailsModalProps> = ({ visible, onClose }) => {
+export const GigDetailsModal: React.FC<GigDetailsModalProps> = ({ visible, onClose, gig }) => {
     return (
         <Modal
             animationType="fade"
@@ -23,61 +25,65 @@ export const GigDetailsModal: React.FC<GigDetailsModalProps> = ({ visible, onClo
                 <View style={styles.modalContainer}>
                     {/* Header with Title and Close */}
                     <View style={styles.header}>
-                        <View>
+                        <View style={{ flex: 1, paddingRight: 16 }}>
                             <Text style={styles.label}>CURRENT GIG</Text>
-                            <Text style={styles.title}>Landing Page Design</Text>
+                            <Text style={styles.title} numberOfLines={2}>
+                                {gig ? gig.title : 'Loading Gig...'}
+                            </Text>
                         </View>
                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                             <Ionicons name="close" size={20} color={BrandColors.black} />
                         </TouchableOpacity>
                     </View>
 
-                    {/* Status Pill */}
-                    <View style={styles.statusContainer}>
-                        <View style={styles.statusPill}>
-                            <View style={styles.statusDot} />
-                            <Text style={styles.statusText}>IN PROGRESS</Text>
-                        </View>
-                    </View>
+                    {gig && (
+                        <>
+                            {/* Status Pill */}
+                            <View style={styles.statusContainer}>
+                                <View style={styles.statusPill}>
+                                    <View style={styles.statusDot} />
+                                    <Text style={styles.statusText}>{gig.status.toUpperCase()}</Text>
+                                </View>
+                            </View>
 
-                    <View style={styles.divider} />
+                            <View style={styles.divider} />
 
-                    {/* Key Details Grid */}
-                    <View style={styles.detailsGrid}>
-                        <View style={styles.detailItem}>
-                            <View style={styles.iconBox}>
-                                <Ionicons name="cash-outline" size={20} color={BrandColors.black} />
-                            </View>
-                            <View>
-                                <Text style={styles.detailLabel}>Payment</Text>
-                                <Text style={styles.detailValue}>₹2,500</Text>
-                            </View>
-                        </View>
+                            {/* Key Details Grid */}
+                            <View style={styles.detailsGrid}>
+                                <View style={styles.detailItem}>
+                                    <View style={styles.iconBox}>
+                                        <Ionicons name="cash-outline" size={20} color={BrandColors.black} />
+                                    </View>
+                                    <View>
+                                        <Text style={styles.detailLabel}>Payment</Text>
+                                        <Text style={styles.detailValue}>₹{paiseToRupees(gig.budget_min).toLocaleString()}</Text>
+                                    </View>
+                                </View>
 
-                        <View style={styles.detailItem}>
-                            <View style={styles.iconBox}>
-                                <Ionicons name="calendar-outline" size={20} color={BrandColors.black} />
+                                <View style={styles.detailItem}>
+                                    <View style={styles.iconBox}>
+                                        <Ionicons name="calendar-outline" size={20} color={BrandColors.black} />
+                                    </View>
+                                    <View>
+                                        <Text style={styles.detailLabel}>Deadline</Text>
+                                        <Text style={styles.detailValue}>
+                                            {gig.deadline ? new Date(gig.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Flexible'}
+                                        </Text>
+                                    </View>
+                                </View>
                             </View>
-                            <View>
-                                <Text style={styles.detailLabel}>Deadline</Text>
-                                <Text style={styles.detailValue}>Feb 5, 2026</Text>
-                            </View>
-                        </View>
-                    </View>
 
-                    {/* Milestone Card */}
-                    <View style={styles.milestoneCard}>
-                        <View style={styles.milestoneHeader}>
-                            <Text style={styles.milestoneLabel}>CURRENT MILESTONE</Text>
-                            <View style={styles.checkIcon}>
-                                <Ionicons name="checkmark" size={14} color={BrandColors.white} />
-                            </View>
-                        </View>
-                        <Text style={styles.milestoneTitle}>Initial Wireframes</Text>
-                        <View style={styles.progressBar}>
-                            <View style={styles.progressFill} />
-                        </View>
-                    </View>
+                            {/* Milestone Card (Placeholder if no milestones implemented yet) */}
+                            {gig.description ? (
+                                <View style={styles.milestoneCard}>
+                                    <View style={styles.milestoneHeader}>
+                                        <Text style={styles.milestoneLabel}>DESCRIPTION</Text>
+                                    </View>
+                                    <Text style={styles.milestoneTitle} numberOfLines={3}>{gig.description}</Text>
+                                </View>
+                            ) : null}
+                        </>
+                    )}
 
                     {/* Action Button */}
                     <TouchableOpacity style={styles.fullDetailsButton} onPress={onClose}>

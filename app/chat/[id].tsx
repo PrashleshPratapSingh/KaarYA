@@ -15,7 +15,6 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { MessageBubble } from '../../components/messaging/MessageBubble';
 import { MessageInput } from '../../components/messaging/MessageInput';
 import { ChatHeader } from '../../components/messaging/ChatHeader';
-import { GigDetailsModal } from '../../components/messaging/GigDetailsModal';
 import { MessageOptionsModal } from '../../components/messaging/MessageOptionsModal';
 import { ProfileDetailsModal } from '../../components/messaging/ProfileDetailsModal';
 import * as Clipboard from 'expo-clipboard';
@@ -24,12 +23,16 @@ import { BrandColors } from '../../constants/Colors';
 import { onMessagesChanged, sendMessage, markChatAsRead, type ChatMessage } from '../../lib/messaging';
 import { uploadChatMedia } from '../../lib/storage';
 import { useAuth } from '../context/AuthContext';
+import { initiatePayment } from '../../lib/payments';
 
 export default function ChatRoomScreen() {
     const router = useRouter();
-    const { id, name } = useLocalSearchParams();
+    const { id, name, gigId } = useLocalSearchParams();
     const { user } = useAuth();
     const chatId = typeof id === 'string' ? id : '';
+    const gigIdStr = typeof gigId === 'string' ? gigId : '';
+    const partnerName = typeof name === 'string' ? name : 'User';
+    const [isPaymentLoading, setIsPaymentLoading] = useState(false);
 
     const [messages, setMessages] = useState<Message[]>([]);
 
@@ -68,7 +71,6 @@ export default function ChatRoomScreen() {
             }));
             setMessages(mappedMessages);
 
-            // Mark as read again if new messages come in while screen is open
             markChatAsRead(user.uid, chatId).catch(console.error);
         });
 
@@ -202,14 +204,57 @@ export default function ChatRoomScreen() {
         router.back();
     };
 
+    // ── Hire & Pay ──────────────────────────────────────────────────────────
+    const handleHirePay = async () => {
+        if (!user || !gigIdStr) {
+            Alert.alert('Error', 'Cannot initiate payment without a linked gig.');
+            return;
+        }
+
+        Alert.alert(
+            '💳 Hire & Pay',
+            `You are about to pay for this gig. The funds will be held in escrow until the work is completed.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Proceed to Pay',
+                    onPress: async () => {
+                        setIsPaymentLoading(true);
+                        try {
+                            const result = await initiatePayment({
+                                amount: 100, // TODO: pull real amount from gig data
+                                gigId: gigIdStr,
+                                clientId: user.uid,
+                                executorId: 'executor', // TODO: pull from chat/gig data
+                                description: `KaarYa Gig: ${displayName}`,
+                                prefill: {
+                                    name: user.name || '',
+                                    email: user.email || '',
+                                },
+                            });
+
+                            if (result.success) {
+                                Alert.alert(
+                                    '✅ Payment Successful!',
+                                    `Payment verified. Funds are now in escrow.\nPayment ID: ${result.paymentId}`,
+                                );
+                            } else if (result.error !== 'Payment cancelled by user') {
+                                Alert.alert('Payment Failed', result.error || 'Something went wrong.');
+                            }
+                        } catch (err: any) {
+                            Alert.alert('Payment Error', err?.message || 'An unexpected error occurred.');
+                        } finally {
+                            setIsPaymentLoading(false);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     const [profileModalVisible, setProfileModalVisible] = useState(false);
     const handleViewProfile = () => {
         setProfileModalVisible(true);
-    };
-
-    const [gigModalVisible, setGigModalVisible] = useState(false);
-    const handleViewGig = () => {
-        setGigModalVisible(true);
     };
 
     return (
@@ -230,7 +275,7 @@ export default function ChatRoomScreen() {
                         user={otherUser}
                         onBack={handleBack}
                         onViewProfile={handleViewProfile}
-                        onViewGig={handleViewGig}
+                        onHirePay={gigIdStr ? handleHirePay : undefined}
                     />
 
                     {renderStatusIndicator()}
@@ -256,11 +301,6 @@ export default function ChatRoomScreen() {
                         onAttachFile={handleAttachFile}
                     />
                 </KeyboardAvoidingView>
-
-                <GigDetailsModal
-                    visible={gigModalVisible}
-                    onClose={() => setGigModalVisible(false)}
-                />
 
                 <ProfileDetailsModal
                     visible={profileModalVisible}
