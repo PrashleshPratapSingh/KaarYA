@@ -16,6 +16,7 @@ import { KARYA_BLACK, KARYA_WHITE, KARYA_YELLOW, BADGE_COLORS, Gig } from './typ
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../app/context/AuthContext';
 import { getOrCreateChat } from '../../lib/messaging';
+import { applyToGig, hasUserApplied } from '../../lib/applications';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -29,6 +30,9 @@ export function MarketplaceGigDetailModal({ visible, gig, onClose }: Props) {
     const router = useRouter();
     const { user } = useAuth();
     const [isCreatingChat, setIsCreatingChat] = useState(false);
+    const [hasApplied, setHasApplied] = useState(false);
+    const [isApplying, setIsApplying] = useState(false);
+    const [isOwnGig, setIsOwnGig] = useState(false);
     // Splash circle animation
     const splashScale = useSharedValue(0);
     const contentOpacity = useSharedValue(0);
@@ -45,13 +49,34 @@ export function MarketplaceGigDetailModal({ visible, gig, onClose }: Props) {
             // Content fade in after splash
             contentOpacity.value = withDelay(200, withTiming(1, { duration: 300 }));
             contentTranslateY.value = withDelay(200, withTiming(0, { duration: 300 }));
+
+            // Check application status and ownership
+            if (user && gig) {
+                // If the gig uses clientId (new schema) or postedBy matches
+                const ownerId = gig.clientId || gig.postedBy.toLowerCase().replace(/\s+/g, '-');
+                setIsOwnGig(user.uid === ownerId);
+
+                // Only check application status if not owner
+                if (user.uid !== ownerId) {
+                    hasUserApplied(gig.id, user.uid)
+                        .then(applied => setHasApplied(applied))
+                        .catch(err => console.error("Error checking application status:", err));
+                }
+            } else {
+                setHasApplied(false);
+                setIsOwnGig(false);
+            }
         } else {
             // Quick collapse
             contentOpacity.value = withTiming(0, { duration: 150 });
             contentTranslateY.value = withTiming(30, { duration: 150 });
             splashScale.value = withDelay(100, withTiming(0, { duration: 200 }));
+            // Reset states
+            setHasApplied(false);
+            setIsOwnGig(false);
         }
-    }, [visible]);
+    }, [visible, gig, user]);
+
 
 
     const splashStyle = useAnimatedStyle(() => ({
@@ -88,13 +113,13 @@ export function MarketplaceGigDetailModal({ visible, gig, onClose }: Props) {
         closeButtonScale.value = withTiming(1, { duration: 150 });
     };
 
-    const handleContactClient = async () => {
+    const handleApplySubmit = async () => {
         if (!gig) return;
 
         if (!user) {
             Alert.alert(
                 "Sign In Required",
-                "You need to sign in to message clients.",
+                "You need to sign in to apply for gigs.",
                 [
                     { text: "Cancel", style: "cancel" },
                     { text: "Sign In", onPress: () => { onClose(); router.push('/onboarding'); } }
@@ -107,8 +132,14 @@ export function MarketplaceGigDetailModal({ visible, gig, onClose }: Props) {
         const posterUserId = gig.clientId || gig.postedBy.toLowerCase().replace(/\s+/g, '-');
 
         try {
-            setIsCreatingChat(true);
+            setIsApplying(true);
 
+            // 1. Submit application to Firestore
+            if (!hasApplied && user.uid !== posterUserId) {
+                await applyToGig(gig.id, user.uid, "I'm interested in your gig!");
+            }
+
+            // 2. Open chat to continue the conversation
             const chatId = await getOrCreateChat(
                 user.uid,
                 posterUserId,
@@ -119,16 +150,21 @@ export function MarketplaceGigDetailModal({ visible, gig, onClose }: Props) {
                 gig.title
             );
 
+            // Success haptic feedback
+            // Assuming Haptics are imported in the parent, but we can just skip it here
+            // or let the parent handle the success modal if we call an onApply prop.
+            // Since this component doesn't have onApply prop, we just navigate.
+
             onClose();
             router.push({
                 pathname: '/chat/[id]',
-                params: { id: chatId, name: gig.postedBy }
+                params: { id: chatId, name: gig.postedBy, gigId: gig.id }
             });
-        } catch (error) {
-            console.error("Error creating chat:", error);
-            Alert.alert("Error", "Could not start chat. Please try again.");
+        } catch (error: any) {
+            console.error("Error applying/creating chat:", error);
+            Alert.alert("Error", error.message || "Could not submit application. Please try again.");
         } finally {
-            setIsCreatingChat(false);
+            setIsApplying(false);
         }
     };
 
@@ -317,24 +353,34 @@ export function MarketplaceGigDetailModal({ visible, gig, onClose }: Props) {
                         </View>
 
                         {/* Apply Button */}
-                        <Animated.View style={applyButtonStyle}>
-                            <Pressable
-                                style={styles.applyButton}
-                                onPress={handleContactClient}
-                                onPressIn={handleApplyPressIn}
-                                onPressOut={handleApplyPressOut}
-                                disabled={isCreatingChat}
-                            >
-                                {isCreatingChat ? (
-                                    <ActivityIndicator color={KARYA_YELLOW} />
-                                ) : (
-                                    <>
-                                        <Text style={styles.applyButtonText}>MESSAGE CLIENT</Text>
-                                        <Feather name="message-square" size={18} color={KARYA_YELLOW} />
-                                    </>
-                                )}
-                            </Pressable>
-                        </Animated.View>
+                        {!isOwnGig && (
+                            <Animated.View style={applyButtonStyle}>
+                                <Pressable
+                                    style={[
+                                        styles.applyButton,
+                                        hasApplied && { backgroundColor: '#4CAF50', borderColor: '#388E3C', borderWidth: 2 }
+                                    ]}
+                                    onPress={handleApplySubmit}
+                                    onPressIn={handleApplyPressIn}
+                                    onPressOut={handleApplyPressOut}
+                                    disabled={isApplying || hasApplied}
+                                >
+                                    {isApplying ? (
+                                        <ActivityIndicator color={KARYA_YELLOW} />
+                                    ) : hasApplied ? (
+                                        <>
+                                            <Text style={[styles.applyButtonText, { color: KARYA_WHITE }]}>APPLIED</Text>
+                                            <Feather name="check" size={18} color={KARYA_WHITE} />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Text style={styles.applyButtonText}>APPLY NOW</Text>
+                                            <Feather name="arrow-right" size={18} color={KARYA_YELLOW} />
+                                        </>
+                                    )}
+                                </Pressable>
+                            </Animated.View>
+                        )}
                     </ScrollView>
                 </Animated.View>
             </View>

@@ -30,12 +30,13 @@ service cloud.firestore {
       allow create: if isAuthenticated() 
                     && request.resource.data.client_id == request.auth.uid;
                     
-      // Only the client (poster) can update a gig (e.g., closing it).
+      // Only the client (poster) can update a gig (e.g., closing, assigning executor).
       allow update: if isAuthenticated() 
-                    && resource.data.client_id == request.auth.uid
-                    && request.resource.data.client_id == request.auth.uid; // Cannot change owner
+                    && resource.data.client_id == request.auth.uid;
       
-      allow delete: if false; // Soft deletes via status='deleted' preferrable
+      // Only the poster can delete their own gig
+      allow delete: if isAuthenticated()
+                    && resource.data.client_id == request.auth.uid;
     }
     
     // Matches gig applications
