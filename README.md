@@ -63,21 +63,6 @@
 
 ---
 
-## 🎨 Design Language
-
-KaarYA uses a **brutalist design system** with a bold, Gen-Z aesthetic:
-
-| Token | Value |
-|-------|-------|
-| **Primary** | `#FFE500` (KaarYa Yellow) |
-| **Secondary** | `#000000` (Bold Black) |
-| **Surface** | `#FFFFFF` |
-| **Borders** | 2–4px solid black |
-| **Border Radius** | Sharp corners to large rounded (8–30px) |
-| **Typography** | 900/800/700 weight · Hero 56px · Title 32px |
-| **Messaging** | Cream `#F5F3E8` bg · Yellow sender · Purple `#5B5FFF` actions |
-
----
 
 ## 📁 Project Structure
 
