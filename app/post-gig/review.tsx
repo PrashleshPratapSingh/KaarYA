@@ -20,7 +20,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { createGig } from "../../lib/queries";
 import { useAuth } from "../context/AuthContext";
-import { initiatePayment } from "../../lib/payments";
+// Payment will be triggered later when a doer is hired (via chat/messaging)
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -130,23 +130,8 @@ export default function ReviewScreen() {
             }
 
             const budgetAmount = parseInt(amount || '5000');
-            const paymentResult = await initiatePayment({
-                amount: budgetAmount,
-                description: `Payment for Gig: ${title}`,
-                prefill: {
-                    email: user.email || '',
-                    contact: '', // Ideally we'd have this from profile
-                    name: user.name || 'Client',
-                }
-            });
 
-            if (!paymentResult.success) {
-                // Payment was cancelled or failed
-                setIsSubmitting(false);
-                return;
-            }
-
-            // 2. Create the Gig upon successful payment verification
+            // Create the gig in Firestore
             await createGig({
                 title,
                 description,
@@ -155,7 +140,7 @@ export default function ReviewScreen() {
                 skills,
                 deadline: deadline || undefined,
                 urgency: 'normal',
-                status: 'pending', // Could be 'funded' or 'pending' depending on exact state flow
+                status: 'open',
             }, user.uid);
 
             router.replace("/post-gig/success");
@@ -170,6 +155,7 @@ export default function ReviewScreen() {
             setIsSubmitting(false);
         }
     };
+
 
     const buttonAnimatedStyle = useAnimatedStyle(() => ({
         transform: [{ scale: buttonScale.value }],

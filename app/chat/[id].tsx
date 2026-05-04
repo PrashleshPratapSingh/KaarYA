@@ -23,7 +23,7 @@ import { BrandColors } from '../../constants/Colors';
 import { onMessagesChanged, sendMessage, markChatAsRead, type ChatMessage } from '../../lib/messaging';
 import { uploadChatMedia } from '../../lib/storage';
 import { useAuth } from '../context/AuthContext';
-import { initiatePayment } from '../../lib/payments';
+// Payment integration will be enabled after Vercel deployment
 
 export default function ChatRoomScreen() {
     const router = useRouter();
@@ -212,43 +212,9 @@ export default function ChatRoomScreen() {
         }
 
         Alert.alert(
-            '💳 Hire & Pay',
-            `You are about to pay for this gig. The funds will be held in escrow until the work is completed.`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Proceed to Pay',
-                    onPress: async () => {
-                        setIsPaymentLoading(true);
-                        try {
-                            const result = await initiatePayment({
-                                amount: 100, // TODO: pull real amount from gig data
-                                gigId: gigIdStr,
-                                clientId: user.uid,
-                                executorId: 'executor', // TODO: pull from chat/gig data
-                                description: `KaarYa Gig: ${displayName}`,
-                                prefill: {
-                                    name: user.name || '',
-                                    email: user.email || '',
-                                },
-                            });
-
-                            if (result.success) {
-                                Alert.alert(
-                                    '✅ Payment Successful!',
-                                    `Payment verified. Funds are now in escrow.\nPayment ID: ${result.paymentId}`,
-                                );
-                            } else if (result.error !== 'Payment cancelled by user') {
-                                Alert.alert('Payment Failed', result.error || 'Something went wrong.');
-                            }
-                        } catch (err: any) {
-                            Alert.alert('Payment Error', err?.message || 'An unexpected error occurred.');
-                        } finally {
-                            setIsPaymentLoading(false);
-                        }
-                    },
-                },
-            ]
+            '🔒 Payments Coming Soon',
+            'Escrow payments via Razorpay will be available once the backend is deployed to Vercel.\n\nYou can still chat and coordinate the gig!',
+            [{ text: 'OK' }]
         );
     };
 

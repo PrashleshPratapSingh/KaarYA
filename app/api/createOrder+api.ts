@@ -1,9 +1,26 @@
-import { db } from '../../lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import Razorpay from 'razorpay';
 
-// POST /api/createOrder
-// Body: { amount (rupees), gigId, clientId, executorId }
-// Returns: Razorpay order object
+// Lazy-init Firebase Admin (only once per cold start)
+function getDb() {
+    if (!getApps().length) {
+        // Only initialize if we have the required credentials
+        if (!process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+            console.warn('⚠️ Missing FIREBASE_CLIENT_EMAIL or FIREBASE_PRIVATE_KEY in .env. Firestore Admin skipped.');
+            return null;
+        }
+
+        initializeApp({
+            credential: cert({
+                projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            }),
+        });
+    }
+    return getFirestore();
+}
 
 export async function POST(request: Request) {
     try {
@@ -17,18 +34,16 @@ export async function POST(request: Request) {
             );
         }
 
-        const keyId = process.env.RAZORPAY_KEY_ID;
+        const keyId = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
         const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
         if (!keyId || !keySecret) {
             return Response.json(
-                { error: 'Razorpay keys not configured on server' },
+                { error: 'Razorpay keys not configured on server. Ensure RAZORPAY_KEY_SECRET is in your .env or Vercel config.' },
                 { status: 500 }
             );
         }
 
-        // Dynamic import — razorpay is a server-only package
-        const Razorpay = (await import('razorpay')).default;
         const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
 
         const receiptId = gigId
@@ -46,18 +61,25 @@ export async function POST(request: Request) {
             },
         });
 
-        // Record the pending order in Firestore
+        // Record the pending order in Firestore using Admin SDK
         if (gigId) {
-            await setDoc(doc(db, 'orders', order.id), {
-                orderId: order.id,
-                gigId,
-                clientId: clientId || null,
-                executorId: executorId || null,
-                amount: order.amount,
-                currency: order.currency,
-                status: 'created',
-                createdAt: serverTimestamp(),
-            });
+            try {
+                const db = getDb();
+                if (db) {
+                    await db.collection('orders').doc(order.id).set({
+                        orderId: order.id,
+                        gigId,
+                        clientId: clientId || null,
+                        executorId: executorId || null,
+                        amount: order.amount,
+                        currency: order.currency,
+                        status: 'created',
+                        createdAt: FieldValue.serverTimestamp(),
+                    });
+                }
+            } catch (dbErr) {
+                console.error('Firestore write failed:', dbErr);
+            }
         }
 
         return Response.json(order, { status: 200 });

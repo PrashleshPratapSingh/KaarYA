@@ -107,14 +107,18 @@ export const initiatePayment = async (options: PaymentOptions): Promise<PaymentR
         const order = await createOrder(amount, gigId, clientId, executorId);
 
         // ── Step 2: Open Razorpay checkout on device ──
-        // Dynamic import to avoid breaking web/Expo Go builds
         let RazorpayCheckout: any;
         try {
             RazorpayCheckout = require('react-native-razorpay').default;
-        } catch {
+            
+            // Expo Go check: the JS module might load, but native methods won't exist
+            if (!RazorpayCheckout || typeof RazorpayCheckout.open !== 'function') {
+                throw new Error('Native methods missing');
+            }
+        } catch (e) {
             Alert.alert(
                 'Native Module Missing',
-                'Razorpay requires a custom dev build. Run `npx expo run:android` or `npx expo run:ios` instead of Expo Go.',
+                'Razorpay requires a custom dev build and cannot be tested inside Expo Go.\n\nPlease run:\nnpx expo run:android\nOR\nnpx expo run:ios',
             );
             return { success: false, error: 'react-native-razorpay not available in this build' };
         }

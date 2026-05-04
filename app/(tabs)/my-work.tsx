@@ -23,7 +23,7 @@ import { type GigRow, deleteGig, closeGig } from '@/lib/queries';
 import { getOrCreateChat, onMessagesChanged, sendMessage } from '@/lib/messaging';
 import { useAuth } from '@/app/context/AuthContext';
 import { useRouter } from 'expo-router';
-import { initiatePayment } from '@/lib/payments';
+// Payment integration will be enabled after Vercel deployment
 
 type ViewMode = 'selection' | 'client' | 'executor';
 
@@ -221,24 +221,11 @@ export default function MyWorkScreen() {
             return;
         }
 
-        try {
-            const result = await initiatePayment({
-                amount: targetGig.amount,
-                gigId: targetGig.id,
-                clientId: user.uid,
-                executorId: targetGig.clientId, // clientId field holds executor in this mapping
-                description: `Escrow: ${targetGig.title}`,
-                prefill: { name: user.name || '' },
-            });
-
-            if (result.success) {
-                Alert.alert('✅ Escrow Funded!', `Payment of ₹${targetGig.amount} is now secured in escrow.`);
-            } else if (result.error !== 'Payment cancelled by user') {
-                Alert.alert('Payment Failed', result.error || 'Something went wrong.');
-            }
-        } catch (err: any) {
-            Alert.alert('Payment Error', err?.message || 'An unexpected error occurred.');
-        }
+        Alert.alert(
+            '🔒 Escrow Coming Soon',
+            `Escrow payments for "${targetGig.title}" will be available once Razorpay is deployed.\n\nAmount: ₹${targetGig.amount.toLocaleString('en-IN')}`,
+            [{ text: 'OK' }]
+        );
     };
 
     // ── Loading / Auth States ──
